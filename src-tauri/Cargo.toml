@@ -1,5 +1,5 @@
 [package]
-name = "show-tracker"
+name = "ashow-tracker"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
@@ -23,4 +23,8 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-deep-link = "2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.5.2"
+objc2-app-kit = { version = "0.2.2", features = ["NSApplication", "NSRunningApplication", "NSApplicationScripting"] }
 

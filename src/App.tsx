@@ -6,8 +6,10 @@ import { searchAnime, type Anime } from "./api/jikan";
 import { AnimeCard } from "./components/AnimeCard";
 import { AuthModal } from "./components/AuthModal";
 import { UserMenu } from "./components/UserMenu";
+import { Toast, type ToastType } from "./components/Toast";
 // Import both functions from the plugin
 import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
+import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 
 
@@ -27,14 +29,38 @@ function App() {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  const showToast = (message: string, type: ToastType = "success") => {
+    setToast({ message, type });
+  };
 
   // --- 0. AUTH LOGIC ---
   // Handle Login/Logout Logic
   useEffect(() => {
-    // Check active session on startup
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) fetchProfile(session.user.id);
+    supabase.auth.getUser().then(async ({ data: { user }, error }) => {
+      if (error || !user) {
+        console.log("Session invalid or user deleted (Auth check failed). Clearing state.");
+        await supabase.auth.signOut(); // Wipes LocalStorage
+        setSession(null);
+        setProfile(null);
+        setMyList([]);
+      } else {
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+
+        if (!profile) {
+          console.log("User has valid token but NO profile (Deleted?). Forcing Logout.");
+          await supabase.auth.signOut();
+          setSession(null);
+          setProfile(null);
+        } else {
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            setProfile(profile);
+            if (session) fetchMyList();
+          });
+        }
+      }
     });
 
     // Listen for changes
@@ -52,24 +78,64 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // --- DEEP LINK LISTENER (UPDATED) ---
   useEffect(() => {
-    // Common handler function to avoid code duplication
     const handleDeepLink = (urls: string[]) => {
       console.log("Processing Deep Link:", urls);
 
       for (const url of urls) {
-        if (url.includes("access_token")) {
-          const hashIndex = url.indexOf("#");
-          if (hashIndex !== -1) {
-            // Hand off to Supabase
-            supabase.auth.getSession().then(({ data, error }) => {
+        // 1. Handle PKCE Flow (Code in Query Params)
+        if (url.includes("code=")) {
+          const params = new URLSearchParams(url.split('?')[1]);
+          const code = params.get("code");
+
+          if (code) {
+            supabase.auth.exchangeCodeForSession(code).then(async ({ data, error }) => {
               if (!error && data.session) {
-                // Success!
+                console.log("PKCE Session exchange successful");
                 fetchProfile(data.session.user.id);
                 fetchMyList();
-                setAuthModalOpen(false); // Close the modal
-                // alert("Verified & Logged In! Welcome back."); // Optional feedback
+                setAuthModalOpen(false);
+
+                // Use Rust command to force focus (works on macOS spaces)
+                invoke('force_focus');
+
+                showToast("Logged in via Google! You can close the browser tab.", "success");
+              } else {
+                console.error("PKCE exchange failed:", error);
+                showToast("Login failed. Please try again.", "error");
+              }
+            });
+            return; // Stop processing this URL
+          }
+        }
+
+        // 2. Handle Implicit Flow (Tokens in Hash)
+        if (url.includes("access_token") || url.includes("refresh_token")) {
+          const fragment = url.split('#')[1];
+          if (!fragment) continue;
+
+          const params = new URLSearchParams(fragment);
+          const accessToken = params.get("access_token");
+          const refreshToken = params.get("refresh_token");
+
+          if (accessToken && refreshToken) {
+            supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            }).then(async ({ data, error }) => {
+              if (!error && data.session) {
+                console.log("Session set successfully via Deep Link");
+                fetchProfile(data.session.user.id);
+                fetchMyList();
+                setAuthModalOpen(false);
+
+                // Use Rust command to force focus (works on macOS spaces)
+                invoke('force_focus');
+
+                showToast("Verified & Logged In! Welcome back. You may close the browser tab now :)", "success");
+              } else {
+                console.error("Failed to set session:", error);
+                showToast("Failed to verify session.", "error");
               }
             });
           }
@@ -124,9 +190,15 @@ function App() {
 
   // --- 2. FETCH MY LIST LOGIC ---
   async function fetchMyList() {
+    if (!session?.user) {
+      setMyList([]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('watchlist')
       .select('*')
+      .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
 
     if (error) console.error("Error fetching list:", error);
@@ -146,15 +218,17 @@ function App() {
     const { data: existing } = await supabase
       .from('watchlist')
       .select('id')
+      .eq('user_id', session.user.id)
       .eq('mal_id', anime.mal_id)
       .maybeSingle();
 
     if (existing) {
-      alert("You already added this show! 😅");
+      showToast("You already added this show! 😅", "info");
       return;
     }
 
     const { error } = await supabase.from('watchlist').insert({
+      user_id: session.user.id,
       mal_id: anime.mal_id,
       title: anime.title,
       image_url: anime.images.jpg.large_image_url,
@@ -163,10 +237,11 @@ function App() {
     });
 
     if (error) {
-      alert("Failed to save ❌");
+      console.error("Save Error:", error);
+      showToast(`Failed to save: ${error.message}`, "error");
     } else {
-      alert(`Added ${anime.title} to your list! ✅`);
-      setQuery(""); // Clear search bar optionally
+      showToast(`Added ${anime.title} to your list! ✅`, "success");
+      setQuery("");
     }
   }
 
@@ -174,6 +249,13 @@ function App() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-8">
       <div className="max-w-6xl mx-auto">
+
+        {/* TOAST NOTIFICATIONS */}
+        <Toast
+          message={toast?.message || null}
+          type={toast?.type}
+          onClose={() => setToast(null)}
+        />
 
         <AuthModal
           supabase={supabase}
@@ -185,9 +267,7 @@ function App() {
         <header className="mb-8 flex items-center justify-between relative z-10">
           {/* Left: Logo */}
           <div className="w-1/3 text-left">
-            <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-              ST.
-            </h1>
+            <img src="/logo.png" alt="AShow Tracker" className="h-24 object-contain" />
           </div>
 
           {/* Center: Tabs */}
@@ -220,7 +300,7 @@ function App() {
             ) : (
               <button
                 onClick={() => setAuthModalOpen(true)}
-                className="bg-white hover:bg-gray-100 text-black px-5 py-2 rounded-full font-bold text-sm transition-all shadow-lg hover:shadow-white/20"
+                className="btn-animated btn-glow bg-white hover:bg-gray-100 text-black px-8 py-2 rounded-full font-bold text-sm transition-all"
               >
                 Sign In
               </button>
@@ -340,7 +420,7 @@ function App() {
 
                         if (error) {
                           console.error("❌ Delete failed:", error);
-                          alert("Error deleting: " + error.message);
+                          showToast("Error deleting: " + error.message, "error");
                           // Optional: Refresh list to bring it back if delete failed
                           fetchMyList();
                         } else {
