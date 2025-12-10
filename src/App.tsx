@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { Search, Loader2, Trash2, List } from "lucide-react";
+import { Search, Loader2, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import { searchAnime, type Anime } from "./api/jikan";
 import { AnimeCard } from "./components/AnimeCard";
+import { AuthModal } from "./components/AuthModal";
+import { UserMenu } from "./components/UserMenu";
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import "./App.css";
 
 
@@ -20,6 +23,62 @@ function App() {
   const [results, setResults] = useState<Anime[]>([]);
   const [myList, setMyList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [isAuthModalOpen, setAuthModalOpen] = useState(false);
+
+  // --- 0. AUTH LOGIC ---
+  // Handle Login/Logout Logic
+  useEffect(() => {
+    // Check active session on startup
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) fetchProfile(session.user.id);
+    });
+
+    // Listen for changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        fetchProfile(session.user.id);
+        fetchMyList(); // Fetch YOUR specific list
+      } else {
+        setProfile(null);
+        setMyList([]); // Clear list on logout
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const setupDeepLink = async () => {
+      await onOpenUrl((urls) => {
+        console.log("App opened with URL:", urls);
+
+        for (const url of urls) {
+          if (url.includes("access_token")) {
+            supabase.auth.getSession().then(({ data, error }) => {
+              if (!error) {
+                if (data.session) fetchProfile(data.session.user.id);
+                alert("Email Verified! You are logged in.");
+              }
+            });
+
+          }
+        }
+      });
+    };
+
+    setupDeepLink();
+  }, []);
+
+
+  async function fetchProfile(userId: string) {
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    setProfile(data);
+  }
+
 
   // --- 1. SEARCH LOGIC ---
   useEffect(() => {
@@ -94,27 +153,56 @@ function App() {
     <div className="min-h-screen bg-[#0a0a0a] text-white p-8">
       <div className="max-w-6xl mx-auto">
 
-        {/* HEADER & TABS */}
-        <header className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-6">
-            Show Tracker
-          </h1>
+        <AuthModal
+          supabase={supabase}
+          isOpen={isAuthModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+        />
 
-          <div className="flex justify-center gap-4 mb-8">
+        {/* HEADER & TABS */}
+        <header className="mb-8 flex items-center justify-between relative z-10">
+          {/* Left: Logo */}
+          <div className="w-1/3 text-left">
+            <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              ST.
+            </h1>
+          </div>
+
+          {/* Center: Tabs */}
+          <div className="flex justify-center gap-1 bg-gray-900/80 p-1 rounded-full border border-gray-800 backdrop-blur-md">
             <button
               onClick={() => setView("search")}
-              className={`px-6 py-2 rounded-full font-medium transition-all ${view === "search" ? "bg-white text-black shadow-lg scale-105" : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+              className={`px-6 py-1.5 rounded-full text-sm font-medium transition-all ${view === "search" ? "bg-gray-800 text-white shadow-sm border border-gray-700" : "text-gray-400 hover:text-white"
                 }`}
             >
               Search
             </button>
             <button
               onClick={() => setView("list")}
-              className={`px-6 py-2 rounded-full font-medium transition-all ${view === "list" ? "bg-white text-black shadow-lg scale-105" : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+              className={`px-6 py-1.5 rounded-full text-sm font-medium transition-all ${view === "list" ? "bg-gray-800 text-white shadow-sm border border-gray-700" : "text-gray-400 hover:text-white"
                 }`}
             >
               My List
             </button>
+          </div>
+
+          {/* Right: User Menu */}
+          <div className="w-1/3 flex justify-end">
+            {session ? (
+              <UserMenu
+                session={session}
+                profile={profile}
+                onLogout={() => supabase.auth.signOut()}
+                onOpenProfile={() => console.log("Edit Profile Clicked")}
+              />
+            ) : (
+              <button
+                onClick={() => setAuthModalOpen(true)}
+                className="bg-white hover:bg-gray-100 text-black px-5 py-2 rounded-full font-bold text-sm transition-all shadow-lg hover:shadow-white/20"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </header>
 
@@ -149,24 +237,24 @@ function App() {
           </motion.div>
         )}
 
-       {/* VIEW 2: MY LIST */}
+        {/* VIEW 2: MY LIST */}
         {view === "list" && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
           >
             {myList.map((item) => (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className="relative group overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-lg transition-all hover:shadow-blue-900/20 hover:scale-[1.02]"
               >
                 {/* Background Image */}
                 <div className="aspect-[2/3] w-full">
-                  <img 
-                    src={item.image_url} 
-                    alt={item.title} 
-                    className="h-full w-full object-cover transition-all duration-300 group-hover:brightness-50" 
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-all duration-300 group-hover:brightness-50"
                   />
                 </div>
 
@@ -187,24 +275,24 @@ function App() {
 
                   {/* Progress Bar */}
                   <div className="h-1.5 w-full bg-gray-700/50 rounded-full overflow-hidden mb-4 backdrop-blur-sm">
-                    <div 
-                      className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500 ease-out" 
-                      style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }} 
+                    <div
+                      className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500 ease-out"
+                      style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }}
                     />
                   </div>
 
                   {/* ACTION BUTTONS (Always visible but dimmed) */}
                   <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
-                    
+
                     {/* 1. INCREMENT BUTTON */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation(); // Prevents clicking the card background
                         const newCount = item.watched_episodes + 1;
-                        
+
                         // Optimistic UI Update
                         setMyList(prev => prev.map(show => show.id === item.id ? { ...show, watched_episodes: newCount } : show));
-                        
+
                         // DB Update
                         supabase.from('watchlist').update({ watched_episodes: newCount }).eq('id', item.id).then();
                       }}
@@ -214,14 +302,14 @@ function App() {
                     </button>
 
                     {/* 2. DELETE BUTTON (Debug Version) */}
-                    <button 
+                    <button
                       onClick={async (e) => {
                         e.stopPropagation();
                         console.log("🗑 Clicked delete for:", item.title, "ID:", item.id);
 
                         // 1. Optimistic UI Update (Remove immediately)
-                        setMyList(prev => prev.filter(show => show.id !== item.id)); 
-                        
+                        setMyList(prev => prev.filter(show => show.id !== item.id));
+
                         // 2. DB Update
                         const { error } = await supabase
                           .from('watchlist')
@@ -245,7 +333,7 @@ function App() {
                 </div>
               </div>
             ))}
-            
+
             {/* Empty State */}
             {myList.length === 0 && (
               <div className="col-span-full text-center mt-20">
