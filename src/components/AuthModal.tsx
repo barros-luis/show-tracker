@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Mail, Lock, Loader2, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
 import { SupabaseClient } from "@supabase/supabase-js";
 
+
 interface AuthModalProps {
   supabase: SupabaseClient;
   isOpen: boolean;

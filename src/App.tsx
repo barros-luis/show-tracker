@@ -41,10 +41,10 @@ function App() {
       setSession(session);
       if (session) {
         fetchProfile(session.user.id);
-        fetchMyList(); // Fetch YOUR specific list
+        fetchMyList();
       } else {
         setProfile(null);
-        setMyList([]); // Clear list on logout
+        setMyList([]);
       }
     });
 
@@ -58,13 +58,21 @@ function App() {
 
         for (const url of urls) {
           if (url.includes("access_token")) {
-            supabase.auth.getSession().then(({ data, error }) => {
-              if (!error) {
-                if (data.session) fetchProfile(data.session.user.id);
-                alert("Email Verified! You are logged in.");
-              }
-            });
+            const hashIndex = url.indexOf("#");
+            if (hashIndex !== -1) {
+              const hash = url.substring(hashIndex);
 
+              supabase.auth.getSession().then(({ data, error }) => {
+                if (!error && data.session) {
+                  fetchProfile(data.session.user.id);
+                  fetchMyList();
+
+                  setAuthModalOpen(false);
+
+                  alert("Verified & Logged In! Welcome back.");
+                }
+              });
+            }
           }
         }
       });
