@@ -14,7 +14,7 @@ export function AnimeCard({ anime, onClick }: AnimeCardProps) {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
-      className="group relative cursor-pointer overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-lg"
+      className="anime-card group relative cursor-pointer overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-lg"
       onClick={() => onClick(anime)}
     >
       {/* Image Container with Aspect Ratio */}
@@ -25,7 +25,7 @@ export function AnimeCard({ anime, onClick }: AnimeCardProps) {
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"
         />
-        
+
         {/* Gradient Overlay for Text Readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-60 transition-opacity group-hover:opacity-80 pointer-events-none" />
       </div>
@@ -41,7 +41,7 @@ export function AnimeCard({ anime, onClick }: AnimeCardProps) {
             <span className="text-xs font-bold">{anime.score || "N/A"}</span>
           </div>
         </div>
-        
+
         <h3 className="line-clamp-2 text-sm font-bold text-white leading-tight">
           {anime.title}
         </h3>

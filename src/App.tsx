@@ -7,6 +7,7 @@ import { AnimeCard } from "./components/AnimeCard";
 import { AuthModal } from "./components/AuthModal";
 import { UserMenu } from "./components/UserMenu";
 import { Toast, type ToastType } from "./components/Toast";
+import { MouseAura } from "./components/MouseAura";
 // Import both functions from the plugin
 import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
 import { invoke } from "@tauri-apps/api/core";
@@ -247,8 +248,9 @@ function App() {
 
   // --- RENDER ---
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen text-white font-sans selection:bg-blue-500 selection:text-white p-8 overflow-hidden relative">
+      <MouseAura />
+      <div className="max-w-6xl mx-auto relative z-10">
 
         {/* TOAST NOTIFICATIONS */}
         <Toast
@@ -274,14 +276,14 @@ function App() {
           <div className="flex justify-center gap-1 bg-gray-900/80 p-1 rounded-full border border-gray-800 backdrop-blur-md">
             <button
               onClick={() => setView("search")}
-              className={`px-6 py-1.5 rounded-full text-sm font-medium transition-all ${view === "search" ? "bg-gray-800 text-white shadow-sm border border-gray-700" : "text-gray-400 hover:text-white"
+              className={`cursor-pointer px-6 py-1.5 rounded-full text-sm font-medium transition-all ${view === "search" ? "bg-gray-800 text-white shadow-sm border border-gray-700" : "text-gray-400 hover:text-white"
                 }`}
             >
               Search
             </button>
             <button
               onClick={() => setView("list")}
-              className={`px-6 py-1.5 rounded-full text-sm font-medium transition-all ${view === "list" ? "bg-gray-800 text-white shadow-sm border border-gray-700" : "text-gray-400 hover:text-white"
+              className={`cursor-pointer px-6 py-1.5 rounded-full text-sm font-medium transition-all ${view === "list" ? "bg-gray-800 text-white shadow-sm border border-gray-700" : "text-gray-400 hover:text-white"
                 }`}
             >
               My List
@@ -349,7 +351,7 @@ function App() {
             {myList.map((item) => (
               <div
                 key={item.id}
-                className="relative group overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-lg transition-all hover:shadow-blue-900/20 hover:scale-[1.02]"
+                className="anime-card relative bg-gray-900 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 group"
               >
                 {/* Background Image */}
                 <div className="aspect-[2/3] w-full">
