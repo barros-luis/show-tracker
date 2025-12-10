@@ -1,49 +1,47 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 import "./App.css";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+// 1. Initialize Supabase Client (Done OUTSIDE the component)
+const supabase = createClient(
+  "https://xbosdjujcvfqujtdamun.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhib3NkanVqY3ZmcXVqdGRhbXVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMzUzNjksImV4cCI6MjA4MDkxMTM2OX0.BrKUQ_VGTfCbNW2dST3LHPz0UUbC9ZNn98mbb5FAVig"
+);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+function App() {
+  const [message, setMessage] = useState("Connecting to Supabase...");
+
+  // 2. This 'effect' runs once when the app starts
+  useEffect(() => {
+    async function fetchMessage() {
+      // 3. Ask Supabase for the data
+      const { data, error } = await supabase
+        .from("global_message")
+        .select("content")
+        .single();
+
+      if (error) {
+        console.error("Supabase Error:", error);
+        setMessage("Error: " + error.message);
+      } 
+      else if (data) {
+        setMessage(data.content);
+      }
+    }
+
+    fetchMessage();
+  }, []);
 
   return (
     <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+      <h1>Anime Tracker v0.1</h1>
+      <br />
+      <p>Database Connection Status:</p>
+      
+      {/* 4. Display the message from the cloud */}
+      <h2 style={{ color: "#646cff", fontSize: "24px" }}>
+        {message}
+      </h2>
     </main>
   );
 }
