@@ -58,21 +58,16 @@ function App() {
 
         for (const url of urls) {
           if (url.includes("access_token")) {
-            const hashIndex = url.indexOf("#");
-            if (hashIndex !== -1) {
-              const hash = url.substring(hashIndex);
+            supabase.auth.getSession().then(({ data, error }) => {
+              if (!error && data.session) {
+                fetchProfile(data.session.user.id);
+                fetchMyList();
 
-              supabase.auth.getSession().then(({ data, error }) => {
-                if (!error && data.session) {
-                  fetchProfile(data.session.user.id);
-                  fetchMyList();
+                setAuthModalOpen(false);
 
-                  setAuthModalOpen(false);
-
-                  alert("Verified & Logged In! Welcome back.");
-                }
-              });
-            }
+                alert("Verified & Logged In! Welcome back.");
+              }
+            });
           }
         }
       });
