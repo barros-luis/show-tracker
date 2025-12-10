@@ -6,7 +6,8 @@ import { searchAnime, type Anime } from "./api/jikan";
 import { AnimeCard } from "./components/AnimeCard";
 import { AuthModal } from "./components/AuthModal";
 import { UserMenu } from "./components/UserMenu";
-import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
+// Import both functions from the plugin
+import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
 import "./App.css";
 
 
@@ -51,25 +52,43 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // --- DEEP LINK LISTENER (UPDATED) ---
   useEffect(() => {
-    const setupDeepLink = async () => {
-      await onOpenUrl((urls) => {
-        console.log("App opened with URL:", urls);
+    // Common handler function to avoid code duplication
+    const handleDeepLink = (urls: string[]) => {
+      console.log("Processing Deep Link:", urls);
 
-        for (const url of urls) {
-          if (url.includes("access_token")) {
+      for (const url of urls) {
+        if (url.includes("access_token")) {
+          const hashIndex = url.indexOf("#");
+          if (hashIndex !== -1) {
+            // Hand off to Supabase
             supabase.auth.getSession().then(({ data, error }) => {
               if (!error && data.session) {
+                // Success!
                 fetchProfile(data.session.user.id);
                 fetchMyList();
-
-                setAuthModalOpen(false);
-
-                alert("Verified & Logged In! Welcome back.");
+                setAuthModalOpen(false); // Close the modal
+                // alert("Verified & Logged In! Welcome back."); // Optional feedback
               }
             });
           }
         }
+      }
+    };
+
+    const setupDeepLink = async () => {
+      // 1. Check if app was LAUNCHED by a URL (Cold Start)
+      const initialUrls = await getCurrent();
+      if (initialUrls) {
+        console.log("App launched via URL:", initialUrls);
+        handleDeepLink(initialUrls);
+      }
+
+      // 2. Listen for NEW URLs while app is open (Warm Start)
+      await onOpenUrl((urls) => {
+        console.log("New URL received:", urls);
+        handleDeepLink(urls);
       });
     };
 
