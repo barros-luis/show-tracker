@@ -1,4 +1,4 @@
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 #[tauri::command]
 fn force_focus(window: tauri::Window) {
@@ -18,11 +18,16 @@ fn force_focus(window: tauri::Window) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             let _ = app
                 .get_webview_window("main")
                 .expect("no main window")
                 .set_focus();
+
+            // Handle Windows Deep Link args
+            if let Some(url) = args.iter().find(|arg| arg.starts_with("show-tracker://")) {
+                let _ = app.emit("deep-link-received", vec![url]);
+            }
         }))
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::init())

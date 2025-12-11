@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, Loader2, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
+import { listen } from "@tauri-apps/api/event";
 import { searchAnime, type Anime } from "./api/jikan";
 import { AnimeCard } from "./components/AnimeCard";
 import { AuthModal } from "./components/AuthModal";
@@ -74,6 +75,7 @@ function App() {
       } else {
         setProfile(null);
         setMyList([]);
+        setView("search");
       }
     });
 
@@ -154,10 +156,21 @@ function App() {
       }
 
       // 2. Listen for NEW URLs while app is open (Warm Start)
-      await onOpenUrl((urls) => {
+      const unlisten = await onOpenUrl((urls) => {
         console.log("New URL received:", urls);
         handleDeepLink(urls);
       });
+
+      // 3. Listen for Windows Deep Links (via Single Instance args)
+      const unlistenWindows = await listen<string[]>("deep-link-received", (event) => {
+        console.log("Windows Deep Link received:", event.payload);
+        handleDeepLink(event.payload);
+      });
+
+      return () => {
+        unlisten();
+        unlistenWindows();
+      };
     };
 
     setupDeepLink();
