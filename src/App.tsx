@@ -8,6 +8,7 @@ import { AuthModal } from "./components/AuthModal";
 import { UserMenu } from "./components/UserMenu";
 import { Toast, type ToastType } from "./components/Toast";
 import { MouseAura } from "./components/MouseAura";
+import { ProfilePage } from "./components/ProfilePage";
 // Import both functions from the plugin
 import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
 import { invoke } from "@tauri-apps/api/core";
@@ -22,7 +23,7 @@ const supabase = createClient(
 
 function App() {
   // --- STATE ---
-  const [view, setView] = useState<"search" | "list">("search");
+  const [view, setView] = useState<"search" | "list" | "profile">("search");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Anime[]>([]);
   const [myList, setMyList] = useState<any[]>([]);
@@ -269,7 +270,12 @@ function App() {
         <header className="mb-8 flex items-center justify-between relative z-10">
           {/* Left: Logo */}
           <div className="w-1/3 text-left">
-            <img src="/logo.png" alt="AShow Tracker" className="h-24 object-contain" />
+            <img
+              src="/logo.png"
+              alt="AShow Tracker"
+              className="h-24 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setView('search')}
+            />
           </div>
 
           {/* Center: Tabs */}
@@ -297,7 +303,10 @@ function App() {
                 session={session}
                 profile={profile}
                 onLogout={() => supabase.auth.signOut()}
-                onOpenProfile={() => console.log("Edit Profile Clicked")}
+                onOpenProfile={() => {
+                  console.log("Opening Profile");
+                  setView("profile");
+                }}
               />
             ) : (
               <button
@@ -448,6 +457,16 @@ function App() {
               </div>
             )}
           </motion.div>
+        )}
+
+        {/* VIEW 3: PROFILE */}
+        {view === "profile" && (
+          <ProfilePage
+            session={session}
+            profile={profile}
+            supabase={supabase}
+            onProfileUpdate={() => fetchProfile(session.user.id)}
+          />
         )}
 
       </div>
