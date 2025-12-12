@@ -14,7 +14,7 @@ export function AnimeCard({ anime, onClick }: AnimeCardProps) {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
-      className="anime-card group relative cursor-pointer overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-lg"
+      className="anime-card group relative cursor-pointer overflow-hidden rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg"
       onClick={() => onClick(anime)}
     >
       {/* Image Container with Aspect Ratio */}
@@ -42,7 +42,7 @@ export function AnimeCard({ anime, onClick }: AnimeCardProps) {
           </div>
         </div>
 
-        <h3 className="line-clamp-2 text-sm font-bold text-white leading-tight">
+        <h3 className="line-clamp-2 text-sm font-bold text-white leading-tight drop-shadow-lg">
           {anime.title}
         </h3>
       </div>

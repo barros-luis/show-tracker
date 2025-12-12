@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AShowTracker",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "identifier": "com.showtracker.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -14,7 +14,8 @@
       {
         "title": "AShowTracker",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "maximized": true
       }
     ],
     "security": {

@@ -1,8 +1,256 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===========================================
+   THEME SYSTEM - Light/Dark Mode Support
+   =========================================== */
+
+/* Light Mode - Subtle Blue Theme */
+:root {
+  --bg-primary: #e8f0fe;
+  /* Soft blue-gray */
+  --bg-secondary: #f0f5ff;
+  /* Very light blue */
+  --bg-tertiary: #dfe8f5;
+  /* Slightly darker blue-gray */
+  --bg-card: #ffffff;
+  --text-primary: #1e293b;
+  /* Dark slate */
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border-color: #c7d2e4;
+  --shadow-color: rgba(100, 116, 139, 0.15);
+}
+
+/* Dark Mode (when 'dark' class IS on html) */
+.dark {
+  --bg-primary: #030712;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1f2937;
+  --bg-card: #111827;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --border-color: #374151;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Apply theme to root elements */
+html {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.4s ease, color 0.3s ease;
+}
+
 body {
-  background-color: #070d1c;
-  color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.4s ease, color 0.3s ease;
+}
+
+/* =========================================== 
+   LIGHT MODE OVERRIDES 
+   =========================================== */
+
+/* Background colors for light mode - subtle blue tones */
+:root:not(.dark) .bg-gray-900 {
+  background-color: #f0f5ff !important;
+}
+
+:root:not(.dark) .bg-gray-900\/50 {
+  background-color: rgba(224, 235, 255, 0.8) !important;
+}
+
+:root:not(.dark) .bg-gray-900\/30 {
+  background-color: rgba(224, 235, 255, 0.5) !important;
+}
+
+:root:not(.dark) .bg-gray-900\/80 {
+  background-color: rgba(240, 245, 255, 0.95) !important;
+}
+
+:root:not(.dark) .bg-gray-900\/40 {
+  background-color: rgba(240, 245, 255, 0.7) !important;
+}
+
+:root:not(.dark) .bg-gray-800 {
+  background-color: #e0ebff !important;
+}
+
+:root:not(.dark) .bg-gray-800\/50 {
+  background-color: rgba(224, 235, 255, 0.7) !important;
+}
+
+:root:not(.dark) .bg-gray-800\/60 {
+  background-color: rgba(224, 235, 255, 0.8) !important;
+}
+
+:root:not(.dark) .bg-gray-700 {
+  background-color: #d0ddf5 !important;
+}
+
+:root:not(.dark) .bg-black {
+  background-color: #e8f0fe !important;
+}
+
+:root:not(.dark) .bg-black\/20 {
+  background-color: rgba(30, 41, 59, 0.08) !important;
+}
+
+:root:not(.dark) .bg-black\/30 {
+  background-color: rgba(30, 41, 59, 0.1) !important;
+}
+
+:root:not(.dark) .bg-black\/50 {
+  background-color: rgba(30, 41, 59, 0.15) !important;
+}
+
+:root:not(.dark) .bg-black\/60 {
+  background-color: rgba(30, 41, 59, 0.2) !important;
+}
+
+/* Text colors for light mode - IMPORTANT: Keep text-white on gradient backgrounds */
+:root:not(.dark) .text-gray-100 {
+  color: #1e293b !important;
+}
+
+:root:not(.dark) .text-gray-200 {
+  color: #334155 !important;
+}
+
+:root:not(.dark) .text-gray-300 {
+  color: #475569 !important;
+}
+
+:root:not(.dark) .text-gray-400 {
+  color: #64748b !important;
+}
+
+:root:not(.dark) .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+/* IMPORTANT: Override text-white for form elements and UI components */
+:root:not(.dark) .text-white {
+  color: #1e293b !important;
+}
+
+:root:not(.dark) .text-white\/90 {
+  color: rgba(30, 41, 59, 0.9) !important;
+}
+
+:root:not(.dark) .text-white\/80 {
+  color: rgba(30, 41, 59, 0.8) !important;
+}
+
+:root:not(.dark) .text-white\/70 {
+  color: rgba(30, 41, 59, 0.7) !important;
+}
+
+/* Hover background overrides for light mode */
+:root:not(.dark) .hover\:bg-gray-800:hover {
+  background-color: #d0ddf5 !important;
+}
+
+:root:not(.dark) .hover\:bg-white\/5:hover {
+  background-color: rgba(30, 41, 59, 0.05) !important;
+}
+
+/* Keep text-white on gradient backgrounds and blue buttons */
+:root:not(.dark) .bg-gradient-to-r .text-white,
+:root:not(.dark) .bg-gradient-to-br .text-white,
+:root:not(.dark) .bg-gradient-to-tr .text-white,
+:root:not(.dark) .from-blue-600 .text-white,
+:root:not(.dark) .from-purple-500 .text-white,
+:root:not(.dark) .bg-blue-600 .text-white,
+:root:not(.dark) [class*="from-blue-"] .text-white,
+:root:not(.dark) [class*="from-pink-"] .text-white,
+:root:not(.dark) [class*="from-purple-"] .text-white,
+:root:not(.dark) [class*="from-cyan-"] .text-white,
+:root:not(.dark) [class*="from-emerald-"] .text-white,
+:root:not(.dark) [class*="from-orange-"] .text-white,
+:root:not(.dark) [class*="from-gray-800"] .text-white,
+:root:not(.dark) .anime-card .text-white,
+:root:not(.dark) .anime-card .text-blue-400,
+:root:not(.dark) .anime-card .text-yellow-500,
+:root:not(.dark) .anime-card .text-gray-200 {
+  color: inherit !important;
+}
+
+/* Anime card specific - keep original colors since they're on dark overlay */
+:root:not(.dark) .anime-card .text-white {
+  color: #ffffff !important;
+}
+
+:root:not(.dark) .anime-card .text-blue-400 {
+  color: #60a5fa !important;
+}
+
+:root:not(.dark) .anime-card .text-yellow-500 {
+  color: #eab308 !important;
+}
+
+/* Border colors for light mode */
+:root:not(.dark) .border-gray-800 {
+  border-color: #c7d2e4 !important;
+}
+
+:root:not(.dark) .border-gray-700 {
+  border-color: #b8c8e0 !important;
+}
+
+:root:not(.dark) .border-gray-600 {
+  border-color: #94a3b8 !important;
+}
+
+:root:not(.dark) .border-white\/10 {
+  border-color: rgba(30, 41, 59, 0.1) !important;
+}
+
+:root:not(.dark) .border-white\/20 {
+  border-color: rgba(30, 41, 59, 0.15) !important;
+}
+
+/* Placeholder colors */
+:root:not(.dark) .placeholder-gray-500::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Shadows for light mode - softer blue-tinted shadows */
+:root:not(.dark) .shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(100, 116, 139, 0.2) !important;
+}
+
+:root:not(.dark) .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(100, 116, 139, 0.15) !important;
+}
+
+:root:not(.dark) .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(100, 116, 139, 0.12) !important;
+}
+
+/* Backdrop blur adjustments */
+:root:not(.dark) .backdrop-blur-xl {
+  backdrop-filter: blur(24px) saturate(150%);
+}
+
+/* Ring colors */
+:root:not(.dark) .ring-white\/10 {
+  --tw-ring-color: rgba(30, 41, 59, 0.1) !important;
+}
+
+/* Scrollbar styling for light mode */
+:root:not(.dark) ::-webkit-scrollbar-track {
+  background: #e0ebff;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #b8c8e0;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .anime-card {

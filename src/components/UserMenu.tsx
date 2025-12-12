@@ -6,9 +6,10 @@ interface UserMenuProps {
   profile: any;
   onLogout: () => void;
   onOpenProfile: () => void;
+  onOpenSettings: () => void;
 }
 
-export function UserMenu({ session, profile, onLogout, onOpenProfile }: UserMenuProps) {
+export function UserMenu({ session, profile, onLogout, onOpenProfile, onOpenSettings }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -57,7 +58,10 @@ export function UserMenu({ session, profile, onLogout, onOpenProfile }: UserMenu
             >
               <User size={16} /> Profile
             </button>
-            <button className="cursor-pointer w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
+            <button
+              onClick={() => { setIsOpen(false); onOpenSettings(); }}
+              className="cursor-pointer w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
+            >
               <Settings size={16} /> Settings
             </button>
             <div className="h-px bg-gray-800 my-1" />

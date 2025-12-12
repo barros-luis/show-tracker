@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 
 export function MouseAura() {
     const [mounted, setMounted] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(true);
 
     const requestRef = useRef<number>(0);
     const particlesRef = useRef<HTMLDivElement[]>([]);
@@ -27,6 +28,18 @@ export function MouseAura() {
 
     useEffect(() => {
         setMounted(true);
+
+        // Check and watch for theme changes
+        const checkTheme = () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            setIsDarkMode(isDark);
+        };
+
+        checkTheme();
+
+        // Watch for class changes on html element
+        const observer = new MutationObserver(checkTheme);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
         const handleMouseMove = (e: MouseEvent) => {
             mouseRef.current = { x: e.clientX, y: e.clientY };
@@ -103,10 +116,18 @@ export function MouseAura() {
         return () => {
             window.removeEventListener("mousemove", handleMouseMove);
             cancelAnimationFrame(requestRef.current);
+            observer.disconnect();
         };
     }, []);
 
     if (!mounted) return null;
+
+    // Different gradients for light vs dark mode
+    const particleGradient = isDarkMode
+        ? 'radial-gradient(circle, rgba(30, 64, 175, 0.6) 0%, rgba(23, 37, 84, 0.3) 30%, rgba(15, 23, 42, 0.1) 60%, transparent 100%)'
+        : 'radial-gradient(circle, rgba(166, 147, 253, 0.41) 0%, rgba(191, 219, 254, 0.25) 30%, rgba(224, 242, 254, 0.1) 60%, transparent 100%)';
+
+    const blendMode = isDarkMode ? 'screen' : 'normal';
 
     return createPortal(
         <>
@@ -114,7 +135,9 @@ export function MouseAura() {
             <div
                 className="fixed inset-0 pointer-events-none z-0 opacity-40 mix-blend-overlay"
                 style={{
-                    backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px)',
+                    backgroundImage: isDarkMode
+                        ? 'radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px)'
+                        : 'radial-gradient(circle, rgba(0, 0, 0, 0.08) 1px, transparent 1px)',
                     backgroundSize: '30px 30px',
                     top: 0,
                     left: 0
@@ -128,11 +151,12 @@ export function MouseAura() {
                     ref={(el) => {
                         if (el) particlesRef.current[i] = el;
                     }}
-                    className="fixed pointer-events-none rounded-full mix-blend-screen transition-transform duration-75"
+                    className="fixed pointer-events-none rounded-full transition-transform duration-75"
                     style={{
                         zIndex: 9999,
-                        background: 'radial-gradient(circle, rgba(30, 64, 175, 0.6) 0%, rgba(23, 37, 84, 0.3) 30%, rgba(15, 23, 42, 0.1) 60%, transparent 100%)',
+                        background: particleGradient,
                         filter: 'blur(20px)',
+                        mixBlendMode: blendMode,
 
                         top: 0,
                         left: 0,
