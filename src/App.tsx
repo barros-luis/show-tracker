@@ -307,7 +307,6 @@ function App() {
               {/* Animated Background Pill */}
               <div className="absolute inset-0 p-1.5">
                 <motion.div
-                  layoutId="activeTab"
                   className="h-full w-1/2 bg-white dark:bg-gray-800 rounded-full shadow-md"
                   initial={false}
                   animate={{
