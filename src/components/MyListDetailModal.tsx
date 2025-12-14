@@ -417,18 +417,18 @@ export function MyListDetailModal({
                                     </div>
 
                                     {/* RIGHT COLUMN - Episode List (2/3) */}
-                                    <div className="w-full md:w-2/3 flex flex-col bg-gray-950 p-6">
+                                    <div className="w-full md:w-2/3 flex flex-col bg-gray-100 dark:bg-gray-950 p-6">
                                         {/* Header with Progress */}
                                         <div className="mb-4">
-                                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                                 <Tv size={20} className="text-blue-500" />
                                                 Episodes
-                                                <span className="text-gray-400 font-normal text-sm ml-2">
+                                                <span className="text-gray-500 dark:text-gray-400 font-normal text-sm ml-2">
                                                     ({watchedCount} / {totalEpisodes} watched)
                                                 </span>
                                             </h3>
                                             {/* Progress Bar */}
-                                            <div className="mt-2 h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                            <div className="mt-2 h-2 w-full bg-gray-300 dark:bg-gray-800 rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full bg-blue-500 transition-all duration-300"
                                                     style={{ width: `${progressPercent}%` }}
@@ -521,7 +521,7 @@ export function MyListDetailModal({
                                             {loadingEpisodes ? (
                                                 <div className="flex items-center justify-center py-20">
                                                     <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-                                                    <span className="ml-3 text-gray-400">Loading episodes...</span>
+                                                    <span className="ml-3 text-gray-500 dark:text-gray-400">Loading episodes...</span>
                                                 </div>
                                             ) : episodes.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center py-20 text-gray-500">
@@ -535,7 +535,7 @@ export function MyListDetailModal({
                                                         key={episode.mal_id}
                                                         className={`rounded-lg border transition-all ${watchedEpisodes.has(episode.mal_id)
                                                             ? "bg-blue-500/10 border-blue-500/30"
-                                                            : "bg-gray-800/50 border-gray-700/50 hover:border-gray-600"
+                                                            : "bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600"
                                                             }`}
                                                     >
                                                         <div className="flex items-center p-3 gap-3">
@@ -544,29 +544,29 @@ export function MyListDetailModal({
                                                                 onClick={() => toggleEpisodeWatched(episode.mal_id)}
                                                                 className={`w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-all ${watchedEpisodes.has(episode.mal_id)
                                                                     ? "bg-blue-500 text-white"
-                                                                    : "bg-gray-700 hover:bg-gray-600 text-transparent hover:text-gray-400"
+                                                                    : "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-transparent hover:text-gray-400"
                                                                     }`}
                                                             >
                                                                 <Check size={14} />
                                                             </button>
 
                                                             {/* Episode Number */}
-                                                            <span className="text-gray-400 text-sm font-mono w-10">
+                                                            <span className="text-gray-500 dark:text-gray-400 text-sm font-mono w-10">
                                                                 {episode.mal_id}
                                                             </span>
 
                                                             {/* Episode Title - Clickable */}
                                                             <button
                                                                 onClick={() => toggleEpisodeExpand(episode.mal_id)}
-                                                                className="flex-1 text-left text-white text-sm hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-2"
+                                                                className="flex-1 text-left text-gray-800 dark:text-white text-sm hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-2"
                                                             >
                                                                 <span className={watchedEpisodes.has(episode.mal_id) ? "line-through opacity-60" : ""}>
                                                                     {episode.title}
                                                                 </span>
                                                                 {expandedEpisode === episode.mal_id ? (
-                                                                    <ChevronUp size={14} className="text-gray-500" />
+                                                                    <ChevronUp size={14} className="text-gray-400 dark:text-gray-500" />
                                                                 ) : (
-                                                                    <ChevronDown size={14} className="text-gray-500" />
+                                                                    <ChevronDown size={14} className="text-gray-400 dark:text-gray-500" />
                                                                 )}
                                                             </button>
 
@@ -595,14 +595,14 @@ export function MyListDetailModal({
                                                                     transition={{ duration: 0.2 }}
                                                                     className="overflow-hidden"
                                                                 >
-                                                                    <div className="px-4 pb-3 pt-1 border-t border-gray-700/50">
+                                                                    <div className="px-4 pb-3 pt-1 border-t border-gray-200 dark:border-gray-700/50">
                                                                         {loadingSynopsis === episode.mal_id ? (
-                                                                            <div className="flex items-center gap-2 text-gray-400 text-sm">
+                                                                            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
                                                                                 <Loader2 size={14} className="animate-spin" />
                                                                                 Loading synopsis...
                                                                             </div>
                                                                         ) : (
-                                                                            <p className="text-gray-400 text-xs leading-relaxed">
+                                                                            <p className="text-gray-600 dark:text-gray-400 text-xs leading-relaxed">
                                                                                 {episodeSynopsis[episode.mal_id] || "No synopsis available."}
                                                                             </p>
                                                                         )}

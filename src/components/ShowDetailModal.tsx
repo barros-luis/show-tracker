@@ -259,8 +259,8 @@ export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedI
                                     </div>
 
                                     {/* RIGHT COLUMN - Trailer (2/3) */}
-                                    <div className="w-full md:w-2/3 flex flex-col bg-gray-950 p-6">
-                                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <div className="w-full md:w-2/3 flex flex-col bg-gray-100 dark:bg-gray-950 p-6">
+                                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                             <Play size={20} className="text-blue-500" fill="currentColor" />
                                             Trailer
                                         </h3>
@@ -276,12 +276,12 @@ export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedI
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="flex-1 flex flex-col items-center justify-center bg-gray-800/30 rounded-xl border border-gray-700/50">
-                                                <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
-                                                    <Play size={28} className="text-gray-500" />
+                                            <div className="flex-1 flex flex-col items-center justify-center bg-gray-200/50 dark:bg-gray-800/30 rounded-xl border border-gray-300 dark:border-gray-700/50">
+                                                <div className="w-16 h-16 bg-gray-300 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
+                                                    <Play size={28} className="text-gray-400 dark:text-gray-500" />
                                                 </div>
-                                                <p className="text-gray-500 text-lg font-medium">No trailer available</p>
-                                                <p className="text-gray-600 text-sm mt-1">Check back later!</p>
+                                                <p className="text-gray-500 dark:text-gray-500 text-lg font-medium">No trailer available</p>
+                                                <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">Check back later!</p>
                                             </div>
                                         )}
                                     </div>
