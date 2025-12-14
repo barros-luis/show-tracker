@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Search, Loader2, Trash2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import { listen } from "@tauri-apps/api/event";
 import { searchAnime, type Anime } from "./api/jikan";
 import { AnimeCard } from "./components/AnimeCard";
+import { ShowDetailModal } from "./components/ShowDetailModal";
+import { MyListDetailModal } from "./components/MyListDetailModal";
 import { AuthModal } from "./components/AuthModal";
 import { UserMenu } from "./components/UserMenu";
 import { Toast, type ToastType } from "./components/Toast";
@@ -34,6 +36,8 @@ function App() {
   const [profile, setProfile] = useState<any>(null);
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [selectedAnime, setSelectedAnime] = useState<Anime | null>(null);
+  const [selectedMyListItem, setSelectedMyListItem] = useState<any | null>(null);
 
   const showToast = (message: string, type: ToastType = "success") => {
     setToast({ message, type });
@@ -281,6 +285,49 @@ function App() {
             onClose={() => setAuthModalOpen(false)}
           />
 
+          <ShowDetailModal
+            anime={selectedAnime}
+            isOpen={selectedAnime !== null}
+            onClose={() => setSelectedAnime(null)}
+            onAddToList={(anime) => {
+              addToWatchlist(anime);
+              setSelectedAnime(null);
+            }}
+            isLoggedIn={!!session}
+          />
+
+          <MyListDetailModal
+            item={selectedMyListItem}
+            isOpen={selectedMyListItem !== null}
+            onClose={() => setSelectedMyListItem(null)}
+            onRemove={async (item) => {
+              // Delete watched episodes first
+              await supabase.from('watched_episodes').delete().eq('watchlist_id', item.id);
+              // Delete from watchlist
+              await supabase.from('watchlist').delete().eq('id', item.id);
+              // Update local state
+              setMyList(prev => prev.filter(show => show.id !== item.id));
+              showToast(`${item.title} removed from your list`, 'success');
+            }}
+            onEpisodeUpdate={(itemId, watchedCount) => {
+              setMyList(prev => prev.map(show =>
+                show.id === itemId ? { ...show, watched_episodes: watchedCount } : show
+              ));
+            }}
+            onTotalEpisodesUpdate={(itemId, totalEpisodes) => {
+              setMyList(prev => prev.map(show =>
+                show.id === itemId ? { ...show, total_episodes: totalEpisodes } : show
+              ));
+            }}
+            onStatusUpdate={(itemId, status) => {
+              setMyList(prev => prev.map(show =>
+                show.id === itemId ? { ...show, status } : show
+              ));
+            }}
+            supabase={supabase}
+            userId={session?.user?.id || null}
+          />
+
           {/* HEADER & TABS */}
           <header className="mb-8 flex items-center justify-between relative z-10">
             {/* Left: Logo */}
@@ -383,7 +430,7 @@ function App() {
               <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 <AnimatePresence>
                   {results.map((anime) => (
-                    <AnimeCard key={anime.mal_id} anime={anime} onClick={(item) => addToWatchlist(item)} />
+                    <AnimeCard key={anime.mal_id} anime={anime} onClick={(item) => setSelectedAnime(item)} />
                   ))}
                 </AnimatePresence>
               </motion.div>
@@ -400,88 +447,57 @@ function App() {
               {myList.map((item) => (
                 <div
                   key={item.id}
-                  className="anime-card relative bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 group border border-gray-100 dark:border-gray-800"
+                  onClick={() => setSelectedMyListItem(item)}
+                  className="anime-card relative bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 group border border-gray-100 dark:border-gray-800 cursor-pointer"
                 >
                   {/* Background Image */}
                   <div className="aspect-[2/3] w-full">
                     <img
                       src={item.image_url}
                       alt={item.title}
-                      className="h-full w-full object-cover transition-all duration-300 group-hover:brightness-50"
+                      className="h-full w-full object-cover transition-all duration-300 group-hover:brightness-75"
                     />
                   </div>
 
-                  {/* Card Content Overlay */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-4">
-                    {/* Title & Stats */}
-                    <div className="mb-3">
-                      <h3 className="font-bold text-white text-lg leading-tight mb-1 drop-shadow-md line-clamp-2 mix-blend-difference">
-                        {item.title}
-                      </h3>
-                      <div className="flex justify-between items-center text-xs font-mono">
-                        <span className="text-blue-400 font-bold drop-shadow-sm">
-                          EP {item.watched_episodes} / {item.total_episodes || "?"}
-                        </span>
-                        <span className="text-gray-200 uppercase tracking-wider drop-shadow-sm">{item.status}</span>
+                  {/* Card Content Overlay - with gradient for text visibility */}
+                  <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/90 via-black/20 to-transparent">
+                    {/* Status Badge - Top Right Corner */}
+                    <div className="p-3 flex justify-end">
+                      <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm ${item.status === "WATCHING" ? "bg-green-500/30 text-green-300 border border-green-500/40" :
+                          item.status === "FINISHED" ? "bg-blue-500/30 text-blue-300 border border-blue-500/40" :
+                            item.status === "ON_HOLD" ? "bg-orange-500/30 text-orange-300 border border-orange-500/40" :
+                              item.status === "PLANNED" ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/40" :
+                                "bg-gray-500/30 text-gray-300 border border-gray-500/40"
+                        }`}>
+                        {item.status === "ON_HOLD" ? "On Hold" :
+                          item.status === "PLANNED" ? "Planned" :
+                            item.status === "WATCHING" ? "Watching" :
+                              item.status === "FINISHED" ? "Finished" :
+                                item.status}
+                      </span>
+                    </div>
+
+                    {/* Bottom Info */}
+                    <div className="p-4">
+                      {/* Title & Stats */}
+                      <div className="mb-3">
+                        <h3 className="font-bold text-white text-lg leading-tight mb-1 drop-shadow-lg line-clamp-2">
+                          {item.title}
+                        </h3>
+                        <div className="flex justify-between items-center text-xs font-mono">
+                          <span className="text-blue-400 font-bold drop-shadow-sm">
+                            EP {item.watched_episodes} / {item.total_episodes || "?"}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Progress Bar */}
-                    <div className="h-1.5 w-full bg-gray-700/50 rounded-full overflow-hidden mb-4 backdrop-blur-sm">
-                      <div
-                        className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500 ease-out"
-                        style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}% ` }}
-                      />
-                    </div>
-
-                    {/* ACTION BUTTONS (Always visible but dimmed) */}
-                    <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
-
-                      {/* 1. INCREMENT BUTTON */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevents clicking the card background
-                          const newCount = item.watched_episodes + 1;
-
-                          // Optimistic UI Update
-                          setMyList(prev => prev.map(show => show.id === item.id ? { ...show, watched_episodes: newCount } : show));
-
-                          // DB Update
-                          supabase.from('watchlist').update({ watched_episodes: newCount }).eq('id', item.id).then();
-                        }}
-                        className="flex-1 bg-white hover:bg-blue-50 text-black font-bold py-2 rounded-lg active:scale-95 transition-all shadow-lg flex items-center justify-center gap-1"
-                      >
-                        <span>+1 Ep</span>
-                      </button>
-
-                      {/* 2. DELETE BUTTON (Debug Version) */}
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          console.log("🗑 Clicked delete for:", item.title, "ID:", item.id);
-
-                          // 1. Optimistic UI Update (Remove immediately)
-                          setMyList(prev => prev.filter(show => show.id !== item.id));
-
-                          // 2. DB Update
-                          const { error } = await supabase
-                            .from('watchlist')
-                            .delete()
-                            .eq('id', item.id);
-
-                          if (error) {
-                            console.error("❌ Delete failed:", error);
-                            showToast("Error deleting: " + error.message, "error");
-                            // Optional: Refresh list to bring it back if delete failed
-                            fetchMyList();
-                          } else {
-                            console.log("✅ Deleted from DB successfully"); {/* Settings Button Moved to UserMenu */ }
-                          }
-                        }}
-                        className="p-2 bg-gray-800/80 text-gray-400 hover:text-red-500 hover:bg-red-500/20 rounded-lg backdrop-blur-md transition-all border border-gray-700 hover:border-red-500/50 cursor-pointer"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                      {/* Progress Bar */}
+                      <div className="h-1.5 w-full bg-gray-700/50 rounded-full overflow-hidden backdrop-blur-sm">
+                        <div
+                          className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500 ease-out"
+                          style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
