@@ -1,32 +1,51 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Star, Calendar, Tv, Clock, Loader2, Plus, Play } from "lucide-react";
+import { X, Star, Calendar, Tv, Clock, Loader2, Plus, Play, Film, Monitor } from "lucide-react";
 import { getAnimeDetails, type Anime } from "../api/jikan";
+import { getMovieDetails, getTVDetails, getTrailerFromVideos, type TMDBMovie, type TMDBTVShow } from "../api/tmdb";
+import { type MediaItem } from "../api/mediaTypes";
 
 interface ShowDetailModalProps {
-    anime: Anime | null;
+    media: MediaItem | null;
     isOpen: boolean;
     onClose: () => void;
-    onAddToList: (anime: Anime) => void;
+    onAddToList: (media: MediaItem) => void;
     isLoggedIn: boolean;
 }
 
-export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedIn }: ShowDetailModalProps) {
-    const [fullDetails, setFullDetails] = useState<Anime | null>(null);
+// Type for full details (can be any of the three)
+type FullDetails = Anime | TMDBMovie | TMDBTVShow | null;
+
+export function ShowDetailModal({ media, isOpen, onClose, onAddToList, isLoggedIn }: ShowDetailModalProps) {
+    const [fullDetails, setFullDetails] = useState<FullDetails>(null);
     const [loading, setLoading] = useState(false);
 
     // Fetch full details when modal opens
     useEffect(() => {
-        if (isOpen && anime) {
+        if (isOpen && media) {
             setLoading(true);
-            getAnimeDetails(anime.mal_id).then((details) => {
-                setFullDetails(details);
-                setLoading(false);
-            });
+
+            // Fetch based on media type
+            if (media.type === 'anime') {
+                getAnimeDetails(media.sourceId).then((details) => {
+                    setFullDetails(details);
+                    setLoading(false);
+                });
+            } else if (media.type === 'movie') {
+                getMovieDetails(media.sourceId).then((details) => {
+                    setFullDetails(details);
+                    setLoading(false);
+                });
+            } else if (media.type === 'tv') {
+                getTVDetails(media.sourceId).then((details) => {
+                    setFullDetails(details);
+                    setLoading(false);
+                });
+            }
         } else {
             setFullDetails(null);
         }
-    }, [isOpen, anime]);
+    }, [isOpen, media]);
 
     // Handle ESC key
     useEffect(() => {
@@ -49,22 +68,116 @@ export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedI
         };
     }, [isOpen]);
 
-    const displayData = fullDetails || anime;
+    // Helper to extract YouTube ID based on media type
+    const getYoutubeId = (): string | null => {
+        if (!fullDetails) return null;
 
-    // Extract YouTube video ID - sometimes youtube_id is null but embed_url contains it
-    const getYoutubeId = () => {
-        if (fullDetails?.trailer?.youtube_id) {
-            return fullDetails.trailer.youtube_id;
-        }
-        // Try to extract from embed_url
-        if (fullDetails?.trailer?.embed_url) {
-            const match = fullDetails.trailer.embed_url.match(/embed\/([a-zA-Z0-9_-]+)/);
-            return match ? match[1] : null;
+        if (media?.type === 'anime') {
+            const anime = fullDetails as Anime;
+            if (anime.trailer?.youtube_id) return anime.trailer.youtube_id;
+            if (anime.trailer?.embed_url) {
+                const match = anime.trailer.embed_url.match(/embed\/([a-zA-Z0-9_-]+)/);
+                return match ? match[1] : null;
+            }
+        } else {
+            // TMDB movie or TV
+            const tmdb = fullDetails as TMDBMovie | TMDBTVShow;
+            return getTrailerFromVideos(tmdb.videos?.results);
         }
         return null;
     };
     const youtubeId = getYoutubeId();
     const hasTrailer = !!youtubeId;
+
+    // Get display data based on media type
+    const getDisplayData = () => {
+        if (!media) return null;
+
+        if (fullDetails) {
+            if (media.type === 'anime') {
+                const anime = fullDetails as Anime;
+                return {
+                    title: anime.title,
+                    imageUrl: anime.images.jpg.large_image_url,
+                    year: anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null),
+                    score: anime.score,
+                    synopsis: anime.synopsis,
+                    episodes: anime.episodes,
+                    status: anime.status,
+                    type: anime.type,
+                    source: anime.source,
+                    season: anime.season,
+                    genres: anime.genres?.map(g => g.name) || [],
+                    duration: anime.duration,
+                    popularity: anime.popularity,
+                    rating: anime.rating,
+                    studios: anime.studios?.map(s => s.name) || [],
+                };
+            } else if (media.type === 'movie') {
+                const movie = fullDetails as TMDBMovie;
+                return {
+                    title: movie.title,
+                    imageUrl: media.largeImageUrl,
+                    year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+                    score: movie.vote_average ? Math.round(movie.vote_average * 10) / 10 : null,
+                    synopsis: movie.overview,
+                    episodes: null,
+                    status: movie.status || 'Released',
+                    type: 'Movie',
+                    source: null,
+                    season: null,
+                    genres: movie.genres?.map(g => g.name) || [],
+                    duration: movie.runtime ? `${movie.runtime} min` : null,
+                    popularity: movie.popularity,
+                    rating: null,
+                    studios: [],
+                };
+            } else {
+                const tv = fullDetails as TMDBTVShow;
+                return {
+                    title: tv.name,
+                    imageUrl: media.largeImageUrl,
+                    year: tv.first_air_date ? new Date(tv.first_air_date).getFullYear() : null,
+                    score: tv.vote_average ? Math.round(tv.vote_average * 10) / 10 : null,
+                    synopsis: tv.overview,
+                    episodes: tv.number_of_episodes,
+                    status: tv.status || 'Unknown',
+                    type: 'TV Series',
+                    source: null,
+                    season: tv.number_of_seasons ? `${tv.number_of_seasons} Season${tv.number_of_seasons > 1 ? 's' : ''}` : null,
+                    genres: tv.genres?.map(g => g.name) || [],
+                    duration: tv.episode_run_time?.[0] ? `${tv.episode_run_time[0]} min per ep` : null,
+                    popularity: tv.popularity,
+                    rating: null,
+                    studios: tv.networks?.map(n => n.name) || [],
+                };
+            }
+        }
+
+        // Fallback to media item data
+        return {
+            title: media.title,
+            imageUrl: media.largeImageUrl,
+            year: media.year,
+            score: media.score,
+            synopsis: media.synopsis,
+            episodes: media.episodes,
+            status: null,
+            type: media.type === 'anime' ? 'Anime' : media.type === 'movie' ? 'Movie' : 'TV Series',
+            source: null,
+            season: null,
+            genres: [],
+            duration: null,
+            popularity: null,
+            rating: null,
+            studios: [],
+        };
+    };
+
+    const displayData = getDisplayData();
+
+    // Get media type icon
+    const MediaTypeIcon = media?.type === 'movie' ? Film : media?.type === 'tv' ? Monitor : Tv;
 
     return (
         <AnimatePresence>
@@ -113,7 +226,7 @@ export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedI
                                         <div className="relative w-full bg-gray-900 flex-shrink-0 flex items-start justify-start pt-4 px-4 gap-4">
                                             {/* Poster */}
                                             <img
-                                                src={displayData.images.jpg.large_image_url}
+                                                src={displayData.imageUrl}
                                                 alt={displayData.title}
                                                 className="h-60 object-contain rounded-lg shadow-lg"
                                             />
@@ -127,24 +240,24 @@ export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedI
                                                         <span className="text-gray-500 text-xs">Rating</span>
                                                     </div>
                                                 )}
-                                                {fullDetails?.popularity && (
+                                                {displayData.popularity && (
                                                     <div className="flex items-center gap-2">
-                                                        <Tv size={14} className="text-purple-400" />
-                                                        <span className="text-white font-semibold">#{fullDetails.popularity}</span>
+                                                        <MediaTypeIcon size={14} className="text-purple-400" />
+                                                        <span className="text-white font-semibold">#{displayData.popularity}</span>
                                                         <span className="text-gray-500 text-xs">Popularity</span>
                                                     </div>
                                                 )}
-                                                {fullDetails?.source && (
+                                                {displayData.source && (
                                                     <div className="flex items-center gap-2">
                                                         <Calendar size={14} className="text-blue-400" />
-                                                        <span className="text-white font-semibold">{fullDetails.source}</span>
+                                                        <span className="text-white font-semibold">{displayData.source}</span>
                                                         <span className="text-gray-500 text-xs">Source</span>
                                                     </div>
                                                 )}
-                                                {fullDetails?.season && fullDetails?.year && (
+                                                {displayData.season && displayData.year && (
                                                     <div className="flex items-center gap-2">
                                                         <Clock size={14} className="text-green-400" />
-                                                        <span className="text-white font-semibold capitalize">{fullDetails.season} {fullDetails.year}</span>
+                                                        <span className="text-white font-semibold capitalize">{displayData.season} {displayData.year}</span>
                                                         <span className="text-gray-500 text-xs">Season</span>
                                                     </div>
                                                 )}
@@ -158,9 +271,6 @@ export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedI
                                                 <h2 className="text-xl font-bold text-white leading-tight">
                                                     {displayData.title}
                                                 </h2>
-                                                {displayData.title_english && displayData.title_english !== displayData.title && (
-                                                    <p className="text-gray-400 text-sm mt-1">{displayData.title_english}</p>
-                                                )}
                                             </div>
 
                                             {/* Quick Stats */}
@@ -204,14 +314,14 @@ export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedI
                                             )}
 
                                             {/* Genres */}
-                                            {fullDetails?.genres && fullDetails.genres.length > 0 && (
+                                            {displayData.genres && displayData.genres.length > 0 && (
                                                 <div className="flex flex-wrap gap-1.5">
-                                                    {fullDetails.genres.map((genre) => (
+                                                    {displayData.genres.map((genre, idx) => (
                                                         <span
-                                                            key={genre.mal_id}
+                                                            key={idx}
                                                             className="px-2 py-0.5 bg-blue-600/20 text-blue-300 rounded-full text-xs font-medium"
                                                         >
-                                                            {genre.name}
+                                                            {genre}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -227,12 +337,14 @@ export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedI
                                                 </div>
                                             )}
 
-                                            {/* Studio */}
-                                            {fullDetails?.studios && fullDetails.studios.length > 0 && (
+                                            {/* Studio/Network */}
+                                            {displayData.studios && displayData.studios.length > 0 && (
                                                 <div className="space-y-1">
-                                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Studio</h4>
+                                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                                        {media?.type === 'tv' ? 'Network' : 'Studio'}
+                                                    </h4>
                                                     <p className="text-white text-sm font-medium">
-                                                        {fullDetails.studios.map(s => s.name).join(", ")}
+                                                        {displayData.studios.join(", ")}
                                                     </p>
                                                 </div>
                                             )}
@@ -242,8 +354,8 @@ export function ShowDetailModal({ anime, isOpen, onClose, onAddToList, isLoggedI
                                         <div className="flex-shrink-0 p-4 border-t border-gray-800">
                                             <button
                                                 onClick={() => {
-                                                    if (displayData) {
-                                                        onAddToList(displayData);
+                                                    if (media) {
+                                                        onAddToList(media);
                                                     }
                                                 }}
                                                 disabled={!isLoggedIn}

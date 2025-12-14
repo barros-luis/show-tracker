@@ -3,8 +3,10 @@ import { Search, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import { listen } from "@tauri-apps/api/event";
-import { searchAnime, type Anime } from "./api/jikan";
-import { AnimeCard } from "./components/AnimeCard";
+import { searchAnime } from "./api/jikan";
+import { searchMovies, searchTVShows } from "./api/tmdb";
+import { type MediaItem, animeToMediaItem, movieToMediaItem, tvToMediaItem } from "./api/mediaTypes";
+import { MediaCard } from "./components/MediaCard";
 import { ShowDetailModal } from "./components/ShowDetailModal";
 import { MyListDetailModal } from "./components/MyListDetailModal";
 import { AuthModal } from "./components/AuthModal";
@@ -29,14 +31,14 @@ function App() {
   // --- STATE ---
   const [view, setView] = useState<"search" | "list" | "profile" | "settings">("search");
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Anime[]>([]);
+  const [results, setResults] = useState<MediaItem[]>([]);
   const [myList, setMyList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-  const [selectedAnime, setSelectedAnime] = useState<Anime | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [selectedMyListItem, setSelectedMyListItem] = useState<any | null>(null);
 
   const showToast = (message: string, type: ToastType = "success") => {
@@ -188,14 +190,30 @@ function App() {
   }
 
 
-  // --- 1. SEARCH LOGIC ---
+  // --- 1. SEARCH LOGIC (Unified: Anime + Movies + TV) ---
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (query.trim().length >= 3) {
         setLoading(true);
         try {
-          const data = await searchAnime(query);
-          setResults(data);
+          // Search all three sources in parallel
+          const [animeData, movieData, tvData] = await Promise.all([
+            searchAnime(query),
+            searchMovies(query),
+            searchTVShows(query),
+          ]);
+
+          // Convert to unified MediaItem format
+          const animeItems = animeData.map(animeToMediaItem);
+          const movieItems = movieData.map(movieToMediaItem);
+          const tvItems = tvData.map(tvToMediaItem);
+
+          // Combine and sort by score (highest first)
+          const combined = [...animeItems, ...movieItems, ...tvItems]
+            .filter(item => item.imageUrl) // Filter out items without images
+            .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+          setResults(combined);
         } catch (err) {
           console.error(err);
         } finally {
@@ -233,34 +251,58 @@ function App() {
   }, [view]);
 
   // --- 3. SAVE LOGIC ---
-  async function addToWatchlist(anime: Anime) {
-    // Check for duplicates
-    const { data: existing } = await supabase
-      .from('watchlist')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('mal_id', anime.mal_id)
-      .maybeSingle();
+  async function addToWatchlist(media: MediaItem) {
+    // Check for duplicates based on media type and source ID
+    let existing;
+    if (media.type === 'anime') {
+      // For anime, check by mal_id
+      const { data } = await supabase
+        .from('watchlist')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('mal_id', media.sourceId)
+        .maybeSingle();
+      existing = data;
+    } else {
+      // For movies/TV, check by tmdb_id
+      const { data } = await supabase
+        .from('watchlist')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('tmdb_id', media.sourceId)
+        .maybeSingle();
+      existing = data;
+    }
 
     if (existing) {
-      showToast("You already added this show! 😅", "info");
+      showToast("You already added this to your list! 😅", "info");
       return;
     }
 
-    const { error } = await supabase.from('watchlist').insert({
+    const insertData: any = {
       user_id: session.user.id,
-      mal_id: anime.mal_id,
-      title: anime.title,
-      image_url: anime.images.jpg.large_image_url,
-      score: anime.score,
-      total_episodes: anime.episodes || 0
-    });
+      title: media.title,
+      image_url: media.largeImageUrl,
+      score: media.score,
+      total_episodes: media.episodes || (media.type === 'movie' ? 1 : 0),
+      media_type: media.type,
+    };
+
+    // Set the appropriate ID field
+    if (media.type === 'anime') {
+      insertData.mal_id = media.sourceId;
+    } else {
+      insertData.tmdb_id = media.sourceId;
+    }
+
+    const { error } = await supabase.from('watchlist').insert(insertData);
 
     if (error) {
       console.error("Save Error:", error);
-      showToast(`Failed to save: ${error.message} `, "error");
+      showToast(`Failed to save: ${error.message}`, "error");
     } else {
-      showToast(`Added ${anime.title} to your list! ✅`, "success");
+      const emoji = media.type === 'movie' ? '🎬' : media.type === 'tv' ? '📺' : '✅';
+      showToast(`Added ${media.title} to your list! ${emoji}`, "success");
       setQuery("");
     }
   }
@@ -286,12 +328,12 @@ function App() {
           />
 
           <ShowDetailModal
-            anime={selectedAnime}
-            isOpen={selectedAnime !== null}
-            onClose={() => setSelectedAnime(null)}
-            onAddToList={(anime) => {
-              addToWatchlist(anime);
-              setSelectedAnime(null);
+            media={selectedMedia}
+            isOpen={selectedMedia !== null}
+            onClose={() => setSelectedMedia(null)}
+            onAddToList={(media) => {
+              addToWatchlist(media);
+              setSelectedMedia(null);
             }}
             isLoggedIn={!!session}
           />
@@ -415,7 +457,7 @@ function App() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search anime..."
+                  placeholder="Search anime, movies, or TV shows..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full py-4 pl-12 pr-6 text-lg text-slate-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-xl"
@@ -429,8 +471,8 @@ function App() {
 
               <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 <AnimatePresence>
-                  {results.map((anime) => (
-                    <AnimeCard key={anime.mal_id} anime={anime} onClick={(item) => setSelectedAnime(item)} />
+                  {results.map((media) => (
+                    <MediaCard key={media.id} media={media} onClick={(m) => setSelectedMedia(m)} />
                   ))}
                 </AnimatePresence>
               </motion.div>
@@ -464,16 +506,20 @@ function App() {
                     {/* Status Badge - Top Right Corner */}
                     <div className="p-3 flex justify-end">
                       <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm ${item.status === "WATCHING" ? "bg-green-500/30 text-green-300 border border-green-500/40" :
-                          item.status === "FINISHED" ? "bg-blue-500/30 text-blue-300 border border-blue-500/40" :
-                            item.status === "ON_HOLD" ? "bg-orange-500/30 text-orange-300 border border-orange-500/40" :
-                              item.status === "PLANNED" ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/40" :
-                                "bg-gray-500/30 text-gray-300 border border-gray-500/40"
+                        item.status === "FINISHED" ? "bg-blue-500/30 text-blue-300 border border-blue-500/40" :
+                          item.status === "ON_HOLD" ? "bg-orange-500/30 text-orange-300 border border-orange-500/40" :
+                            item.status === "PLANNED" ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/40" :
+                              item.status === "REWATCHING" ? "bg-pink-500/30 text-pink-300 border border-pink-500/40" :
+                                item.status === "REWATCHED" ? "bg-cyan-500/30 text-cyan-300 border border-cyan-500/40" :
+                                  "bg-gray-500/30 text-gray-300 border border-gray-500/40"
                         }`}>
                         {item.status === "ON_HOLD" ? "On Hold" :
                           item.status === "PLANNED" ? "Planned" :
                             item.status === "WATCHING" ? "Watching" :
                               item.status === "FINISHED" ? "Finished" :
-                                item.status}
+                                item.status === "REWATCHING" ? "Re-watching" :
+                                  item.status === "REWATCHED" ? "Re-watched" :
+                                    item.status}
                       </span>
                     </div>
 

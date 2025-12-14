@@ -1,8 +1,20 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Calendar, Tv, Clock, Loader2, Trash2, ChevronDown, ChevronUp, Check, AlertTriangle } from "lucide-react";
-import { getAnimeDetails, getAllAnimeEpisodes, getEpisodeDetails, type Anime, type AnimeEpisode } from "../api/jikan";
+import { getAnimeDetails, getAllAnimeEpisodes, getEpisodeDetails, type Anime } from "../api/jikan";
+import { getTVDetails, getAllTVEpisodes, type TMDBTVShow } from "../api/tmdb";
 import { SupabaseClient } from "@supabase/supabase-js";
+
+// Unified episode type for both anime and TV
+interface UnifiedEpisode {
+    id: number;  // mal_id for anime, episode id for TMDB
+    number: number;  // episode number (for tracking)
+    title: string;
+    synopsis?: string | null;
+    filler?: boolean;
+    recap?: boolean;
+    season?: number;
+}
 
 // Status options with display labels and colors
 const STATUS_OPTIONS = [
@@ -10,11 +22,15 @@ const STATUS_OPTIONS = [
     { value: "WATCHING", label: "Watching", color: "bg-green-500/20 text-green-400 border-green-500/30" },
     { value: "ON_HOLD", label: "On Hold", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
     { value: "FINISHED", label: "Finished", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+    { value: "REWATCHING", label: "Re-watching", color: "bg-pink-500/20 text-pink-400 border-pink-500/30" },
+    { value: "REWATCHED", label: "Re-watched", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30" },
 ] as const;
 
 interface WatchlistItem {
     id: number;
-    mal_id: number;
+    mal_id: number | null;
+    tmdb_id: number | null;
+    media_type: 'anime' | 'movie' | 'tv';
     title: string;
     image_url: string;
     total_episodes: number | null;
@@ -45,8 +61,8 @@ export function MyListDetailModal({
     supabase,
     userId
 }: MyListDetailModalProps) {
-    const [fullDetails, setFullDetails] = useState<Anime | null>(null);
-    const [episodes, setEpisodes] = useState<AnimeEpisode[]>([]);
+    const [fullDetails, setFullDetails] = useState<Anime | TMDBTVShow | null>(null);
+    const [episodes, setEpisodes] = useState<UnifiedEpisode[]>([]);
     const [watchedEpisodes, setWatchedEpisodes] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(false);
     const [loadingEpisodes, setLoadingEpisodes] = useState(false);
@@ -57,34 +73,86 @@ export function MyListDetailModal({
     const [currentStatus, setCurrentStatus] = useState<string>(item?.status || "PLANNED");
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
-    // Fetch anime details and episodes when modal opens
+    // Fetch details and episodes when modal opens
     useEffect(() => {
         if (isOpen && item) {
             setLoading(true);
             setLoadingEpisodes(true);
 
-            // Fetch anime details
-            getAnimeDetails(item.mal_id).then((details) => {
-                setFullDetails(details);
+            if (item.media_type === 'anime' && item.mal_id) {
+                // Fetch anime details from Jikan
+                getAnimeDetails(item.mal_id).then((details) => {
+                    setFullDetails(details);
+                    setLoading(false);
+                });
+
+                // Fetch all anime episodes
+                getAllAnimeEpisodes(item.mal_id).then(async (eps) => {
+                    // Convert to unified format
+                    const unifiedEps: UnifiedEpisode[] = eps.map(ep => ({
+                        id: ep.mal_id,
+                        number: ep.mal_id,  // For anime, mal_id IS the episode number
+                        title: ep.title,
+                        synopsis: ep.synopsis,
+                        filler: ep.filler,
+                        recap: ep.recap,
+                    }));
+                    setEpisodes(unifiedEps);
+                    setLoadingEpisodes(false);
+
+                    // Update total_episodes if different
+                    if (eps.length > 0 && eps.length !== item.total_episodes) {
+                        await supabase
+                            .from('watchlist')
+                            .update({ total_episodes: eps.length })
+                            .eq('id', item.id);
+                        onTotalEpisodesUpdate(item.id, eps.length);
+                    }
+                });
+            } else if (item.media_type === 'tv' && item.tmdb_id) {
+                // Fetch TV show details from TMDB
+                getTVDetails(item.tmdb_id).then((details) => {
+                    setFullDetails(details);
+                    setLoading(false);
+                });
+
+                // Fetch all TV episodes from TMDB
+                getAllTVEpisodes(item.tmdb_id).then(async (eps) => {
+                    // Convert to unified format
+                    const unifiedEps: UnifiedEpisode[] = eps.map((ep, idx) => ({
+                        id: ep.id,
+                        number: idx + 1,  // Sequential episode number across all seasons
+                        title: `S${ep.season_number}E${ep.episode_number}: ${ep.name}`,
+                        synopsis: ep.overview,
+                        season: ep.season_number,
+                    }));
+                    setEpisodes(unifiedEps);
+                    setLoadingEpisodes(false);
+
+                    // Update total_episodes if different
+                    if (eps.length > 0 && eps.length !== item.total_episodes) {
+                        await supabase
+                            .from('watchlist')
+                            .update({ total_episodes: eps.length })
+                            .eq('id', item.id);
+                        onTotalEpisodesUpdate(item.id, eps.length);
+                    }
+                });
+            } else if (item.media_type === 'movie') {
+                // Movies don't have episode tracking, just mark as single item
+                setFullDetails(null);
                 setLoading(false);
-            });
-
-            // Fetch all episodes
-            getAllAnimeEpisodes(item.mal_id).then(async (eps) => {
-                setEpisodes(eps);
+                setEpisodes([{
+                    id: 1,
+                    number: 1,
+                    title: 'Watch Movie',
+                    synopsis: null,
+                }]);
                 setLoadingEpisodes(false);
-
-                // Update total_episodes if we got actual episode data and it's different
-                if (eps.length > 0 && eps.length !== item.total_episodes) {
-                    // Update database
-                    await supabase
-                        .from('watchlist')
-                        .update({ total_episodes: eps.length })
-                        .eq('id', item.id);
-                    // Update parent state
-                    onTotalEpisodesUpdate(item.id, eps.length);
-                }
-            });
+            } else {
+                setLoading(false);
+                setLoadingEpisodes(false);
+            }
 
             // Fetch watched episodes from database
             fetchWatchedEpisodes();
@@ -193,16 +261,26 @@ export function MyListDetailModal({
 
         setExpandedEpisode(episodeNumber);
 
-        // Fetch synopsis if not already loaded
+        // Fetch synopsis if not already loaded (only for anime with mal_id)
         if (!episodeSynopsis[episodeNumber]) {
-            setLoadingSynopsis(episodeNumber);
-            const details = await getEpisodeDetails(item!.mal_id, episodeNumber);
-            if (details?.synopsis) {
-                setEpisodeSynopsis(prev => ({ ...prev, [episodeNumber]: details.synopsis! }));
+            if (item?.media_type === 'anime' && item.mal_id) {
+                setLoadingSynopsis(episodeNumber);
+                const details = await getEpisodeDetails(item.mal_id, episodeNumber);
+                if (details?.synopsis) {
+                    setEpisodeSynopsis(prev => ({ ...prev, [episodeNumber]: details.synopsis! }));
+                } else {
+                    setEpisodeSynopsis(prev => ({ ...prev, [episodeNumber]: "No synopsis available." }));
+                }
+                setLoadingSynopsis(null);
             } else {
-                setEpisodeSynopsis(prev => ({ ...prev, [episodeNumber]: "No synopsis available." }));
+                // For TV shows, the synopsis is already in the episode data
+                const episode = episodes.find(ep => ep.number === episodeNumber);
+                if (episode?.synopsis) {
+                    setEpisodeSynopsis(prev => ({ ...prev, [episodeNumber]: episode.synopsis! }));
+                } else {
+                    setEpisodeSynopsis(prev => ({ ...prev, [episodeNumber]: "No synopsis available." }));
+                }
             }
-            setLoadingSynopsis(null);
         }
     };
 
@@ -283,32 +361,49 @@ export function MyListDetailModal({
 
                                             {/* Quick Stats - Minimal */}
                                             <div className="flex flex-col gap-3 py-2 text-sm">
-                                                {fullDetails?.score && (
+                                                {/* Rating - works for both anime and TV */}
+                                                {(item.media_type === 'anime' && fullDetails && 'score' in fullDetails && fullDetails.score) ? (
                                                     <div className="flex items-center gap-2">
                                                         <Star size={14} className="text-yellow-500" fill="currentColor" />
                                                         <span className="text-white font-semibold">{fullDetails.score}</span>
                                                         <span className="text-gray-500 text-xs">Rating</span>
                                                     </div>
-                                                )}
+                                                ) : (item.media_type === 'tv' && fullDetails && 'vote_average' in fullDetails && fullDetails.vote_average) ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Star size={14} className="text-yellow-500" fill="currentColor" />
+                                                        <span className="text-white font-semibold">{Math.round(fullDetails.vote_average * 10) / 10}</span>
+                                                        <span className="text-gray-500 text-xs">Rating</span>
+                                                    </div>
+                                                ) : null}
                                                 {fullDetails?.popularity && (
                                                     <div className="flex items-center gap-2">
                                                         <Tv size={14} className="text-purple-400" />
-                                                        <span className="text-white font-semibold">#{fullDetails.popularity}</span>
+                                                        <span className="text-white font-semibold">#{Math.round(fullDetails.popularity)}</span>
                                                         <span className="text-gray-500 text-xs">Popularity</span>
                                                     </div>
                                                 )}
-                                                {fullDetails?.source && (
+                                                {/* Source - anime only */}
+                                                {item.media_type === 'anime' && fullDetails && 'source' in fullDetails && fullDetails.source && (
                                                     <div className="flex items-center gap-2">
                                                         <Calendar size={14} className="text-blue-400" />
                                                         <span className="text-white font-semibold">{fullDetails.source}</span>
                                                         <span className="text-gray-500 text-xs">Source</span>
                                                     </div>
                                                 )}
-                                                {fullDetails?.season && fullDetails?.year && (
+                                                {/* Season - anime only */}
+                                                {item.media_type === 'anime' && fullDetails && 'season' in fullDetails && 'year' in fullDetails && fullDetails.season && fullDetails.year && (
                                                     <div className="flex items-center gap-2">
                                                         <Clock size={14} className="text-green-400" />
                                                         <span className="text-white font-semibold capitalize">{fullDetails.season} {fullDetails.year}</span>
                                                         <span className="text-gray-500 text-xs">Season</span>
+                                                    </div>
+                                                )}
+                                                {/* Seasons count - TV only */}
+                                                {item.media_type === 'tv' && fullDetails && 'number_of_seasons' in fullDetails && fullDetails.number_of_seasons && (
+                                                    <div className="flex items-center gap-2">
+                                                        <Tv size={14} className="text-green-400" />
+                                                        <span className="text-white font-semibold">{fullDetails.number_of_seasons} Season{fullDetails.number_of_seasons > 1 ? 's' : ''}</span>
+                                                        <span className="text-gray-500 text-xs">Total</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -371,14 +466,15 @@ export function MyListDetailModal({
                                             </div>
 
                                             {/* Synopsis */}
-                                            {fullDetails?.synopsis && (
-                                                <div className="space-y-2">
-                                                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Synopsis</h3>
-                                                    <p className="text-gray-300 text-xs leading-relaxed">
-                                                        {fullDetails.synopsis}
-                                                    </p>
-                                                </div>
-                                            )}
+                                            {((item.media_type === 'anime' && fullDetails && 'synopsis' in fullDetails && fullDetails.synopsis) ||
+                                                (item.media_type === 'tv' && fullDetails && 'overview' in fullDetails && fullDetails.overview)) && (
+                                                    <div className="space-y-2">
+                                                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Synopsis</h3>
+                                                        <p className="text-gray-300 text-xs leading-relaxed">
+                                                            {item.media_type === 'anime' && 'synopsis' in fullDetails ? fullDetails.synopsis : 'overview' in fullDetails ? fullDetails.overview : ''}
+                                                        </p>
+                                                    </div>
+                                                )}
                                         </div>
 
                                         {/* Remove Button */}
@@ -447,8 +543,8 @@ export function MyListDetailModal({
 
                                                             // Find all episodes from 1 to maxWatched that aren't checked
                                                             const episodesToAdd = episodes
-                                                                .filter(ep => ep.mal_id <= maxWatched && !watchedEpisodes.has(ep.mal_id))
-                                                                .map(ep => ep.mal_id);
+                                                                .filter(ep => ep.number <= maxWatched && !watchedEpisodes.has(ep.number))
+                                                                .map(ep => ep.number);
 
                                                             if (episodesToAdd.length === 0) return;
 
@@ -484,13 +580,13 @@ export function MyListDetailModal({
 
                                                             // Find all unchecked episodes
                                                             const episodesToAdd = episodes
-                                                                .filter(ep => !watchedEpisodes.has(ep.mal_id))
-                                                                .map(ep => ep.mal_id);
+                                                                .filter(ep => !watchedEpisodes.has(ep.number))
+                                                                .map(ep => ep.number);
 
                                                             if (episodesToAdd.length === 0) return;
 
                                                             // Update local state - all episodes watched
-                                                            const newWatched = new Set(episodes.map(ep => ep.mal_id));
+                                                            const newWatched = new Set(episodes.map(ep => ep.number));
                                                             setWatchedEpisodes(newWatched);
 
                                                             // Batch insert to database
@@ -527,13 +623,17 @@ export function MyListDetailModal({
                                                 <div className="flex flex-col items-center justify-center py-20 text-gray-500">
                                                     <Tv size={48} className="mb-4 opacity-50" />
                                                     <p>No episode data available</p>
-                                                    <p className="text-sm mt-1">This anime may not have episode info in the database</p>
+                                                    <p className="text-sm mt-1">
+                                                        {item?.media_type === 'tv'
+                                                            ? 'This show may not have episode info yet'
+                                                            : 'This anime may not have episode info in the database'}
+                                                    </p>
                                                 </div>
                                             ) : (
                                                 episodes.map((episode) => (
                                                     <div
-                                                        key={episode.mal_id}
-                                                        className={`rounded-lg border transition-all ${watchedEpisodes.has(episode.mal_id)
+                                                        key={episode.number}
+                                                        className={`rounded-lg border transition-all ${watchedEpisodes.has(episode.number)
                                                             ? "bg-blue-500/10 border-blue-500/30"
                                                             : "bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600"
                                                             }`}
@@ -541,8 +641,8 @@ export function MyListDetailModal({
                                                         <div className="flex items-center p-3 gap-3">
                                                             {/* Checkbox */}
                                                             <button
-                                                                onClick={() => toggleEpisodeWatched(episode.mal_id)}
-                                                                className={`w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-all ${watchedEpisodes.has(episode.mal_id)
+                                                                onClick={() => toggleEpisodeWatched(episode.number)}
+                                                                className={`w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-all ${watchedEpisodes.has(episode.number)
                                                                     ? "bg-blue-500 text-white"
                                                                     : "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-transparent hover:text-gray-400"
                                                                     }`}
@@ -552,18 +652,18 @@ export function MyListDetailModal({
 
                                                             {/* Episode Number */}
                                                             <span className="text-gray-500 dark:text-gray-400 text-sm font-mono w-10">
-                                                                {episode.mal_id}
+                                                                {episode.number}
                                                             </span>
 
                                                             {/* Episode Title - Clickable */}
                                                             <button
-                                                                onClick={() => toggleEpisodeExpand(episode.mal_id)}
+                                                                onClick={() => toggleEpisodeExpand(episode.number)}
                                                                 className="flex-1 text-left text-gray-800 dark:text-white text-sm hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-2"
                                                             >
-                                                                <span className={watchedEpisodes.has(episode.mal_id) ? "line-through opacity-60" : ""}>
+                                                                <span className={watchedEpisodes.has(episode.number) ? "line-through opacity-60" : ""}>
                                                                     {episode.title}
                                                                 </span>
-                                                                {expandedEpisode === episode.mal_id ? (
+                                                                {expandedEpisode === episode.number ? (
                                                                     <ChevronUp size={14} className="text-gray-400 dark:text-gray-500" />
                                                                 ) : (
                                                                     <ChevronDown size={14} className="text-gray-400 dark:text-gray-500" />
@@ -587,7 +687,7 @@ export function MyListDetailModal({
 
                                                         {/* Expanded Synopsis */}
                                                         <AnimatePresence>
-                                                            {expandedEpisode === episode.mal_id && (
+                                                            {expandedEpisode === episode.number && (
                                                                 <motion.div
                                                                     initial={{ height: 0, opacity: 0 }}
                                                                     animate={{ height: "auto", opacity: 1 }}
@@ -596,14 +696,14 @@ export function MyListDetailModal({
                                                                     className="overflow-hidden"
                                                                 >
                                                                     <div className="px-4 pb-3 pt-1 border-t border-gray-200 dark:border-gray-700/50">
-                                                                        {loadingSynopsis === episode.mal_id ? (
+                                                                        {loadingSynopsis === episode.number ? (
                                                                             <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
                                                                                 <Loader2 size={14} className="animate-spin" />
                                                                                 Loading synopsis...
                                                                             </div>
                                                                         ) : (
                                                                             <p className="text-gray-600 dark:text-gray-400 text-xs leading-relaxed">
-                                                                                {episodeSynopsis[episode.mal_id] || "No synopsis available."}
+                                                                                {episodeSynopsis[episode.number] || "No synopsis available."}
                                                                             </p>
                                                                         )}
                                                                     </div>

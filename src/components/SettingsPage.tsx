@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { User, Sun, Moon, Settings as SettingsIcon, Shield } from 'lucide-react';
+import { User, Sun, Moon, Settings as SettingsIcon, Shield, Info, ExternalLink } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { EditProfileForm } from './EditProfileForm';
 
-type SettingsTab = 'profile' | 'appearance' | 'general' | 'account';
+type SettingsTab = 'profile' | 'appearance' | 'general' | 'account' | 'about';
 
 interface SettingsPageProps {
     session: any;
@@ -22,6 +22,7 @@ export function SettingsPage({ session, profile, supabase, onProfileUpdate, show
         { id: 'appearance', label: 'Appearance', icon: Sun },
         { id: 'general', label: 'General', icon: SettingsIcon },
         { id: 'account', label: 'Account', icon: Shield },
+        { id: 'about', label: 'About', icon: Info },
     ];
 
     return (
@@ -143,6 +144,74 @@ export function SettingsPage({ session, profile, supabase, onProfileUpdate, show
                                 <div className="text-center py-12 text-gray-500">
                                     <Shield className="w-12 h-12 mx-auto mb-4 opacity-20" />
                                     <p>Account management coming soon...</p>
+                                </div>
+                            )}
+                            {activeTab === 'about' && (
+                                <div className="space-y-8">
+                                    {/* App Info */}
+                                    <section>
+                                        <h3 className="text-lg font-medium text-white mb-4">About AShow Tracker</h3>
+                                        <p className="text-gray-400 text-sm leading-relaxed">
+                                            AShow Tracker helps you keep track of your favorite anime, movies, and TV shows.
+                                            Mark episodes as watched, track your progress, and never lose your place again.
+                                        </p>
+                                    </section>
+
+                                    {/* Data Sources */}
+                                    <section>
+                                        <h3 className="text-lg font-medium text-white mb-4">Data Sources</h3>
+                                        <div className="space-y-4">
+                                            {/* TMDB Attribution */}
+                                            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                                                <div className="flex items-center gap-4 mb-3">
+                                                    <img
+                                                        src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg"
+                                                        alt="TMDB Logo"
+                                                        className="h-5"
+                                                    />
+                                                </div>
+                                                <p className="text-gray-400 text-xs leading-relaxed">
+                                                    This product uses the TMDB API but is not endorsed or certified by TMDB.
+                                                    Movie and TV show data, trailers, and images are provided by The Movie Database.
+                                                </p>
+                                                <a
+                                                    href="https://www.themoviedb.org"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs mt-2 transition-colors"
+                                                >
+                                                    Visit TMDB <ExternalLink size={12} />
+                                                </a>
+                                            </div>
+
+                                            {/* Jikan Attribution */}
+                                            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                                                <div className="flex items-center gap-4 mb-3">
+                                                    <span className="text-white font-bold text-lg">Jikan API</span>
+                                                    <span className="text-gray-500 text-xs">(MyAnimeList)</span>
+                                                </div>
+                                                <p className="text-gray-400 text-xs leading-relaxed">
+                                                    Anime data is provided by the Jikan API, an unofficial MyAnimeList API.
+                                                    This includes anime information, episode lists, and related metadata.
+                                                </p>
+                                                <a
+                                                    href="https://jikan.moe"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs mt-2 transition-colors"
+                                                >
+                                                    Visit Jikan <ExternalLink size={12} />
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    {/* Version */}
+                                    <section className="pt-4 border-t border-gray-800">
+                                        <p className="text-gray-500 text-xs text-center">
+                                            AShow Tracker v1.0.0 • Made with ❤️
+                                        </p>
+                                    </section>
                                 </div>
                             )}
 
