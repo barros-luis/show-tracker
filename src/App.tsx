@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Search, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Loader2, ChevronLeft, ChevronRight, ChevronDown, Edit2, Film, Tv, Sparkles, Folder, Gamepad2, Book, Music, Star, Heart, Flame, Zap, Moon, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import { listen } from "@tauri-apps/api/event";
@@ -16,6 +16,8 @@ import { MouseAura } from "./components/MouseAura";
 import { ProfilePage } from "./components/ProfilePage";
 import { SettingsPage } from "./components/SettingsPage";
 import { SettingsProvider } from "./context/SettingsContext";
+import { ListManageModal, type UserList } from "./components/ListManageModal";
+import { ListPickerModal } from "./components/ListPickerModal";
 import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
@@ -41,8 +43,42 @@ function App() {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [selectedMyListItem, setSelectedMyListItem] = useState<any | null>(null);
 
+  // List management state
+  const [userLists, setUserLists] = useState<UserList[]>([]);
+  const [isListManageModalOpen, setListManageModalOpen] = useState(false);
+  const [isListPickerOpen, setListPickerOpen] = useState(false);
+  const [pendingMedia, setPendingMedia] = useState<MediaItem | null>(null);
+
+  // My List filters (multi-select)
+  const [mediaTypeFilters, setMediaTypeFilters] = useState<Set<string>>(new Set());
+  const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Search filters
+  const [searchMediaTypeFilter, setSearchMediaTypeFilter] = useState<Set<string>>(new Set());
+
   const showToast = (message: string, type: ToastType = "success") => {
     setToast({ message, type });
+  };
+
+  // Icon helper for lists
+  const getListIcon = (iconName: string | null, size: number = 18) => {
+    const icons: Record<string, React.ReactNode> = {
+      folder: <Folder size={size} />,
+      film: <Film size={size} />,
+      tv: <Tv size={size} />,
+      sparkles: <Sparkles size={size} />,
+      gamepad: <Gamepad2 size={size} />,
+      book: <Book size={size} />,
+      music: <Music size={size} />,
+      star: <Star size={size} />,
+      heart: <Heart size={size} />,
+      flame: <Flame size={size} />,
+      zap: <Zap size={size} />,
+      moon: <Moon size={size} />,
+    };
+    return icons[iconName || 'folder'] || <Folder size={size} />;
   };
 
   // --- 0. AUTH LOGIC ---
@@ -196,11 +232,17 @@ function App() {
       if (query.trim().length >= 3) {
         setLoading(true);
         try {
+          // Read adult content setting from localStorage
+          const savedSettings = localStorage.getItem('app_settings');
+          const adultContent = savedSettings ? JSON.parse(savedSettings).adultContent ?? false : false;
+
           // Search all three sources in parallel
+          // For anime
+          // For movies/tv
           const [animeData, movieData, tvData] = await Promise.all([
-            searchAnime(query),
-            searchMovies(query),
-            searchTVShows(query),
+            searchAnime(query, !adultContent),
+            searchMovies(query, adultContent),
+            searchTVShows(query, adultContent),
           ]);
 
           // Convert to unified MediaItem format
@@ -243,15 +285,40 @@ function App() {
     else setMyList(data || []);
   }
 
+  // Fetch user's custom lists
+  async function fetchUserLists() {
+    if (!session?.user) {
+      setUserLists([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('lists')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('position', { ascending: true });
+
+    if (error) console.error("Error fetching lists:", error);
+    else setUserLists(data || []);
+  }
+
   // Refresh list whenever we switch to the "My List" tab
   useEffect(() => {
     if (view === "list") {
       fetchMyList();
+      fetchUserLists();
     }
   }, [view]);
 
+  // Fetch lists when session changes
+  useEffect(() => {
+    if (session?.user) {
+      fetchUserLists();
+    }
+  }, [session]);
+
   // --- 3. SAVE LOGIC ---
-  async function addToWatchlist(media: MediaItem) {
+  async function addToWatchlist(media: MediaItem, listId: number | null = null) {
     // Check for duplicates based on media type and source ID
     let existing;
     if (media.type === 'anime') {
@@ -286,6 +353,7 @@ function App() {
       score: media.score,
       total_episodes: media.episodes || (media.type === 'movie' ? 1 : 0),
       media_type: media.type,
+      list_id: listId,
     };
 
     // Set the appropriate ID field
@@ -301,11 +369,34 @@ function App() {
       console.error("Save Error:", error);
       showToast(`Failed to save: ${error.message}`, "error");
     } else {
+      const list = userLists.find(l => l.id === listId);
+      const listName = list ? ` to ${list.name}` : '';
       const emoji = media.type === 'movie' ? '🎬' : media.type === 'tv' ? '📺' : '✅';
-      showToast(`Added ${media.title} to your list! ${emoji}`, "success");
+      showToast(`Added ${media.title}${listName}! ${emoji}`, "success");
       setQuery("");
     }
   }
+
+  // Handler for add button in ShowDetailModal - opens list picker
+  const handleAddToListClick = (media: MediaItem) => {
+    if (userLists.length > 0) {
+      setPendingMedia(media);
+      setListPickerOpen(true);
+    } else {
+      // No lists, just add without list
+      addToWatchlist(media, null);
+    }
+    setSelectedMedia(null);
+  };
+
+  // Handle list selection from picker
+  const handleListSelected = (list: UserList | null) => {
+    if (pendingMedia) {
+      addToWatchlist(pendingMedia, list?.id || null);
+      setPendingMedia(null);
+    }
+    setListPickerOpen(false);
+  };
 
   // --- RENDER ---
   return (
@@ -327,14 +418,30 @@ function App() {
             onClose={() => setAuthModalOpen(false)}
           />
 
+          {/* List Picker Modal */}
+          <ListPickerModal
+            isOpen={isListPickerOpen}
+            onClose={() => { setListPickerOpen(false); setPendingMedia(null); }}
+            lists={userLists}
+            onSelectList={handleListSelected}
+            mediaTitle={pendingMedia?.title || ""}
+          />
+
+          {/* List Management Modal */}
+          <ListManageModal
+            isOpen={isListManageModalOpen}
+            onClose={() => setListManageModalOpen(false)}
+            lists={userLists}
+            onListsChange={setUserLists}
+            supabase={supabase}
+            userId={session?.user?.id || ""}
+          />
+
           <ShowDetailModal
             media={selectedMedia}
             isOpen={selectedMedia !== null}
             onClose={() => setSelectedMedia(null)}
-            onAddToList={(media) => {
-              addToWatchlist(media);
-              setSelectedMedia(null);
-            }}
+            onAddToList={handleAddToListClick}
             isLoggedIn={!!session}
           />
 
@@ -366,6 +473,12 @@ function App() {
                 show.id === itemId ? { ...show, status } : show
               ));
             }}
+            onListChange={(itemId, listId) => {
+              setMyList(prev => prev.map(show =>
+                show.id === itemId ? { ...show, list_id: listId } : show
+              ));
+            }}
+            userLists={userLists}
             supabase={supabase}
             userId={session?.user?.id || null}
           />
@@ -451,7 +564,7 @@ function App() {
           {/* VIEW 1: SEARCH */}
           {view === "search" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="relative max-w-xl mx-auto mb-12">
+              <div className="relative max-w-xl mx-auto mb-6">
                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                   <Search className="h-5 w-5 text-gray-500" />
                 </div>
@@ -469,11 +582,58 @@ function App() {
                 )}
               </div>
 
+              {/* Search Filters */}
+              <div className="flex justify-center gap-2 mb-8">
+                <div className="flex gap-1 bg-gray-800/50 rounded-lg p-1">
+                  {[
+                    { value: 'anime', label: 'Animes', icon: <Sparkles size={12} />, color: 'purple' },
+                    { value: 'movie', label: 'Movies', icon: <Film size={12} />, color: 'red' },
+                    { value: 'tv', label: 'Series', icon: <Tv size={12} />, color: 'green' },
+                  ].map(type => {
+                    const isActive = searchMediaTypeFilter.has(type.value);
+                    return (
+                      <button
+                        key={type.value}
+                        onClick={() => {
+                          const newFilters = new Set(searchMediaTypeFilter);
+                          if (isActive) {
+                            newFilters.delete(type.value);
+                          } else {
+                            newFilters.add(type.value);
+                          }
+                          setSearchMediaTypeFilter(newFilters);
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${isActive
+                          ? `bg-${type.color}-500 text-white`
+                          : 'text-gray-400 hover:text-white'
+                          }`}
+                      >
+                        {type.icon} {type.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {searchMediaTypeFilter.size > 0 && (
+                  <button
+                    onClick={() => setSearchMediaTypeFilter(new Set())}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <X size={12} /> Clear
+                  </button>
+                )}
+              </div>
+
               <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 <AnimatePresence>
-                  {results.map((media) => (
-                    <MediaCard key={media.id} media={media} onClick={(m) => setSelectedMedia(m)} />
-                  ))}
+                  {results
+                    .filter(media => {
+                      if (searchMediaTypeFilter.size === 0) return true;
+                      return searchMediaTypeFilter.has(media.type);
+                    })
+                    .map((media) => (
+                      <MediaCard key={media.id} media={media} onClick={(m) => setSelectedMedia(m)} />
+                    ))}
                 </AnimatePresence>
               </motion.div>
             </motion.div>
@@ -484,76 +644,283 @@ function App() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+              className="space-y-8"
             >
-              {myList.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => setSelectedMyListItem(item)}
-                  className="anime-card relative bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 group border border-gray-100 dark:border-gray-800 cursor-pointer"
-                >
-                  {/* Background Image */}
-                  <div className="aspect-[2/3] w-full">
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="h-full w-full object-cover transition-all duration-300 group-hover:brightness-75"
-                    />
-                  </div>
-
-                  {/* Card Content Overlay - with gradient for text visibility */}
-                  <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/90 via-black/20 to-transparent">
-                    {/* Status Badge - Top Right Corner */}
-                    <div className="p-3 flex justify-end">
-                      <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm ${item.status === "WATCHING" ? "bg-green-500/30 text-green-300 border border-green-500/40" :
-                        item.status === "FINISHED" ? "bg-blue-500/30 text-blue-300 border border-blue-500/40" :
-                          item.status === "ON_HOLD" ? "bg-orange-500/30 text-orange-300 border border-orange-500/40" :
-                            item.status === "PLANNED" ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/40" :
-                              item.status === "REWATCHING" ? "bg-pink-500/30 text-pink-300 border border-pink-500/40" :
-                                item.status === "REWATCHED" ? "bg-cyan-500/30 text-cyan-300 border border-cyan-500/40" :
-                                  "bg-gray-500/30 text-gray-300 border border-gray-500/40"
-                        }`}>
-                        {item.status === "ON_HOLD" ? "On Hold" :
-                          item.status === "PLANNED" ? "Planned" :
-                            item.status === "WATCHING" ? "Watching" :
-                              item.status === "FINISHED" ? "Finished" :
-                                item.status === "REWATCHING" ? "Re-watching" :
-                                  item.status === "REWATCHED" ? "Re-watched" :
-                                    item.status}
-                      </span>
-                    </div>
-
-                    {/* Bottom Info */}
-                    <div className="p-4">
-                      {/* Title & Stats */}
-                      <div className="mb-3">
-                        <h3 className="font-bold text-white text-lg leading-tight mb-1 drop-shadow-lg line-clamp-2">
-                          {item.title}
-                        </h3>
-                        <div className="flex justify-between items-center text-xs font-mono">
-                          <span className="text-blue-400 font-bold drop-shadow-sm">
-                            EP {item.watched_episodes} / {item.total_episodes || "?"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Progress Bar */}
-                      <div className="h-1.5 w-full bg-gray-700/50 rounded-full overflow-hidden backdrop-blur-sm">
-                        <div
-                          className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500 ease-out"
-                          style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
+              {/* Filter Bar */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Media Type Filters (toggle multiple) */}
+                <div className="flex gap-1 bg-gray-800/50 rounded-lg p-1">
+                  {[
+                    { value: 'anime', label: 'Anime', icon: <Sparkles size={12} />, color: 'purple' },
+                    { value: 'movie', label: 'Movies', icon: <Film size={12} />, color: 'red' },
+                    { value: 'tv', label: 'Series', icon: <Tv size={12} />, color: 'green' },
+                  ].map(type => {
+                    const isActive = mediaTypeFilters.has(type.value);
+                    return (
+                      <button
+                        key={type.value}
+                        onClick={() => {
+                          const newFilters = new Set(mediaTypeFilters);
+                          if (isActive) {
+                            newFilters.delete(type.value);
+                          } else {
+                            newFilters.add(type.value);
+                          }
+                          setMediaTypeFilters(newFilters);
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${isActive
+                          ? `bg-${type.color}-500 text-white`
+                          : 'text-gray-400 hover:text-white'
+                          }`}
+                      >
+                        {type.icon} {type.label}
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
+
+                {/* Status Filters (toggle multiple) */}
+                <div className="relative" ref={statusDropdownRef}>
+                  <button
+                    onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    {statusFilters.size === 0
+                      ? 'All Statuses'
+                      : statusFilters.size === 1
+                        ? Array.from(statusFilters)[0].split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')
+                        : `${statusFilters.size} statuses`}
+                    <ChevronDown size={12} className={`transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {showStatusDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[160px]"
+                      >
+                        {/* Clear All button */}
+                        <button
+                          onClick={() => {
+                            setStatusFilters(new Set());
+                            setShowStatusDropdown(false);
+                          }}
+                          className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors ${statusFilters.size === 0
+                            ? 'bg-blue-500/20 text-white'
+                            : 'text-gray-300 hover:bg-gray-700'
+                            }`}
+                        >
+                          All Statuses
+                        </button>
+
+                        {[
+                          { value: 'WATCHING', label: 'Watching' },
+                          { value: 'PLANNED', label: 'Planned' },
+                          { value: 'FINISHED', label: 'Finished' },
+                          { value: 'ON_HOLD', label: 'On Hold' },
+                          { value: 'REWATCHING', label: 'Re-watching' },
+                          { value: 'REWATCHED', label: 'Re-watched' },
+                        ].map(option => {
+                          const isActive = statusFilters.has(option.value);
+                          return (
+                            <button
+                              key={option.value}
+                              onClick={() => {
+                                const newFilters = new Set(statusFilters);
+                                if (isActive) {
+                                  newFilters.delete(option.value);
+                                } else {
+                                  newFilters.add(option.value);
+                                }
+                                setStatusFilters(newFilters);
+                              }}
+                              className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors flex items-center gap-2 ${isActive
+                                ? 'bg-blue-500/20 text-white'
+                                : 'text-gray-300 hover:bg-gray-700'
+                                }`}
+                            >
+                              <div className={`w-3 h-3 rounded border ${isActive ? 'bg-blue-500 border-blue-500' : 'border-gray-500'}`}>
+                                {isActive && <span className="text-white text-[8px] flex items-center justify-center">✓</span>}
+                              </div>
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Clear Filters Button (shows when filters active) */}
+                {(mediaTypeFilters.size > 0 || statusFilters.size > 0) && (
+                  <button
+                    onClick={() => {
+                      setMediaTypeFilters(new Set());
+                      setStatusFilters(new Set());
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <X size={12} /> Clear Filters
+                  </button>
+                )}
+
+                {/* Edit Lists Button */}
+                <button
+                  onClick={() => setListManageModalOpen(true)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 ml-auto"
+                >
+                  <Edit2 size={12} /> Edit Lists
+                </button>
+              </div>
+
+              {/* List Rows */}
+              {userLists
+                .sort((a, b) => a.position - b.position)
+                .map(list => {
+                  // Filter items for this list
+                  const listItems = myList.filter(item => {
+                    if (item.list_id !== list.id) return false;
+                    if (mediaTypeFilters.size > 0 && !mediaTypeFilters.has(item.media_type)) return false;
+                    if (statusFilters.size > 0 && !statusFilters.has(item.status)) return false;
+                    return true;
+                  });
+
+                  if (listItems.length === 0) return null;
+
+                  return (
+                    <div key={list.id} className="space-y-3">
+                      {/* List Header */}
+                      <div className="flex items-center gap-2">
+                        <span className={`text-${list.color}-400`}>{getListIcon(list.icon, 20)}</span>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{list.name}</h2>
+                        <span className="text-gray-500 text-sm">({listItems.length})</span>
+                      </div>
+
+                      {/* Horizontal Scroll Row */}
+                      <div className="relative group">
+                        <div
+                          className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
+                          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
+                          {listItems.map(item => (
+                            <div
+                              key={item.id}
+                              onClick={() => setSelectedMyListItem(item)}
+                              className="flex-shrink-0 w-36 cursor-pointer group/card"
+                            >
+                              <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
+                                <img
+                                  src={item.image_url}
+                                  alt={item.title}
+                                  className="h-full w-full object-cover"
+                                />
+                                {/* Overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                  <div className="absolute bottom-0 left-0 right-0 p-2">
+                                    <p className="text-xs font-medium line-clamp-2" style={{ color: 'white' }}>{item.title}</p>
+                                    <p className="text-blue-400 text-[10px] font-mono">EP {item.watched_episodes}/{item.total_episodes || '?'}</p>
+                                  </div>
+                                </div>
+                                {/* Progress bar */}
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/80">
+                                  <div
+                                    className="h-full bg-blue-500"
+                                    style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Scroll buttons */}
+                        <button
+                          onClick={(e) => {
+                            const container = (e.target as HTMLElement).parentElement?.querySelector('.overflow-x-auto');
+                            container?.scrollBy({ left: -300, behavior: 'smooth' });
+                          }}
+                          className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white dark:bg-black/70 rounded-full flex items-center justify-center text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-100 dark:hover:bg-black shadow-lg"
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            const container = (e.target as HTMLElement).parentElement?.querySelector('.overflow-x-auto');
+                            container?.scrollBy({ left: 300, behavior: 'smooth' });
+                          }}
+                          className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white dark:bg-black/70 rounded-full flex items-center justify-center text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-100 dark:hover:bg-black shadow-lg"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {/* Uncategorized Items */}
+              {(() => {
+                const uncategorizedItems = myList.filter(item => {
+                  if (item.list_id !== null) return false;
+                  if (mediaTypeFilters.size > 0 && !mediaTypeFilters.has(item.media_type)) return false;
+                  if (statusFilters.size > 0 && !statusFilters.has(item.status)) return false;
+                  return true;
+                });
+
+                if (uncategorizedItems.length === 0) return null;
+
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 dark:text-gray-400"><Folder size={20} /></span>
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">Uncategorized</h2>
+                      <span className="text-gray-500 text-sm">({uncategorizedItems.length})</span>
+                    </div>
+                    <div className="relative group">
+                      <div
+                        className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                      >
+                        {uncategorizedItems.map(item => (
+                          <div
+                            key={item.id}
+                            onClick={() => setSelectedMyListItem(item)}
+                            className="flex-shrink-0 w-36 cursor-pointer group/card"
+                          >
+                            <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
+                              <img
+                                src={item.image_url}
+                                alt={item.title}
+                                className="h-full w-full object-cover"
+                              />
+                              {/* Always visible overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent">
+                                <div className="absolute bottom-0 left-0 right-0 p-2">
+                                  <p className="text-xs font-medium line-clamp-2 drop-shadow-lg" style={{ color: 'white' }}>{item.title}</p>
+                                  <p className="text-blue-400 text-[10px] font-mono drop-shadow-lg">EP {item.watched_episodes}/{item.total_episodes || '?'}</p>
+                                </div>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/80">
+                                <div
+                                  className="h-full bg-blue-500"
+                                  style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Empty State */}
               {myList.length === 0 && (
-                <div className="col-span-full text-center mt-20">
+                <div className="text-center py-20">
                   <p className="text-gray-500 text-xl">Your list is empty.</p>
-                  <button onClick={() => setView("search")} className="text-blue-400 mt-2 hover:underline">
+                  <button onClick={() => setView("search")} className="text-blue-400 mt-2 hover:underline cursor-pointer">
                     Go search for something!
                   </button>
                 </div>

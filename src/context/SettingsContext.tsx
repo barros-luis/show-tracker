@@ -16,6 +16,9 @@ type Theme = 'light' | 'dark';
 
 interface Settings {
     theme: Theme;
+    mouseAura: boolean;
+    adultContent: boolean;
+    zoomLevel: number;
     [key: string]: any; // Allow extensibility for future settings
 }
 
@@ -25,7 +28,10 @@ interface SettingsContextType {
 }
 
 const defaultSettings: Settings = {
-    theme: 'dark' // Default to dark as per current app style
+    theme: 'dark', // Default to dark as per current app style
+    mouseAura: true, // Default enabled
+    adultContent: false, // Default filtered
+    zoomLevel: 100, // Default 100%
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -71,6 +77,12 @@ export function SettingsProvider({ children, session }: { children: ReactNode, s
             body.classList.remove('dark');
         }
     }, [settings.theme]);
+
+    // 3b. Apply Zoom Level
+    useEffect(() => {
+        const root = window.document.documentElement;
+        root.style.fontSize = `${settings.zoomLevel}%`;
+    }, [settings.zoomLevel]);
 
     // 4. Update Function
     const updateSetting = async (key: string, value: any) => {

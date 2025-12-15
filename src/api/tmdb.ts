@@ -93,11 +93,11 @@ export interface TMDBSeason {
 }
 
 // Search Movies
-export async function searchMovies(query: string): Promise<TMDBMovie[]> {
+export async function searchMovies(query: string, includeAdult = false): Promise<TMDBMovie[]> {
     if (query.length < 2) return [];
 
     try {
-        const response = await fetch(buildUrl("/search/movie", { query, language: "en-US" }));
+        const response = await fetch(buildUrl("/search/movie", { query, language: "en-US", include_adult: String(includeAdult) }));
         const data = await response.json();
         return data.results || [];
     } catch (error) {
@@ -107,11 +107,11 @@ export async function searchMovies(query: string): Promise<TMDBMovie[]> {
 }
 
 // Search TV Shows
-export async function searchTVShows(query: string): Promise<TMDBTVShow[]> {
+export async function searchTVShows(query: string, includeAdult = false): Promise<TMDBTVShow[]> {
     if (query.length < 2) return [];
 
     try {
-        const response = await fetch(buildUrl("/search/tv", { query, language: "en-US" }));
+        const response = await fetch(buildUrl("/search/tv", { query, language: "en-US", include_adult: String(includeAdult) }));
         const data = await response.json();
         return data.results || [];
     } catch (error) {

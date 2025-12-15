@@ -59,7 +59,7 @@ export function MediaCard({ media, onClick }: MediaCardProps) {
                     </div>
                 </div>
 
-                <h3 className="line-clamp-2 text-sm font-bold text-white leading-tight drop-shadow-lg">
+                <h3 className="line-clamp-2 text-sm font-bold leading-tight drop-shadow-lg" style={{ color: 'white' }}>
                     {media.title}
                 </h3>
             </div>

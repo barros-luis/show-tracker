@@ -126,18 +126,82 @@ export function SettingsPage({ session, profile, supabase, onProfileUpdate, show
                                         </div>
                                     </section>
 
-                                    {/* PLACEHOLDER FOR FUTURE SETTINGS */}
-                                    <section className="opacity-50 pointer-events-none">
-                                        <h3 className="text-lg font-medium text-white mb-4">Zoom Level (Coming Soon)</h3>
-                                        <input type="range" className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+                                    {/* MOUSE AURA TOGGLE */}
+                                    <section>
+                                        <h3 className="text-lg font-medium text-white mb-4">Mouse Aura Effect</h3>
+                                        <div className="flex items-center justify-between p-4 bg-gray-800 rounded-xl">
+                                            <div>
+                                                <p className="font-medium text-white">Enable Mouse Glow</p>
+                                                <p className="text-xs text-gray-400">Show a glowing aura following your cursor</p>
+                                            </div>
+                                            <button
+                                                onClick={() => updateSetting('mouseAura', !settings.mouseAura)}
+                                                className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${settings.mouseAura ? 'bg-blue-500' : 'bg-gray-600'
+                                                    }`}
+                                            >
+                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${settings.mouseAura ? 'translate-x-6' : 'translate-x-0.5'
+                                                    }`} />
+                                            </button>
+                                        </div>
+                                    </section>
+
+                                    {/* ZOOM LEVEL */}
+                                    <section>
+                                        <h3 className="text-lg font-medium text-white mb-4">Zoom Level</h3>
+                                        <div className="p-4 bg-gray-800 rounded-xl space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-white font-medium">{settings.zoomLevel}%</span>
+                                                <button
+                                                    onClick={() => updateSetting('zoomLevel', 100)}
+                                                    className="text-xs text-blue-400 hover:text-blue-300 cursor-pointer"
+                                                >
+                                                    Reset to 100%
+                                                </button>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="75"
+                                                max="150"
+                                                step="5"
+                                                value={settings.zoomLevel}
+                                                onChange={(e) => updateSetting('zoomLevel', parseInt(e.target.value))}
+                                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                            />
+                                            <div className="flex justify-between text-xs text-gray-500">
+                                                <span>75%</span>
+                                                <span>100%</span>
+                                                <span>150%</span>
+                                            </div>
+                                        </div>
                                     </section>
                                 </div>
                             )}
 
                             {activeTab === 'general' && (
-                                <div className="text-center py-12 text-gray-500">
-                                    <SettingsIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                    <p>General settings coming soon...</p>
+                                <div className="space-y-8">
+                                    {/* ADULT CONTENT FILTER */}
+                                    <section>
+                                        <h3 className="text-lg font-medium text-white mb-4">Content Filter</h3>
+                                        <div className="flex items-center justify-between p-4 bg-gray-800 rounded-xl">
+                                            <div>
+                                                <p className="font-medium text-white">Show Adult Content</p>
+                                                <p className="text-xs text-gray-400">Include 18+ content in search results</p>
+                                            </div>
+                                            <button
+                                                onClick={() => updateSetting('adultContent', !settings.adultContent)}
+                                                className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${settings.adultContent ? 'bg-red-500' : 'bg-gray-600'
+                                                    }`}
+                                            >
+                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${settings.adultContent ? 'translate-x-6' : 'translate-x-0.5'
+                                                    }`} />
+                                            </button>
+                                        </div>
+                                        {settings.adultContent && (
+                                            <p className="mt-2 text-xs text-red-400">
+                                                ⚠️ Adult content will be shown in search results.
+                                            </p>
+                                        )}
+                                    </section>
                                 </div>
                             )}
                             {activeTab === 'account' && (

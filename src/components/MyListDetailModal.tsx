@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Star, Calendar, Tv, Clock, Loader2, Trash2, ChevronDown, ChevronUp, Check, AlertTriangle } from "lucide-react";
+import { X, Star, Calendar, Tv, Clock, Loader2, Trash2, ChevronDown, ChevronUp, Check, AlertTriangle, FolderOpen, Folder, Film, Sparkles, Gamepad2, Book, Music, Heart, Flame, Zap, Moon } from "lucide-react";
 import { getAnimeDetails, getAllAnimeEpisodes, getEpisodeDetails, type Anime } from "../api/jikan";
 import { getTVDetails, getAllTVEpisodes, type TMDBTVShow } from "../api/tmdb";
 import { SupabaseClient } from "@supabase/supabase-js";
+import type { UserList } from "./ListManageModal";
 
 // Unified episode type for both anime and TV
 interface UnifiedEpisode {
@@ -36,6 +37,7 @@ interface WatchlistItem {
     total_episodes: number | null;
     watched_episodes: number;
     status: string;
+    list_id: number | null;
 }
 
 interface MyListDetailModalProps {
@@ -46,6 +48,8 @@ interface MyListDetailModalProps {
     onEpisodeUpdate: (itemId: number, watchedCount: number) => void;
     onTotalEpisodesUpdate: (itemId: number, totalEpisodes: number) => void;
     onStatusUpdate: (itemId: number, status: string) => void;
+    onListChange: (itemId: number, listId: number | null) => void;
+    userLists: UserList[];
     supabase: SupabaseClient;
     userId: string | null;
 }
@@ -58,6 +62,8 @@ export function MyListDetailModal({
     onEpisodeUpdate,
     onTotalEpisodesUpdate,
     onStatusUpdate,
+    onListChange,
+    userLists,
     supabase,
     userId
 }: MyListDetailModalProps) {
@@ -72,6 +78,35 @@ export function MyListDetailModal({
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
     const [currentStatus, setCurrentStatus] = useState<string>(item?.status || "PLANNED");
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+    const [currentListId, setCurrentListId] = useState<number | null>(item?.list_id ?? null);
+    const [showListDropdown, setShowListDropdown] = useState(false);
+
+    // Icon helper for lists
+    const getListIcon = (iconName: string | null, size: number = 12) => {
+        const icons: Record<string, React.ReactNode> = {
+            folder: <Folder size={size} />,
+            film: <Film size={size} />,
+            tv: <Tv size={size} />,
+            sparkles: <Sparkles size={size} />,
+            gamepad: <Gamepad2 size={size} />,
+            book: <Book size={size} />,
+            music: <Music size={size} />,
+            star: <Star size={size} />,
+            heart: <Heart size={size} />,
+            flame: <Flame size={size} />,
+            zap: <Zap size={size} />,
+            moon: <Moon size={size} />,
+        };
+        return icons[iconName || 'folder'] || <Folder size={size} />;
+    };
+
+    // Sync status and list_id when item changes
+    useEffect(() => {
+        if (item) {
+            setCurrentStatus(item.status || "PLANNED");
+            setCurrentListId(item.list_id ?? null);
+        }
+    }, [item]);
 
     // Fetch details and episodes when modal opens
     useEffect(() => {
@@ -458,6 +493,75 @@ export function MyListDetailModal({
                                                                 >
                                                                     {currentStatus === option.value && <Check size={12} />}
                                                                     {option.label}
+                                                                </button>
+                                                            ))}
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+
+                                            {/* Move to List Dropdown */}
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setShowListDropdown(!showListDropdown)}
+                                                    className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 cursor-pointer transition-all bg-gray-700/50 hover:bg-gray-700 text-gray-300 border border-gray-600/30"
+                                                >
+                                                    <FolderOpen size={12} />
+                                                    {currentListId
+                                                        ? userLists.find(l => l.id === currentListId)?.name || "Move to List"
+                                                        : "Uncategorized"
+                                                    }
+                                                    <ChevronDown size={12} className={`transition-transform ${showListDropdown ? "rotate-180" : ""}`} />
+                                                </button>
+
+                                                {/* Dropdown Menu */}
+                                                <AnimatePresence>
+                                                    {showListDropdown && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: -5 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: -5 }}
+                                                            className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[160px]"
+                                                        >
+                                                            {/* Uncategorized option */}
+                                                            <button
+                                                                onClick={async () => {
+                                                                    setCurrentListId(null);
+                                                                    setShowListDropdown(false);
+                                                                    await supabase
+                                                                        .from('watchlist')
+                                                                        .update({ list_id: null })
+                                                                        .eq('id', item.id);
+                                                                    onListChange(item.id, null);
+                                                                }}
+                                                                className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors ${currentListId === null
+                                                                    ? "bg-blue-500/20 text-white"
+                                                                    : "text-gray-300 hover:bg-gray-700"
+                                                                    }`}
+                                                            >
+                                                                {currentListId === null && <Check size={12} />}
+                                                                <Folder size={12} /> Uncategorized
+                                                            </button>
+
+                                                            {userLists.map((list) => (
+                                                                <button
+                                                                    key={list.id}
+                                                                    onClick={async () => {
+                                                                        setCurrentListId(list.id);
+                                                                        setShowListDropdown(false);
+                                                                        await supabase
+                                                                            .from('watchlist')
+                                                                            .update({ list_id: list.id })
+                                                                            .eq('id', item.id);
+                                                                        onListChange(item.id, list.id);
+                                                                    }}
+                                                                    className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors ${currentListId === list.id
+                                                                        ? "bg-blue-500/20 text-white"
+                                                                        : "text-gray-300 hover:bg-gray-700"
+                                                                        }`}
+                                                                >
+                                                                    {currentListId === list.id && <Check size={12} />}
+                                                                    {getListIcon(list.icon, 12)} {list.name}
                                                                 </button>
                                                             ))}
                                                         </motion.div>

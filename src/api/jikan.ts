@@ -53,11 +53,11 @@ export interface Anime {
   trailer: AnimeTrailer | null;
 }
 
-// Search Anime by query
-export async function searchAnime(query: string): Promise<Anime[]> {
-  if (query.length < 3) return [];
-
-  const response = await fetch(`${BASE_URL}/anime?q=${query}&limit=12`);
+// Search for anime
+export async function searchAnime(query: string, sfw = true): Promise<Anime[]> {
+  if (query.length < 2) return [];
+  const sfwParam = sfw ? '&sfw=true' : '';
+  const response = await fetch(`${BASE_URL}/anime?q=${query}&limit=12${sfwParam}`);
   const data = await response.json();
   return data.data || [];
 }

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSettings } from "../context/SettingsContext";
 
 export function MouseAura() {
+    const { settings } = useSettings();
     const [mounted, setMounted] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(true);
 
@@ -121,8 +123,8 @@ export function MouseAura() {
     }, []);
 
     if (!mounted) return null;
+    if (!settings.mouseAura) return null;
 
-    // Different gradients for light vs dark mode
     const particleGradient = isDarkMode
         ? 'radial-gradient(circle, rgba(30, 64, 175, 0.6) 0%, rgba(23, 37, 84, 0.3) 30%, rgba(15, 23, 42, 0.1) 60%, transparent 100%)'
         : 'radial-gradient(circle, rgba(166, 147, 253, 0.41) 0%, rgba(191, 219, 254, 0.25) 30%, rgba(224, 242, 254, 0.1) 60%, transparent 100%)';
