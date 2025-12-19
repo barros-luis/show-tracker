@@ -20,6 +20,7 @@ interface Settings {
     adultContent: boolean;
     zoomLevel: number;
     closeToTray: boolean;
+    launchAtStartup: boolean;
     [key: string]: any; // Allow extensibility for future settings
 }
 
@@ -34,6 +35,7 @@ const defaultSettings: Settings = {
     adultContent: true, // Default unfiltered
     zoomLevel: 100, // Default 100%
     closeToTray: true, // Default: minimize to tray instead of closing
+    launchAtStartup: false, // Default: disabled - user must explicitly enable
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -95,6 +97,16 @@ export function SettingsProvider({ children, session }: { children: ReactNode, s
             });
         }).catch(() => { });
     }, [settings.closeToTray]);
+
+    // 3d. Sync Launch at Startup setting with Rust
+    useEffect(() => {
+        import('@tauri-apps/api/core').then(({ invoke }) => {
+            const command = settings.launchAtStartup ? 'enable_autostart' : 'disable_autostart';
+            invoke(command).catch(() => {
+                // Silently fail if not in Tauri environment
+            });
+        }).catch(() => { });
+    }, [settings.launchAtStartup]);
 
     // 4. Update Function
     const updateSetting = async (key: string, value: any) => {

@@ -224,6 +224,28 @@ export function SettingsPage({ session, profile, supabase, onProfileUpdate, show
                                             {settings.closeToTray ? 'The app will stay running in your system tray' : 'The app will fully close when you click X'}
                                         </p>
                                     </section>
+
+                                    {/* LAUNCH AT STARTUP */}
+                                    <section>
+                                        <h3 className="text-lg font-medium text-white mb-4">Startup</h3>
+                                        <div className="flex items-center justify-between p-4 bg-gray-800 rounded-xl">
+                                            <div>
+                                                <p className="font-medium text-white">Launch at Startup</p>
+                                                <p className="text-xs text-gray-400">Automatically start the app when you log in to your computer</p>
+                                            </div>
+                                            <button
+                                                onClick={() => updateSetting('launchAtStartup', !settings.launchAtStartup)}
+                                                className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${settings.launchAtStartup ? 'bg-blue-500' : 'bg-gray-600'
+                                                    }`}
+                                            >
+                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${settings.launchAtStartup ? 'translate-x-6' : 'translate-x-0.5'
+                                                    }`} />
+                                            </button>
+                                        </div>
+                                        <p className="mt-2 text-xs text-gray-500">
+                                            {settings.launchAtStartup ? 'The app will start automatically when you log in' : 'The app will only start when you open it manually'}
+                                        </p>
+                                    </section>
                                 </div>
                             )}
                             {activeTab === 'account' && (

@@ -38,8 +38,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: app-v__VERSION__ 
+          tagName: v__VERSION__
           releaseName: "Show Tracker v__VERSION__"
           releaseBody: "Auto-generated release for Windows and Mac."
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false

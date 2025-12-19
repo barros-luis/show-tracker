@@ -4,6 +4,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager, WindowEvent,
 };
+use tauri_plugin_autostart::MacosLauncher;
 
 // Global flag to track if we should close to tray
 static CLOSE_TO_TRAY: AtomicBool = AtomicBool::new(true);
@@ -28,9 +29,62 @@ fn set_close_to_tray(enabled: bool) {
     CLOSE_TO_TRAY.store(enabled, Ordering::SeqCst);
 }
 
+#[tauri::command]
+fn enable_autostart(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().enable().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn disable_autostart(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().disable().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_autostart_status(app: tauri::AppHandle) -> Result<bool, String> {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().is_enabled().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn check_for_update(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri_plugin_updater::UpdaterExt;
+    match app.updater().map_err(|e| e.to_string())?.check().await {
+        Ok(Some(update)) => Ok(Some(update.version)),
+        Ok(None) => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+#[tauri::command]
+async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let update = app
+        .updater()
+        .map_err(|e| e.to_string())?
+        .check()
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or("No update available")?;
+
+    update
+        .download_and_install(|_, _| {}, || {})
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Restart the app to apply the update
+    app.restart();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec!["--minimized"]),
+        ))
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             let _ = app
                 .get_webview_window("main")
@@ -50,8 +104,10 @@ pub fn run() {
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
 
-            // Load custom tray icon (minimalist for macOS menu bar)
+            #[cfg(target_os = "macos")]
             let tray_icon = tauri::include_image!("icons/tray-icon.png");
+            #[cfg(target_os = "windows")]
+            let tray_icon = tauri::include_image!("icons/32x32.png");
 
             // Build tray icon
             let _tray = TrayIconBuilder::new()
@@ -90,6 +146,14 @@ pub fn run() {
                 })
                 .build(app)?;
 
+            // Check if app was launched with --minimized flag (auto-start)
+            // If so, hide the window so it starts in the system tray
+            if std::env::args().any(|arg| arg == "--minimized") {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+            }
+
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -102,7 +166,15 @@ pub fn run() {
                 // If CLOSE_TO_TRAY is false, let the app close normally
             }
         })
-        .invoke_handler(tauri::generate_handler![force_focus, set_close_to_tray])
+        .invoke_handler(tauri::generate_handler![
+            force_focus,
+            set_close_to_tray,
+            enable_autostart,
+            disable_autostart,
+            get_autostart_status,
+            check_for_update,
+            install_update
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

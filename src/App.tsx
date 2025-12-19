@@ -20,6 +20,7 @@ import { ListManageModal, type UserList } from "./components/ListManageModal";
 import { ListPickerModal } from "./components/ListPickerModal";
 import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
 import { invoke } from "@tauri-apps/api/core";
+import { UpdateBanner } from "./components/UpdateBanner";
 import "./App.css";
 
 
@@ -58,6 +59,9 @@ function App() {
   // Search filters
   const [searchMediaTypeFilter, setSearchMediaTypeFilter] = useState<Set<string>>(new Set());
 
+  // Update state
+  const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
+
   const showToast = (message: string, type: ToastType = "success") => {
     setToast({ message, type });
   };
@@ -79,6 +83,28 @@ function App() {
       moon: <Moon size={size} />,
     };
     return icons[iconName || 'folder'] || <Folder size={size} />;
+  };
+
+  // --- CHECK FOR UPDATES ---
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const newVersion = await invoke<string | null>('check_for_update');
+        if (newVersion) {
+          setUpdateAvailable(newVersion);
+        }
+      } catch (err) {
+        // Silently fail - update check is not critical
+        console.log('Update check failed:', err);
+      }
+    };
+
+    // Check for updates on app startup
+    checkForUpdates();
+  }, []);
+
+  const handleInstallUpdate = async () => {
+    await invoke('install_update');
   };
 
   // --- 0. AUTH LOGIC ---
@@ -413,6 +439,15 @@ function App() {
             type={toast?.type}
             onClose={() => setToast(null)}
           />
+
+          {/* UPDATE BANNER */}
+          {updateAvailable && (
+            <UpdateBanner
+              newVersion={updateAvailable}
+              onUpdate={handleInstallUpdate}
+              onDismiss={() => setUpdateAvailable(null)}
+            />
+          )}
 
           <AuthModal
             supabase={supabase}

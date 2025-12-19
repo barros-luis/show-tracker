@@ -47,6 +47,12 @@
           "show-tracker"
         ]
       }
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/barros-luis/show-tracker/releases/latest/download/latest.json"
+      ],
+      "pubkey": ""
     }
   }
 }
