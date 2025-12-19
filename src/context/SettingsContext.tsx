@@ -19,6 +19,7 @@ interface Settings {
     mouseAura: boolean;
     adultContent: boolean;
     zoomLevel: number;
+    closeToTray: boolean;
     [key: string]: any; // Allow extensibility for future settings
 }
 
@@ -28,10 +29,11 @@ interface SettingsContextType {
 }
 
 const defaultSettings: Settings = {
-    theme: 'dark', // Default to dark as per current app style
+    theme: 'dark', // Default to dark style
     mouseAura: true, // Default enabled
-    adultContent: false, // Default filtered
+    adultContent: true, // Default unfiltered
     zoomLevel: 100, // Default 100%
+    closeToTray: true, // Default: minimize to tray instead of closing
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -83,6 +85,16 @@ export function SettingsProvider({ children, session }: { children: ReactNode, s
         const root = window.document.documentElement;
         root.style.fontSize = `${settings.zoomLevel}%`;
     }, [settings.zoomLevel]);
+
+    // 3c. Sync Close to Tray setting with Rust
+    useEffect(() => {
+        // Dynamic import to avoid issues in non-Tauri environments
+        import('@tauri-apps/api/core').then(({ invoke }) => {
+            invoke('set_close_to_tray', { enabled: settings.closeToTray }).catch(() => {
+                // Silently fail if not in Tauri environment
+            });
+        }).catch(() => { });
+    }, [settings.closeToTray]);
 
     // 4. Update Function
     const updateSetting = async (key: string, value: any) => {

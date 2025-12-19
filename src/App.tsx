@@ -110,12 +110,12 @@ function App() {
     });
 
     // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       if (session) {
         fetchProfile(session.user.id);
-        fetchMyList();
-      } else {
+        fetchMyList(session.user.id); // Pass user ID to avoid stale closure
+      } else if (event === 'SIGNED_OUT') {
         setProfile(null);
         setMyList([]);
         setView("search");
@@ -269,8 +269,10 @@ function App() {
   }, [query]);
 
   // --- 2. FETCH MY LIST LOGIC ---
-  async function fetchMyList() {
-    if (!session?.user) {
+  async function fetchMyList(userId?: string) {
+    // Use passed userId or fall back to session (for calls from UI)
+    const uid = userId ?? session?.user?.id;
+    if (!uid) {
       setMyList([]);
       return;
     }
@@ -278,7 +280,7 @@ function App() {
     const { data, error } = await supabase
       .from('watchlist')
       .select('*')
-      .eq('user_id', session.user.id)
+      .eq('user_id', uid)
       .order('created_at', { ascending: false });
 
     if (error) console.error("Error fetching list:", error);
@@ -774,6 +776,8 @@ function App() {
                   <Edit2 size={12} /> Edit Lists
                 </button>
               </div>
+
+
 
               {/* List Rows */}
               {userLists
