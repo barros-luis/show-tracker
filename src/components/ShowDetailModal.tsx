@@ -134,6 +134,13 @@ export function ShowDetailModal({ media, isOpen, onClose, onAddToList, isLoggedI
                 };
             } else {
                 const tv = fullDetails as TMDBTVShow;
+                // Normalize TMDB status to be more user-friendly
+                let displayStatus = tv.status || 'Unknown';
+                if (displayStatus === 'Returning Series') {
+                    displayStatus = 'Currently Airing';
+                } else if (displayStatus === 'Ended') {
+                    displayStatus = 'Finished';
+                }
                 return {
                     title: tv.name,
                     imageUrl: media.largeImageUrl,
@@ -141,7 +148,7 @@ export function ShowDetailModal({ media, isOpen, onClose, onAddToList, isLoggedI
                     score: tv.vote_average ? Math.round(tv.vote_average * 10) / 10 : null,
                     synopsis: tv.overview,
                     episodes: tv.number_of_episodes,
-                    status: tv.status || 'Unknown',
+                    status: displayStatus,
                     type: 'TV Series',
                     source: null,
                     season: tv.number_of_seasons ? `${tv.number_of_seasons} Season${tv.number_of_seasons > 1 ? 's' : ''}` : null,

@@ -139,3 +139,34 @@ export async function getEpisodeDetails(malId: number, episodeNumber: number): P
     return null;
   }
 }
+
+// Interface for anime relation
+export interface AnimeRelation {
+  relation: string; // "Sequel", "Prequel", "Side Story", "Summary", "Other", etc.
+  entries: {
+    mal_id: number;
+    type: string;
+    name: string;
+  }[];
+}
+
+// Get anime relations (sequels, prequels, movies, etc.)
+export async function getAnimeRelations(malId: number): Promise<AnimeRelation[]> {
+  try {
+    const response = await fetch(`${BASE_URL}/anime/${malId}/relations`);
+    const data = await response.json();
+
+    // Transform the API response
+    return (data.data || []).map((rel: any) => ({
+      relation: rel.relation,
+      entries: (rel.entry || []).map((e: any) => ({
+        mal_id: e.mal_id,
+        type: e.type,
+        name: e.name,
+      })),
+    }));
+  } catch (error) {
+    console.error("Error fetching anime relations:", error);
+    return [];
+  }
+}

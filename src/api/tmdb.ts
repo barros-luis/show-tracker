@@ -67,6 +67,20 @@ export interface TMDBTVShow {
     videos?: { results: TMDBVideo[] };
     status?: string;
     networks?: { id: number; name: string; logo_path: string | null }[];
+    last_episode_to_air?: {
+        id: number;
+        name: string;
+        air_date: string | null;
+        episode_number: number;
+        season_number: number;
+    } | null;
+    next_episode_to_air?: {
+        id: number;
+        name: string;
+        air_date: string | null;
+        episode_number: number;
+        season_number: number;
+    } | null;
 }
 
 export interface TMDBEpisode {

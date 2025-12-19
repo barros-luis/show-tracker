@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import { listen } from "@tauri-apps/api/event";
 import { searchAnime } from "./api/jikan";
-import { searchMovies, searchTVShows } from "./api/tmdb";
+import { searchMovies, searchTVShows, getTVDetails } from "./api/tmdb";
 import { type MediaItem, animeToMediaItem, movieToMediaItem, tvToMediaItem } from "./api/mediaTypes";
 import { MediaCard } from "./components/MediaCard";
 import { ShowDetailModal } from "./components/ShowDetailModal";
@@ -21,6 +21,8 @@ import { ListPickerModal } from "./components/ListPickerModal";
 import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
 import { invoke } from "@tauri-apps/api/core";
 import { UpdateBanner } from "./components/UpdateBanner";
+import { NotificationBell } from "./components/NotificationBell";
+import { type AppNotification, checkForNewReleases, fetchNotifications } from "./api/NotificationService";
 import "./App.css";
 
 
@@ -61,6 +63,9 @@ function App() {
 
   // Update state
   const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
+
+  // Notifications state
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   const showToast = (message: string, type: ToastType = "success") => {
     setToast({ message, type });
@@ -106,6 +111,60 @@ function App() {
   const handleInstallUpdate = async () => {
     await invoke('install_update');
   };
+
+  // --- CHECK FOR NEW RELEASES (NOTIFICATIONS) ---
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const checkNotifications = async () => {
+      // Get settings from localStorage (since App wraps SettingsProvider)
+      const savedSettings = localStorage.getItem('app_settings');
+      const settings = savedSettings ? JSON.parse(savedSettings) : {};
+      const notifyInApp = settings.notifyInApp ?? true;
+      const notifyOS = settings.notifyOS ?? true;
+
+      // Skip if both notifications are disabled
+      if (!notifyInApp && !notifyOS) return;
+
+      try {
+        // Fetch current notifications first
+        const currentNotifs = await fetchNotifications(supabase, session.user.id);
+        setNotifications(currentNotifs);
+
+        // Check for new releases
+        const newNotifs = await checkForNewReleases(
+          supabase,
+          session.user.id,
+          myList,
+          { notifyInApp, notifyOS }
+        );
+
+        // Add new notifications to state
+        if (newNotifs.length > 0) {
+          setNotifications(prev => [...newNotifs, ...prev]);
+        }
+      } catch (err) {
+        console.error('Notification check failed:', err);
+      }
+    };
+
+    // Check on startup (with small delay to let list load)
+    const startupTimeout = setTimeout(checkNotifications, 3000);
+
+    // Get interval from settings
+    const savedSettings = localStorage.getItem('app_settings');
+    const settings = savedSettings ? JSON.parse(savedSettings) : {};
+    const checkIntervalHours = settings.notifyCheckInterval ?? 2;
+
+    // Periodic check
+    const intervalId = setInterval(checkNotifications, checkIntervalHours * 60 * 60 * 1000);
+
+    return () => {
+      clearTimeout(startupTimeout);
+      clearInterval(intervalId);
+    };
+  }, [session?.user?.id, myList.length]); // Re-run when user logs in or list changes
+
 
   // --- 0. AUTH LOGIC ---
   // Handle Login/Logout Logic
@@ -276,10 +335,70 @@ function App() {
           const movieItems = movieData.map(movieToMediaItem);
           const tvItems = tvData.map(tvToMediaItem);
 
-          // Combine and sort by score (highest first)
-          const combined = [...animeItems, ...movieItems, ...tvItems]
-            .filter(item => item.imageUrl) // Filter out items without images
-            .sort((a, b) => (b.score || 0) - (a.score || 0));
+          // Combine all results
+          const allItems = [...animeItems, ...movieItems, ...tvItems]
+            .filter(item => item.imageUrl); // Filter out items without images
+
+          // Deduplicate by title - only remove true duplicates (same show from different sources)
+          // This removes TMDB anime duplicates while keeping seasons, movies, etc.
+
+          // Helper to normalize title for comparison (only removes punctuation, keeps all words)
+          const normalizeTitle = (title: string): string => {
+            return title
+              .toLowerCase()
+              .replace(/[^a-z0-9\s]/g, '') // Remove punctuation
+              .replace(/\s+/g, ' ')         // Normalize spaces
+              .trim();
+          };
+
+          // Check if two titles are the SAME content from different sources
+          // Only true duplicates: "Jujutsu Kaisen" (anime) vs "Jujutsu Kaisen" (TV)
+          // NOT duplicates: "Jujutsu Kaisen" vs "Jujutsu Kaisen 2nd Season"
+          const areSameTitleDifferentSource = (item1: MediaItem, item2: MediaItem): boolean => {
+            // Must be different sources (anime vs movie/tv)
+            const differentSources = (item1.type === 'anime' && item2.type !== 'anime') ||
+              (item1.type !== 'anime' && item2.type === 'anime');
+            if (!differentSources) return false;
+
+            const norm1 = normalizeTitle(item1.title);
+            const norm2 = normalizeTitle(item2.title);
+
+            // Exact match after normalization
+            if (norm1 === norm2) return true;
+
+            // Check for English vs Japanese title match (e.g., "Demon Slayer" in one, "Kimetsu no Yaiba" in other)
+            // Only if one title contains the full other title AND they're similar length
+            if (norm1.includes(norm2) || norm2.includes(norm1)) {
+              const lengthRatio = Math.min(norm1.length, norm2.length) / Math.max(norm1.length, norm2.length);
+              // Only match if shorter is at least 70% of longer (avoids "A" matching "ABC")
+              if (lengthRatio >= 0.7) return true;
+            }
+
+            return false;
+          };
+
+          const deduplicated: MediaItem[] = [];
+
+          for (const item of allItems) {
+            // Check if same content from different source already exists
+            const existingIdx = deduplicated.findIndex(existing =>
+              areSameTitleDifferentSource(item, existing)
+            );
+
+            if (existingIdx === -1) {
+              // No duplicate, add it
+              deduplicated.push(item);
+            } else {
+              // Duplicate found - prefer anime over TMDB
+              const existing = deduplicated[existingIdx];
+              if (item.type === 'anime' && existing.type !== 'anime') {
+                deduplicated[existingIdx] = item;
+              }
+            }
+          }
+
+          // Sort by score (highest first)
+          const combined = deduplicated.sort((a, b) => (b.score || 0) - (a.score || 0));
 
           setResults(combined);
         } catch (err) {
@@ -389,6 +508,28 @@ function App() {
       insertData.mal_id = media.sourceId;
     } else {
       insertData.tmdb_id = media.sourceId;
+
+      // For TV shows, fetch full details to get episode/season info (search results don't include this)
+      if (media.type === 'tv') {
+        try {
+          const tvDetails = await getTVDetails(media.sourceId);
+          if (tvDetails) {
+            if (tvDetails.number_of_seasons) {
+              insertData.seasons_count = tvDetails.number_of_seasons;
+            }
+            if (tvDetails.last_episode_to_air) {
+              insertData.last_episode_season = tvDetails.last_episode_to_air.season_number;
+              insertData.last_episode_number = tvDetails.last_episode_to_air.episode_number;
+            }
+            // Also update total_episodes with accurate count
+            if (tvDetails.number_of_episodes) {
+              insertData.total_episodes = tvDetails.number_of_episodes;
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch TV details for notification tracking:", err);
+        }
+      }
     }
 
     const { error } = await supabase.from('watchlist').insert(insertData);
@@ -577,6 +718,16 @@ function App() {
 
             {/* Right: User Menu */}
             <div className="w-1/3 flex justify-end items-center gap-4">
+              {/* Notification Bell */}
+              {session && (
+                <NotificationBell
+                  supabase={supabase}
+                  userId={session?.user?.id || null}
+                  notifications={notifications}
+                  onNotificationsChange={setNotifications}
+                />
+              )}
+
               {/* Settings Button Moved to UserMenu */}
 
               {session ? (
