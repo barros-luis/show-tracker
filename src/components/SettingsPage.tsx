@@ -246,6 +246,63 @@ export function SettingsPage({ session, profile, supabase, onProfileUpdate, show
                                             {settings.launchAtStartup ? 'The app will start automatically when you log in' : 'The app will only start when you open it manually'}
                                         </p>
                                     </section>
+
+                                    {/* NOTIFICATIONS */}
+                                    <section>
+                                        <h3 className="text-lg font-medium text-white mb-4">Notifications</h3>
+                                        <div className="space-y-4">
+                                            {/* In-App Notifications */}
+                                            <div className="flex items-center justify-between p-4 bg-gray-800 rounded-xl">
+                                                <div>
+                                                    <p className="font-medium text-white">In-App Notifications</p>
+                                                    <p className="text-xs text-gray-400">Show notifications in the app's bell icon</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => updateSetting('notifyInApp', !settings.notifyInApp)}
+                                                    className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${settings.notifyInApp ? 'bg-blue-500' : 'bg-gray-600'
+                                                        }`}
+                                                >
+                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${settings.notifyInApp ? 'translate-x-6' : 'translate-x-0.5'
+                                                        }`} />
+                                                </button>
+                                            </div>
+
+                                            {/* OS Notifications */}
+                                            <div className="flex items-center justify-between p-4 bg-gray-800 rounded-xl">
+                                                <div>
+                                                    <p className="font-medium text-white">System Notifications</p>
+                                                    <p className="text-xs text-gray-400">Send notifications to your operating system</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => updateSetting('notifyOS', !settings.notifyOS)}
+                                                    className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${settings.notifyOS ? 'bg-blue-500' : 'bg-gray-600'
+                                                        }`}
+                                                >
+                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${settings.notifyOS ? 'translate-x-6' : 'translate-x-0.5'
+                                                        }`} />
+                                                </button>
+                                            </div>
+
+                                            {/* Check Interval */}
+                                            <div className="flex items-center justify-between p-4 bg-gray-800 rounded-xl">
+                                                <div>
+                                                    <p className="font-medium text-white">Check Interval</p>
+                                                    <p className="text-xs text-gray-400">How often to check for new episodes</p>
+                                                </div>
+                                                <select
+                                                    value={settings.notifyCheckInterval}
+                                                    onChange={(e) => updateSetting('notifyCheckInterval', parseInt(e.target.value))}
+                                                    className="bg-gray-700 text-white text-sm rounded-lg px-3 py-2 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                                >
+                                                    <option value={1}>Every 1 hour</option>
+                                                    <option value={2}>Every 2 hours</option>
+                                                    <option value={4}>Every 4 hours</option>
+                                                    <option value={6}>Every 6 hours</option>
+                                                    <option value={12}>Every 12 hours</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </section>
                                 </div>
                             )}
                             {activeTab === 'account' && (

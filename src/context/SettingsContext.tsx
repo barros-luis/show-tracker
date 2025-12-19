@@ -21,6 +21,9 @@ interface Settings {
     zoomLevel: number;
     closeToTray: boolean;
     launchAtStartup: boolean;
+    notifyInApp: boolean;
+    notifyOS: boolean;
+    notifyCheckInterval: number; // hours
     [key: string]: any; // Allow extensibility for future settings
 }
 
@@ -36,6 +39,9 @@ const defaultSettings: Settings = {
     zoomLevel: 100, // Default 100%
     closeToTray: true, // Default: minimize to tray instead of closing
     launchAtStartup: false, // Default: disabled - user must explicitly enable
+    notifyInApp: true, // Default: enabled - show in-app notifications
+    notifyOS: true, // Default: enabled - show OS notifications
+    notifyCheckInterval: 2, // Default: check every 2 hours
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
