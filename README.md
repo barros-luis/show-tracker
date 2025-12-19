@@ -18,7 +18,7 @@
 ## 🚀 About
 **AShow Tracker** is a premium desktop application built for enthusiasts who want a beautiful, seamless way to track their binge-watching habits. Breaking away from clunky web interfaces, it offers a native, glassmorphism-inspired UI with deep system integration.
 
-## ✨ Features (v0.7.0)
+## ✨ Features (v0.9.7)
 
 ### 🎨 Stunning UI/UX
 - **Glassmorphism Design:** Modern, translucent aesthetics with dynamic gradient backgrounds.
@@ -30,16 +30,33 @@
 - **Session Management:** Automatic token handling and deep link redirection logic.
 - **Security:** In-memory session validation and Row Level Security (RLS) data protection.
 
-### 👤 Profile V1 (New!)
+### 👤 Profile
 - **Identity:** Set a custom nickname and upload a profile picture with **Drag & Zoom Cropping**.
 - **Customization:** "Shuffle" your banner gradient to match your vibe.
 - **Social Fields:** Add custom links (GitHub, Twitter, etc.) with specific icons.
 - **Bio:** A Markdown-style "About Me" section to tell your story.
 
-### 📺 Management
-- **Search:** Instant access to anime metadata (Jikan API).
-- **Watchlist:** One-click add to your personal tracking list.
-- **Progress:** Visual progress bars for episode tracking.
+### 📺 Multi-Source Tracking
+- **Anime:** Full integration with Jikan API (MyAnimeList data).
+- **Movies & TV Shows:** TMDB integration for Hollywood and international content.
+- **Smart Deduplication:** Intelligent search that removes duplicates across sources.
+
+### 📋 Custom Lists
+- **Multi-List Support:** Create unlimited custom lists (Watching, Plan to Watch, Favorites, etc.).
+- **Custom Icons & Colors:** Personalize each list with unique icons.
+- **Easy Organization:** Drag and drop shows between lists.
+
+### 🔔 Notification System (New!)
+- **New Episodes:** Get notified when new episodes air for your tracked shows.
+- **New Seasons:** Alerts when a new season is announced or released.
+- **Anime Sequels:** Automatic detection of sequels and spin-offs via relations.
+- **Movie Releases:** Notifications for related movies (e.g., "Teen Wolf: The Movie").
+- **In-App & OS Notifications:** Choose between in-app bell or native OS notifications.
+
+### 🔄 Auto-Updates
+- **Seamless Updates:** In-app update mechanism with signed releases.
+- **One-Click Install:** Update banner with instant installation.
+- **Start on Boot:** Optional auto-launch at system startup.
 
 ---
 
@@ -47,45 +64,39 @@
 
 We are actively building the future of show tracking. Here is what's coming next:
 
-- [ ] **Mobile Adaptation:** Seamless sync with a future mobile app (#19).
-- [ ] **Smart Recommendations:** AI-driven suggestions based on your list (#12).
-- [ ] **Detailed Info View:** Trailers, full descriptions, and advanced metadata (#15).
-- [ ] **Advanced Filtering:** Sort by genre, score, and status (#21).
-- [ ] **Multi-List Support:** Separate lists for Movies, Shows, and Anime (#13).
-- [ ] **Custom Lists:** Create your own collections (e.g., "Weekend Binge") (#14).
-- [ ] **Social Features:** Notifications system and friend updates (#18).
-- [ ] **Auto-Updates:** In-app update mechanism to skip manual downloads (#20).
+- [ ] **Mobile Adaptation:** Seamless sync with a future mobile app.
+- [ ] **Smart Recommendations:** AI-driven suggestions based on your list.
+- [ ] **Social Features:** Friend lists and shared watchlists.
 
 ---
 
-## 🛠️ Getting Started
+## 📦 Download
+
+### Windows
+Download the latest `.msi` installer from the [Releases](https://github.com/barros-luis/show-tracker/releases/latest) page.
+
+### macOS
+Download the `.dmg` file from the [Releases](https://github.com/barros-luis/show-tracker/releases/latest) page.
+
+---
+
+## 🛠️ Development
+
+<details>
+<summary>Click to expand developer setup</summary>
 
 ### Prerequisites
 - Node.js (v18+)
-- Rust (latest stable) for Tauri
+- Rust (latest stable)
 
-### Installation
-
-1. **Clone the repo**
-   ```bash
-   git clone https://github.com/yourusername/show-tracker.git
-   cd show-tracker
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Run Development Mode**
-   ```bash
-   npm run tauri dev
-   ```
-
-4. **Build for Production**
-   ```bash
-   npm run tauri build
-   ```
+### Setup
+```bash
+git clone https://github.com/barros-luis/show-tracker.git
+cd show-tracker
+npm install
+npm run tauri dev
+```
+</details>
 
 ---
 
