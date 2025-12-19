@@ -39,7 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
-          releaseName: "Show Tracker v__VERSION__"
+          releaseName: "AShow Tracker v__VERSION__"
           releaseBody: "Auto-generated release for Windows and Mac."
           releaseDraft: false
           prerelease: false
