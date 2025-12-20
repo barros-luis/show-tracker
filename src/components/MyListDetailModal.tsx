@@ -274,6 +274,7 @@ export function MyListDetailModal({
                     user_id: userId,
                     watchlist_id: item.id,
                     mal_id: item.mal_id,
+                    tmdb_id: item.tmdb_id,
                     episode_number: episodeNumber
                 });
         }
@@ -662,6 +663,7 @@ export function MyListDetailModal({
                                                                 user_id: userId,
                                                                 watchlist_id: item.id,
                                                                 mal_id: item.mal_id,
+                                                                tmdb_id: item.tmdb_id,
                                                                 episode_number: ep
                                                             }));
                                                             await supabase.from('watched_episodes').insert(insertData);
@@ -698,6 +700,7 @@ export function MyListDetailModal({
                                                                 user_id: userId,
                                                                 watchlist_id: item.id,
                                                                 mal_id: item.mal_id,
+                                                                tmdb_id: item.tmdb_id,
                                                                 episode_number: ep
                                                             }));
                                                             await supabase.from('watched_episodes').insert(insertData);

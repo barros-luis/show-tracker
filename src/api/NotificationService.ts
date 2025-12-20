@@ -144,14 +144,13 @@ export async function checkForNewReleases(
             }
 
             if (hasNewContent) {
-                // Check if we already have this notification (avoid duplicates)
+                // Check if we already have this notification (avoid duplicates, including dismissed ones)
                 const { data: existing } = await supabase
                     .from('notifications')
                     .select('id')
                     .eq('user_id', userId)
                     .eq('watchlist_id', item.id)
                     .eq('message', newContentMessage)
-                    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
                     .maybeSingle();
 
                 if (!existing) {
@@ -264,6 +263,7 @@ export async function fetchNotifications(
         .from('notifications')
         .select('*')
         .eq('user_id', userId)
+        .or('dismissed.is.null,dismissed.eq.false')
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -297,13 +297,13 @@ export async function markAllNotificationsRead(
         .eq('user_id', userId);
 }
 
-// Clear all notifications
+// Clear all notifications (soft delete - mark as dismissed)
 export async function clearAllNotifications(
     supabase: SupabaseClient,
     userId: string
 ): Promise<void> {
     await supabase
         .from('notifications')
-        .delete()
+        .update({ dismissed: true })
         .eq('user_id', userId);
 }
