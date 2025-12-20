@@ -22,6 +22,7 @@ import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
 import { invoke } from "@tauri-apps/api/core";
 import { UpdateBanner } from "./components/UpdateBanner";
 import { NotificationBell } from "./components/NotificationBell";
+import { TitleBar } from "./components/TitleBar";
 import { type AppNotification, checkForNewReleases, fetchNotifications } from "./api/NotificationService";
 import "./App.css";
 
@@ -570,431 +571,514 @@ function App() {
   // --- RENDER ---
   return (
     <SettingsProvider session={session}>
-      <div className="min-h-screen font-sans selection:bg-blue-500 selection:text-white p-8 overflow-hidden relative bg-[#e8f0fe] dark:bg-[#070d1c] text-slate-900 dark:text-white transition-colors duration-300">
-        <MouseAura />
-        <div className="max-w-6xl mx-auto relative z-10">
+      <div className="h-screen flex flex-col">
+        {/* Custom Title Bar */}
+        <TitleBar />
 
-          {/* TOAST NOTIFICATIONS */}
-          <Toast
-            message={toast?.message || null}
-            type={toast?.type}
-            onClose={() => setToast(null)}
-          />
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto font-sans selection:bg-blue-500 selection:text-white p-8 relative bg-[#e8f0fe] dark:bg-[#070d1c] text-slate-900 dark:text-white transition-colors duration-300">
+          <MouseAura />
+          <div className="max-w-6xl mx-auto relative z-10">
 
-          {/* UPDATE BANNER */}
-          {updateAvailable && (
-            <UpdateBanner
-              newVersion={updateAvailable}
-              onUpdate={handleInstallUpdate}
-              onDismiss={() => setUpdateAvailable(null)}
+            {/* TOAST NOTIFICATIONS */}
+            <Toast
+              message={toast?.message || null}
+              type={toast?.type}
+              onClose={() => setToast(null)}
             />
-          )}
 
-          <AuthModal
-            supabase={supabase}
-            isOpen={isAuthModalOpen}
-            onClose={() => setAuthModalOpen(false)}
-          />
-
-          {/* List Picker Modal */}
-          <ListPickerModal
-            isOpen={isListPickerOpen}
-            onClose={() => { setListPickerOpen(false); setPendingMedia(null); }}
-            lists={userLists}
-            onSelectList={handleListSelected}
-            mediaTitle={pendingMedia?.title || ""}
-          />
-
-          {/* List Management Modal */}
-          <ListManageModal
-            isOpen={isListManageModalOpen}
-            onClose={() => setListManageModalOpen(false)}
-            lists={userLists}
-            onListsChange={setUserLists}
-            supabase={supabase}
-            userId={session?.user?.id || ""}
-          />
-
-          <ShowDetailModal
-            media={selectedMedia}
-            isOpen={selectedMedia !== null}
-            onClose={() => setSelectedMedia(null)}
-            onAddToList={handleAddToListClick}
-            isLoggedIn={!!session}
-          />
-
-          <MyListDetailModal
-            item={selectedMyListItem}
-            isOpen={selectedMyListItem !== null}
-            onClose={() => setSelectedMyListItem(null)}
-            onRemove={async (item) => {
-              // Delete watched episodes first
-              await supabase.from('watched_episodes').delete().eq('watchlist_id', item.id);
-              // Delete from watchlist
-              await supabase.from('watchlist').delete().eq('id', item.id);
-              // Update local state
-              setMyList(prev => prev.filter(show => show.id !== item.id));
-              showToast(`${item.title} removed from your list`, 'success');
-            }}
-            onEpisodeUpdate={(itemId, watchedCount) => {
-              setMyList(prev => prev.map(show =>
-                show.id === itemId ? { ...show, watched_episodes: watchedCount } : show
-              ));
-            }}
-            onTotalEpisodesUpdate={(itemId, totalEpisodes) => {
-              setMyList(prev => prev.map(show =>
-                show.id === itemId ? { ...show, total_episodes: totalEpisodes } : show
-              ));
-            }}
-            onStatusUpdate={(itemId, status) => {
-              setMyList(prev => prev.map(show =>
-                show.id === itemId ? { ...show, status } : show
-              ));
-            }}
-            onListChange={(itemId, listId) => {
-              setMyList(prev => prev.map(show =>
-                show.id === itemId ? { ...show, list_id: listId } : show
-              ));
-            }}
-            userLists={userLists}
-            supabase={supabase}
-            userId={session?.user?.id || null}
-          />
-
-          {/* HEADER & TABS */}
-          <header className="mb-8 flex items-center justify-between relative z-10">
-            {/* Left: Logo */}
-            <div className="w-1/3 text-left">
-              {/* Light mode logo (dark text) */}
-              <img
-                src="/ast-logo-dark.png"
-                alt="AShow Tracker"
-                className="h-24 object-contain cursor-pointer hover:opacity-90 transition-opacity dark:hidden"
-                onClick={() => setView('search')}
+            {/* UPDATE BANNER */}
+            {updateAvailable && (
+              <UpdateBanner
+                newVersion={updateAvailable}
+                onUpdate={handleInstallUpdate}
+                onDismiss={() => setUpdateAvailable(null)}
               />
-              {/* Dark mode logo (light text) */}
-              <img
-                src="/logo.png"
-                alt="AShow Tracker"
-                className="h-24 object-contain cursor-pointer hover:opacity-90 transition-opacity hidden dark:block"
-                onClick={() => setView('search')}
-              />
-            </div>
+            )}
 
-            {/* Center: View Toggle */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-100 dark:bg-slate-900/50 backdrop-blur-md p-1.5 rounded-full flex items-center shadow-inner border border-white/5">
+            <AuthModal
+              supabase={supabase}
+              isOpen={isAuthModalOpen}
+              onClose={() => setAuthModalOpen(false)}
+            />
 
-              {/* Animated Background Pill */}
-              <div className="absolute inset-0 p-1.5">
-                <motion.div
-                  className="h-full w-1/2 bg-white dark:bg-gray-800 rounded-full shadow-md"
-                  initial={false}
-                  animate={{
-                    x: view === "search" ? "0%" : "100%"
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            {/* List Picker Modal */}
+            <ListPickerModal
+              isOpen={isListPickerOpen}
+              onClose={() => { setListPickerOpen(false); setPendingMedia(null); }}
+              lists={userLists}
+              onSelectList={handleListSelected}
+              mediaTitle={pendingMedia?.title || ""}
+            />
+
+            {/* List Management Modal */}
+            <ListManageModal
+              isOpen={isListManageModalOpen}
+              onClose={() => setListManageModalOpen(false)}
+              lists={userLists}
+              onListsChange={setUserLists}
+              supabase={supabase}
+              userId={session?.user?.id || ""}
+            />
+
+            <ShowDetailModal
+              media={selectedMedia}
+              isOpen={selectedMedia !== null}
+              onClose={() => setSelectedMedia(null)}
+              onAddToList={handleAddToListClick}
+              isLoggedIn={!!session}
+            />
+
+            <MyListDetailModal
+              item={selectedMyListItem}
+              isOpen={selectedMyListItem !== null}
+              onClose={() => setSelectedMyListItem(null)}
+              onRemove={async (item) => {
+                // Delete watched episodes first
+                await supabase.from('watched_episodes').delete().eq('watchlist_id', item.id);
+                // Delete from watchlist
+                await supabase.from('watchlist').delete().eq('id', item.id);
+                // Update local state
+                setMyList(prev => prev.filter(show => show.id !== item.id));
+                showToast(`${item.title} removed from your list`, 'success');
+              }}
+              onEpisodeUpdate={(itemId, watchedCount) => {
+                setMyList(prev => prev.map(show =>
+                  show.id === itemId ? { ...show, watched_episodes: watchedCount } : show
+                ));
+              }}
+              onTotalEpisodesUpdate={(itemId, totalEpisodes) => {
+                setMyList(prev => prev.map(show =>
+                  show.id === itemId ? { ...show, total_episodes: totalEpisodes } : show
+                ));
+              }}
+              onStatusUpdate={(itemId, status) => {
+                setMyList(prev => prev.map(show =>
+                  show.id === itemId ? { ...show, status } : show
+                ));
+              }}
+              onListChange={(itemId, listId) => {
+                setMyList(prev => prev.map(show =>
+                  show.id === itemId ? { ...show, list_id: listId } : show
+                ));
+              }}
+              userLists={userLists}
+              supabase={supabase}
+              userId={session?.user?.id || null}
+            />
+
+            {/* HEADER & TABS */}
+            <header className="mb-8 flex items-center justify-between relative z-10">
+              {/* Left: Logo */}
+              <div className="w-1/3 text-left">
+                {/* Light mode logo (dark text) */}
+                <img
+                  src="/ast-logo-dark.png"
+                  alt="AShow Tracker"
+                  className="h-24 object-contain cursor-pointer hover:opacity-90 transition-opacity dark:hidden"
+                  onClick={() => setView('search')}
+                />
+                {/* Dark mode logo (light text) */}
+                <img
+                  src="/logo.png"
+                  alt="AShow Tracker"
+                  className="h-24 object-contain cursor-pointer hover:opacity-90 transition-opacity hidden dark:block"
+                  onClick={() => setView('search')}
                 />
               </div>
 
-              <button
-                onClick={() => setView("search")}
-                className={`relative cursor-pointer px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 z-10 ${view === "search"
-                  ? "text-slate-900 dark:text-white"
-                  : "text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
-                  }`}
-              >
-                Search
-              </button>
-              <button
-                onClick={() => setView("list")}
-                className={`relative cursor-pointer px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 z-10 ${view === "list"
-                  ? "text-slate-900 dark:text-white"
-                  : "text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
-                  }`}
-              >
-                My List
-              </button>
-            </div>
+              {/* Center: View Toggle */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-100 dark:bg-slate-900/50 backdrop-blur-md p-1.5 rounded-full flex items-center shadow-inner border border-white/5">
 
-            {/* Right: User Menu */}
-            <div className="w-1/3 flex justify-end items-center gap-4">
-              {/* Notification Bell */}
-              {session && (
-                <NotificationBell
-                  supabase={supabase}
-                  userId={session?.user?.id || null}
-                  notifications={notifications}
-                  onNotificationsChange={setNotifications}
-                />
-              )}
+                {/* Animated Background Pill */}
+                <div className="absolute inset-0 p-1.5">
+                  <motion.div
+                    className="h-full w-1/2 bg-white dark:bg-gray-800 rounded-full shadow-md"
+                    initial={false}
+                    animate={{
+                      x: view === "search" ? "0%" : "100%"
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                </div>
 
-              {/* Settings Button Moved to UserMenu */}
-
-              {session ? (
-                <UserMenu
-                  session={session}
-                  profile={profile}
-                  onLogout={() => supabase.auth.signOut()}
-                  onOpenProfile={() => setView("profile")}
-                  onOpenSettings={() => setView("settings")}
-                />
-              ) : (
                 <button
-                  onClick={() => setAuthModalOpen(true)}
-                  className="btn-animated btn-glow bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-gray-100 text-white dark:text-black px-8 py-2 rounded-full font-bold text-sm transition-all shadow-lg"
+                  onClick={() => setView("search")}
+                  className={`relative cursor-pointer px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 z-10 ${view === "search"
+                    ? "text-slate-900 dark:text-white"
+                    : "text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
+                    }`}
                 >
-                  Sign In
+                  Search
                 </button>
-              )}
-            </div>
-          </header>
+                <button
+                  onClick={() => setView("list")}
+                  className={`relative cursor-pointer px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 z-10 ${view === "list"
+                    ? "text-slate-900 dark:text-white"
+                    : "text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
+                    }`}
+                >
+                  My List
+                </button>
+              </div>
 
-          {/* VIEW 1: SEARCH */}
-          {view === "search" && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="relative max-w-xl mx-auto mb-6">
-                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search anime, movies, or TV shows..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full py-4 pl-12 pr-6 text-lg text-slate-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-xl"
-                />
-                {loading && (
-                  <div className="absolute inset-y-0 right-4 flex items-center">
-                    <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+              {/* Right: User Menu */}
+              <div className="w-1/3 flex justify-end items-center gap-4">
+                {/* Notification Bell */}
+                {session && (
+                  <NotificationBell
+                    supabase={supabase}
+                    userId={session?.user?.id || null}
+                    notifications={notifications}
+                    onNotificationsChange={setNotifications}
+                  />
+                )}
+
+                {/* Settings Button Moved to UserMenu */}
+
+                {session ? (
+                  <UserMenu
+                    session={session}
+                    profile={profile}
+                    onLogout={() => supabase.auth.signOut()}
+                    onOpenProfile={() => setView("profile")}
+                    onOpenSettings={() => setView("settings")}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setAuthModalOpen(true)}
+                    className="btn-animated btn-glow bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-gray-100 text-white dark:text-black px-8 py-2 rounded-full font-bold text-sm transition-all shadow-lg"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </div>
+            </header>
+
+            {/* VIEW 1: SEARCH */}
+            {view === "search" && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="relative max-w-xl mx-auto mb-6">
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-500" />
                   </div>
-                )}
-              </div>
-
-              {/* Search Filters */}
-              <div className="flex justify-center gap-2 mb-8">
-                <div className="flex gap-1 bg-gray-800/50 rounded-lg p-1">
-                  {[
-                    { value: 'anime', label: 'Animes', icon: <Sparkles size={12} />, color: 'purple' },
-                    { value: 'movie', label: 'Movies', icon: <Film size={12} />, color: 'red' },
-                    { value: 'tv', label: 'Series', icon: <Tv size={12} />, color: 'green' },
-                  ].map(type => {
-                    const isActive = searchMediaTypeFilter.has(type.value);
-                    return (
-                      <button
-                        key={type.value}
-                        onClick={() => {
-                          const newFilters = new Set(searchMediaTypeFilter);
-                          if (isActive) {
-                            newFilters.delete(type.value);
-                          } else {
-                            newFilters.add(type.value);
-                          }
-                          setSearchMediaTypeFilter(newFilters);
-                        }}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${isActive
-                          ? `bg-${type.color}-500 text-white`
-                          : 'text-gray-400 hover:text-white'
-                          }`}
-                      >
-                        {type.icon} {type.label}
-                      </button>
-                    );
-                  })}
+                  <input
+                    type="text"
+                    placeholder="Search anime, movies, or TV shows..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full py-4 pl-12 pr-6 text-lg text-slate-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-xl"
+                  />
+                  {loading && (
+                    <div className="absolute inset-y-0 right-4 flex items-center">
+                      <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+                    </div>
+                  )}
                 </div>
 
-                {searchMediaTypeFilter.size > 0 && (
-                  <button
-                    onClick={() => setSearchMediaTypeFilter(new Set())}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <X size={12} /> Clear
-                  </button>
-                )}
-              </div>
-
-              <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <AnimatePresence>
-                  {results
-                    .filter(media => {
-                      if (searchMediaTypeFilter.size === 0) return true;
-                      return searchMediaTypeFilter.has(media.type);
-                    })
-                    .map((media) => (
-                      <MediaCard key={media.id} media={media} onClick={(m) => setSelectedMedia(m)} />
-                    ))}
-                </AnimatePresence>
-              </motion.div>
-            </motion.div>
-          )}
-
-          {/* VIEW 2: MY LIST */}
-          {view === "list" && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
-            >
-              {/* Filter Bar */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Media Type Filters (toggle multiple) */}
-                <div className="flex gap-1 bg-gray-800/50 rounded-lg p-1">
-                  {[
-                    { value: 'anime', label: 'Anime', icon: <Sparkles size={12} />, color: 'purple' },
-                    { value: 'movie', label: 'Movies', icon: <Film size={12} />, color: 'red' },
-                    { value: 'tv', label: 'Series', icon: <Tv size={12} />, color: 'green' },
-                  ].map(type => {
-                    const isActive = mediaTypeFilters.has(type.value);
-                    return (
-                      <button
-                        key={type.value}
-                        onClick={() => {
-                          const newFilters = new Set(mediaTypeFilters);
-                          if (isActive) {
-                            newFilters.delete(type.value);
-                          } else {
-                            newFilters.add(type.value);
-                          }
-                          setMediaTypeFilters(newFilters);
-                        }}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${isActive
-                          ? `bg-${type.color}-500 text-white`
-                          : 'text-gray-400 hover:text-white'
-                          }`}
-                      >
-                        {type.icon} {type.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Status Filters (toggle multiple) */}
-                <div className="relative" ref={statusDropdownRef}>
-                  <button
-                    onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
-                  >
-                    {statusFilters.size === 0
-                      ? 'All Statuses'
-                      : statusFilters.size === 1
-                        ? Array.from(statusFilters)[0].split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')
-                        : `${statusFilters.size} statuses`}
-                    <ChevronDown size={12} className={`transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  <AnimatePresence>
-                    {showStatusDropdown && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[160px]"
-                      >
-                        {/* Clear All button */}
+                {/* Search Filters */}
+                <div className="flex justify-center gap-2 mb-8">
+                  <div className="flex gap-1 bg-gray-800/50 rounded-lg p-1">
+                    {[
+                      { value: 'anime', label: 'Animes', icon: <Sparkles size={12} />, color: 'purple' },
+                      { value: 'movie', label: 'Movies', icon: <Film size={12} />, color: 'red' },
+                      { value: 'tv', label: 'Series', icon: <Tv size={12} />, color: 'green' },
+                    ].map(type => {
+                      const isActive = searchMediaTypeFilter.has(type.value);
+                      return (
                         <button
+                          key={type.value}
                           onClick={() => {
-                            setStatusFilters(new Set());
-                            setShowStatusDropdown(false);
+                            const newFilters = new Set(searchMediaTypeFilter);
+                            if (isActive) {
+                              newFilters.delete(type.value);
+                            } else {
+                              newFilters.add(type.value);
+                            }
+                            setSearchMediaTypeFilter(newFilters);
                           }}
-                          className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors ${statusFilters.size === 0
-                            ? 'bg-blue-500/20 text-white'
-                            : 'text-gray-300 hover:bg-gray-700'
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${isActive
+                            ? `bg-${type.color}-500 text-white`
+                            : 'text-gray-400 hover:text-white'
                             }`}
                         >
-                          All Statuses
+                          {type.icon} {type.label}
                         </button>
+                      );
+                    })}
+                  </div>
 
-                        {[
-                          { value: 'WATCHING', label: 'Watching' },
-                          { value: 'PLANNED', label: 'Planned' },
-                          { value: 'FINISHED', label: 'Finished' },
-                          { value: 'ON_HOLD', label: 'On Hold' },
-                          { value: 'REWATCHING', label: 'Re-watching' },
-                          { value: 'REWATCHED', label: 'Re-watched' },
-                        ].map(option => {
-                          const isActive = statusFilters.has(option.value);
-                          return (
-                            <button
-                              key={option.value}
-                              onClick={() => {
-                                const newFilters = new Set(statusFilters);
-                                if (isActive) {
-                                  newFilters.delete(option.value);
-                                } else {
-                                  newFilters.add(option.value);
-                                }
-                                setStatusFilters(newFilters);
-                              }}
-                              className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors flex items-center gap-2 ${isActive
-                                ? 'bg-blue-500/20 text-white'
-                                : 'text-gray-300 hover:bg-gray-700'
-                                }`}
-                            >
-                              <div className={`w-3 h-3 rounded border ${isActive ? 'bg-blue-500 border-blue-500' : 'border-gray-500'}`}>
-                                {isActive && <span className="text-white text-[8px] flex items-center justify-center">✓</span>}
-                              </div>
-                              {option.label}
-                            </button>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {searchMediaTypeFilter.size > 0 && (
+                    <button
+                      onClick={() => setSearchMediaTypeFilter(new Set())}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all cursor-pointer flex items-center gap-1"
+                    >
+                      <X size={12} /> Clear
+                    </button>
+                  )}
                 </div>
 
-                {/* Clear Filters Button (shows when filters active) */}
-                {(mediaTypeFilters.size > 0 || statusFilters.size > 0) && (
+                <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  <AnimatePresence>
+                    {results
+                      .filter(media => {
+                        if (searchMediaTypeFilter.size === 0) return true;
+                        return searchMediaTypeFilter.has(media.type);
+                      })
+                      .map((media) => (
+                        <MediaCard key={media.id} media={media} onClick={(m) => setSelectedMedia(m)} />
+                      ))}
+                  </AnimatePresence>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* VIEW 2: MY LIST */}
+            {view === "list" && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
+                {/* Filter Bar */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Media Type Filters (toggle multiple) */}
+                  <div className="flex gap-1 bg-gray-800/50 rounded-lg p-1">
+                    {[
+                      { value: 'anime', label: 'Anime', icon: <Sparkles size={12} />, color: 'purple' },
+                      { value: 'movie', label: 'Movies', icon: <Film size={12} />, color: 'red' },
+                      { value: 'tv', label: 'Series', icon: <Tv size={12} />, color: 'green' },
+                    ].map(type => {
+                      const isActive = mediaTypeFilters.has(type.value);
+                      return (
+                        <button
+                          key={type.value}
+                          onClick={() => {
+                            const newFilters = new Set(mediaTypeFilters);
+                            if (isActive) {
+                              newFilters.delete(type.value);
+                            } else {
+                              newFilters.add(type.value);
+                            }
+                            setMediaTypeFilters(newFilters);
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${isActive
+                            ? `bg-${type.color}-500 text-white`
+                            : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                          {type.icon} {type.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Status Filters (toggle multiple) */}
+                  <div className="relative" ref={statusDropdownRef}>
+                    <button
+                      onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      {statusFilters.size === 0
+                        ? 'All Statuses'
+                        : statusFilters.size === 1
+                          ? Array.from(statusFilters)[0].split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')
+                          : `${statusFilters.size} statuses`}
+                      <ChevronDown size={12} className={`transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {showStatusDropdown && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[160px]"
+                        >
+                          {/* Clear All button */}
+                          <button
+                            onClick={() => {
+                              setStatusFilters(new Set());
+                              setShowStatusDropdown(false);
+                            }}
+                            className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors ${statusFilters.size === 0
+                              ? 'bg-blue-500/20 text-white'
+                              : 'text-gray-300 hover:bg-gray-700'
+                              }`}
+                          >
+                            All Statuses
+                          </button>
+
+                          {[
+                            { value: 'WATCHING', label: 'Watching' },
+                            { value: 'PLANNED', label: 'Planned' },
+                            { value: 'FINISHED', label: 'Finished' },
+                            { value: 'ON_HOLD', label: 'On Hold' },
+                            { value: 'REWATCHING', label: 'Re-watching' },
+                            { value: 'REWATCHED', label: 'Re-watched' },
+                          ].map(option => {
+                            const isActive = statusFilters.has(option.value);
+                            return (
+                              <button
+                                key={option.value}
+                                onClick={() => {
+                                  const newFilters = new Set(statusFilters);
+                                  if (isActive) {
+                                    newFilters.delete(option.value);
+                                  } else {
+                                    newFilters.add(option.value);
+                                  }
+                                  setStatusFilters(newFilters);
+                                }}
+                                className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors flex items-center gap-2 ${isActive
+                                  ? 'bg-blue-500/20 text-white'
+                                  : 'text-gray-300 hover:bg-gray-700'
+                                  }`}
+                              >
+                                <div className={`w-3 h-3 rounded border ${isActive ? 'bg-blue-500 border-blue-500' : 'border-gray-500'}`}>
+                                  {isActive && <span className="text-white text-[8px] flex items-center justify-center">✓</span>}
+                                </div>
+                                {option.label}
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Clear Filters Button (shows when filters active) */}
+                  {(mediaTypeFilters.size > 0 || statusFilters.size > 0) && (
+                    <button
+                      onClick={() => {
+                        setMediaTypeFilters(new Set());
+                        setStatusFilters(new Set());
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <X size={12} /> Clear Filters
+                    </button>
+                  )}
+
+                  {/* Edit Lists Button */}
                   <button
-                    onClick={() => {
-                      setMediaTypeFilters(new Set());
-                      setStatusFilters(new Set());
-                    }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all cursor-pointer flex items-center gap-1.5"
+                    onClick={() => setListManageModalOpen(true)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 ml-auto"
                   >
-                    <X size={12} /> Clear Filters
+                    <Edit2 size={12} /> Edit Lists
                   </button>
-                )}
-
-                {/* Edit Lists Button */}
-                <button
-                  onClick={() => setListManageModalOpen(true)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 ml-auto"
-                >
-                  <Edit2 size={12} /> Edit Lists
-                </button>
-              </div>
+                </div>
 
 
 
-              {/* List Rows */}
-              {userLists
-                .sort((a, b) => a.position - b.position)
-                .map(list => {
-                  // Filter items for this list
-                  const listItems = myList.filter(item => {
-                    if (item.list_id !== list.id) return false;
+                {/* List Rows */}
+                {userLists
+                  .sort((a, b) => a.position - b.position)
+                  .map(list => {
+                    // Filter items for this list
+                    const listItems = myList.filter(item => {
+                      if (item.list_id !== list.id) return false;
+                      if (mediaTypeFilters.size > 0 && !mediaTypeFilters.has(item.media_type)) return false;
+                      if (statusFilters.size > 0 && !statusFilters.has(item.status)) return false;
+                      return true;
+                    });
+
+                    if (listItems.length === 0) return null;
+
+                    return (
+                      <div key={list.id} className="space-y-3">
+                        {/* List Header */}
+                        <div className="flex items-center gap-2">
+                          <span className={`text-${list.color}-400`}>{getListIcon(list.icon, 20)}</span>
+                          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{list.name}</h2>
+                          <span className="text-gray-500 text-sm">({listItems.length})</span>
+                        </div>
+
+                        {/* Horizontal Scroll Row */}
+                        <div className="relative group">
+                          <div
+                            className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                          >
+                            {listItems.map(item => (
+                              <div
+                                key={item.id}
+                                onClick={() => setSelectedMyListItem(item)}
+                                className="flex-shrink-0 w-36 cursor-pointer group/card"
+                              >
+                                <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
+                                  <img
+                                    src={item.image_url}
+                                    alt={item.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                  {/* Overlay */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                    <div className="absolute bottom-0 left-0 right-0 p-2">
+                                      <p className="text-xs font-medium line-clamp-2" style={{ color: 'white' }}>{item.title}</p>
+                                      <p className="text-blue-400 text-[10px] font-mono">EP {item.watched_episodes}/{item.total_episodes || '?'}</p>
+                                    </div>
+                                  </div>
+                                  {/* Progress bar */}
+                                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/80">
+                                    <div
+                                      className="h-full bg-blue-500"
+                                      style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Scroll buttons */}
+                          <button
+                            onClick={(e) => {
+                              const container = (e.target as HTMLElement).parentElement?.querySelector('.overflow-x-auto');
+                              container?.scrollBy({ left: -300, behavior: 'smooth' });
+                            }}
+                            className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white dark:bg-black/70 rounded-full flex items-center justify-center text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-100 dark:hover:bg-black shadow-lg"
+                          >
+                            <ChevronLeft size={18} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              const container = (e.target as HTMLElement).parentElement?.querySelector('.overflow-x-auto');
+                              container?.scrollBy({ left: 300, behavior: 'smooth' });
+                            }}
+                            className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white dark:bg-black/70 rounded-full flex items-center justify-center text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-100 dark:hover:bg-black shadow-lg"
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {/* Uncategorized Items */}
+                {(() => {
+                  const uncategorizedItems = myList.filter(item => {
+                    if (item.list_id !== null) return false;
                     if (mediaTypeFilters.size > 0 && !mediaTypeFilters.has(item.media_type)) return false;
                     if (statusFilters.size > 0 && !statusFilters.has(item.status)) return false;
                     return true;
                   });
 
-                  if (listItems.length === 0) return null;
+                  if (uncategorizedItems.length === 0) return null;
 
                   return (
-                    <div key={list.id} className="space-y-3">
-                      {/* List Header */}
+                    <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <span className={`text-${list.color}-400`}>{getListIcon(list.icon, 20)}</span>
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{list.name}</h2>
-                        <span className="text-gray-500 text-sm">({listItems.length})</span>
+                        <span className="text-gray-400 dark:text-gray-400"><Folder size={20} /></span>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Uncategorized</h2>
+                        <span className="text-gray-500 text-sm">({uncategorizedItems.length})</span>
                       </div>
-
-                      {/* Horizontal Scroll Row */}
                       <div className="relative group">
                         <div
                           className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
                           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
-                          {listItems.map(item => (
+                          {uncategorizedItems.map(item => (
                             <div
                               key={item.id}
                               onClick={() => setSelectedMyListItem(item)}
@@ -1006,14 +1090,13 @@ function App() {
                                   alt={item.title}
                                   className="h-full w-full object-cover"
                                 />
-                                {/* Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                {/* Always visible overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent">
                                   <div className="absolute bottom-0 left-0 right-0 p-2">
-                                    <p className="text-xs font-medium line-clamp-2" style={{ color: 'white' }}>{item.title}</p>
-                                    <p className="text-blue-400 text-[10px] font-mono">EP {item.watched_episodes}/{item.total_episodes || '?'}</p>
+                                    <p className="text-xs font-medium line-clamp-2 drop-shadow-lg" style={{ color: 'white' }}>{item.title}</p>
+                                    <p className="text-blue-400 text-[10px] font-mono drop-shadow-lg">EP {item.watched_episodes}/{item.total_episodes || '?'}</p>
                                   </div>
                                 </div>
-                                {/* Progress bar */}
                                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/80">
                                   <div
                                     className="h-full bg-blue-500"
@@ -1024,122 +1107,46 @@ function App() {
                             </div>
                           ))}
                         </div>
-
-                        {/* Scroll buttons */}
-                        <button
-                          onClick={(e) => {
-                            const container = (e.target as HTMLElement).parentElement?.querySelector('.overflow-x-auto');
-                            container?.scrollBy({ left: -300, behavior: 'smooth' });
-                          }}
-                          className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white dark:bg-black/70 rounded-full flex items-center justify-center text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-100 dark:hover:bg-black shadow-lg"
-                        >
-                          <ChevronLeft size={18} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            const container = (e.target as HTMLElement).parentElement?.querySelector('.overflow-x-auto');
-                            container?.scrollBy({ left: 300, behavior: 'smooth' });
-                          }}
-                          className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white dark:bg-black/70 rounded-full flex items-center justify-center text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-100 dark:hover:bg-black shadow-lg"
-                        >
-                          <ChevronRight size={18} />
-                        </button>
                       </div>
                     </div>
                   );
-                })}
+                })()}
 
-              {/* Uncategorized Items */}
-              {(() => {
-                const uncategorizedItems = myList.filter(item => {
-                  if (item.list_id !== null) return false;
-                  if (mediaTypeFilters.size > 0 && !mediaTypeFilters.has(item.media_type)) return false;
-                  if (statusFilters.size > 0 && !statusFilters.has(item.status)) return false;
-                  return true;
-                });
-
-                if (uncategorizedItems.length === 0) return null;
-
-                return (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-400 dark:text-gray-400"><Folder size={20} /></span>
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">Uncategorized</h2>
-                      <span className="text-gray-500 text-sm">({uncategorizedItems.length})</span>
-                    </div>
-                    <div className="relative group">
-                      <div
-                        className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
-                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                      >
-                        {uncategorizedItems.map(item => (
-                          <div
-                            key={item.id}
-                            onClick={() => setSelectedMyListItem(item)}
-                            className="flex-shrink-0 w-36 cursor-pointer group/card"
-                          >
-                            <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
-                              <img
-                                src={item.image_url}
-                                alt={item.title}
-                                className="h-full w-full object-cover"
-                              />
-                              {/* Always visible overlay */}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent">
-                                <div className="absolute bottom-0 left-0 right-0 p-2">
-                                  <p className="text-xs font-medium line-clamp-2 drop-shadow-lg" style={{ color: 'white' }}>{item.title}</p>
-                                  <p className="text-blue-400 text-[10px] font-mono drop-shadow-lg">EP {item.watched_episodes}/{item.total_episodes || '?'}</p>
-                                </div>
-                              </div>
-                              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/80">
-                                <div
-                                  className="h-full bg-blue-500"
-                                  style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                {/* Empty State */}
+                {myList.length === 0 && (
+                  <div className="text-center py-20">
+                    <p className="text-gray-500 text-xl">Your list is empty.</p>
+                    <button onClick={() => setView("search")} className="text-blue-400 mt-2 hover:underline cursor-pointer">
+                      Go search for something!
+                    </button>
                   </div>
-                );
-              })()}
+                )}
+              </motion.div>
+            )}
 
-              {/* Empty State */}
-              {myList.length === 0 && (
-                <div className="text-center py-20">
-                  <p className="text-gray-500 text-xl">Your list is empty.</p>
-                  <button onClick={() => setView("search")} className="text-blue-400 mt-2 hover:underline cursor-pointer">
-                    Go search for something!
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* VIEW 3: PROFILE -> Redirects to Settings/Profile now in a robust app, but keeping separately for now if needed.
+            {/* VIEW 3: PROFILE -> Redirects to Settings/Profile now in a robust app, but keeping separately for now if needed.
               Actually, let's keep it but perhaps deprecate it in favor of Settings -> Profile.
               For now keeping existing view.
           */}
-          {view === "profile" && (
-            <ProfilePage
-              session={session}
-              profile={profile}
-            />
-          )}
+            {view === "profile" && (
+              <ProfilePage
+                session={session}
+                profile={profile}
+              />
+            )}
 
-          {/* VIEW 4: SETTINGS */}
-          {view === "settings" && (
-            <SettingsPage
-              session={session}
-              profile={profile}
-              supabase={supabase}
-              onProfileUpdate={() => fetchProfile(session.user.id)}
-              showToast={showToast}
-            />
-          )}
+            {/* VIEW 4: SETTINGS */}
+            {view === "settings" && (
+              <SettingsPage
+                session={session}
+                profile={profile}
+                supabase={supabase}
+                onProfileUpdate={() => fetchProfile(session.user.id)}
+                showToast={showToast}
+              />
+            )}
 
+          </div>
         </div>
       </div>
     </SettingsProvider>
