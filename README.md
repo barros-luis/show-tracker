@@ -18,7 +18,7 @@
 ## 🚀 About
 **AShow Tracker** is a premium desktop application built for enthusiasts who want a beautiful, seamless way to track their binge-watching habits. Breaking away from clunky web interfaces, it offers a native, glassmorphism-inspired UI with deep system integration.
 
-## ✨ Features (v0.9.7)
+## ✨ Features (v1.0.0)
 
 ### 🎨 Stunning UI/UX
 - **Glassmorphism Design:** Modern, translucent aesthetics with dynamic gradient backgrounds.
@@ -70,13 +70,32 @@ We are actively building the future of show tracking. Here is what's coming next
 
 ---
 
-## 📦 Download
+## 📦 Download & Installation
 
 ### Windows
-Download the latest `.msi` installer from the [Releases](https://github.com/barros-luis/show-tracker/releases/latest) page.
+1. Download the latest `.msi` or `.exe` installer from the [Releases](https://github.com/barros-luis/show-tracker/releases/latest) page.
+2. Run the installer.
+3. **⚠️ Windows SmartScreen Warning:** Since the app is not code-signed with a paid certificate, Windows may show a warning:
+   - Click **"More info"**
+   - Then click **"Run anyway"**
+   
+   > This is normal for indie apps. The app is safe and open-source!
 
 ### macOS
-Download the `.dmg` file from the [Releases](https://github.com/barros-luis/show-tracker/releases/latest) page.
+1. Download the `.dmg` file from the [Releases](https://github.com/barros-luis/show-tracker/releases/latest) page.
+2. Open the DMG and drag the app to Applications.
+3. **⚠️ Gatekeeper Warning:** Since the app is not notarized, macOS will block it.
+   
+   **Run this command in Terminal app (one-time only):**
+   ```bash
+    xattr -cr /Applications/AShowTracker.app
+   ```
+   Then open the app normally.
+   
+   > The app is safe and open-source! This removes the quarantine flag that macOS adds to downloaded apps.
+
+#### From here forward, you can update it from inside the app every time a new version is released.
+
 
 ---
 

@@ -1,15 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Minus, Square, X, Copy } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export function TitleBar() {
     const [isMaximized, setIsMaximized] = useState(true);
+    const [isWindows, setIsWindows] = useState(false);
     const appWindow = getCurrentWindow();
+    const lastClickRef = useRef(0);
 
-    // Check maximized state on mount
+    // Check platform and maximized state on mount
     useEffect(() => {
+        // Check if running on Windows using navigator
+        const isWin = navigator.userAgent.includes("Windows") ||
+            navigator.platform.toLowerCase().includes("win");
+        setIsWindows(isWin);
+
+        // Check maximized state
         appWindow.isMaximized().then(setIsMaximized);
     }, []);
+
+    // Don't render on non-Windows platforms (they use native title bar)
+    if (!isWindows) return null;
 
     const handleMinimize = () => appWindow.minimize();
 
@@ -25,17 +36,27 @@ export function TitleBar() {
 
     const handleClose = () => appWindow.close();
 
-    // Handle drag - use Tauri's startDragging API
-    const handleDragStart = (e: React.MouseEvent) => {
-        // Only start drag on left click
-        if (e.button === 0) {
+    // Handle mouse down - check for double click, otherwise drag
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (e.button !== 0) return; // Only handle left click
+
+        const now = Date.now();
+        const timeSinceLastClick = now - lastClickRef.current;
+
+        if (timeSinceLastClick < 300) {
+            // Double click detected - maximize/restore
+            lastClickRef.current = 0; // Reset to prevent triple-click
+            handleMaximize();
+        } else {
+            // Single click - start dragging
+            lastClickRef.current = now;
             appWindow.startDragging();
         }
     };
 
     return (
         <div
-            onMouseDown={handleDragStart}
+            onMouseDown={handleMouseDown}
             className="h-9 bg-gray-900 flex items-center justify-between select-none border-b border-gray-800/50 shrink-0"
         >
             {/* Left: App Logo & Title */}
