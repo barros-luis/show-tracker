@@ -68,14 +68,8 @@ export function SearchPage() {
                         const norm1 = normalizeTitle(item1.title);
                         const norm2 = normalizeTitle(item2.title);
 
-                        if (norm1 === norm2) return true;
-
-                        if (norm1.includes(norm2) || norm2.includes(norm1)) {
-                            const lengthRatio = Math.min(norm1.length, norm2.length) / Math.max(norm1.length, norm2.length);
-                            if (lengthRatio >= 0.7) return true;
-                        }
-
-                        return false;
+                        // Only match exact titles (after normalization)
+                        return norm1 === norm2;
                     };
 
                     const deduplicated: MediaItem[] = [];

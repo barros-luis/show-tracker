@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - AShow Tracker</title>
+    <meta name="description"
+        content="Learn about AShow Tracker - the story behind the project, our mission, and the technology powering it.">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">
+                <img src="logo.png" alt="AShow Tracker" class="nav-logo">
+                <span class="nav-title">AShow Tracker</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="index.html#download">Download</a>
+                <a href="about.html" class="active">About</a>
+                <a href="https://github.com/barros-luis/show-tracker" target="_blank" rel="noopener"
+                    class="github-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- About Hero -->
+    <section class="about-hero">
+        <div class="section-container">
+            <div class="about-hero-content">
+                <h1 class="about-title">About <span class="gradient-text">AShow Tracker</span></h1>
+                <p class="about-lead">
+                    Built by a show enthusiast, for show enthusiasts.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Story Section -->
+    <section class="about-section">
+        <div class="section-container">
+            <div class="about-grid">
+                <div class="about-card">
+                    <div class="about-card-icon" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
+                    </div>
+                    <h2>The Vision</h2>
+                    <p>
+                        AShow Tracker was born from frustration with existing tracking solutions.
+                        Web-based trackers feel clunky, and most desktop apps lack visual polish.
+                        I wanted something that felt <strong>premium</strong>—a native app with a beautiful UI
+                        that makes tracking shows actually enjoyable.
+                    </p>
+                </div>
+
+                <div class="about-card">
+                    <div class="about-card-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 6v6l4 2" />
+                        </svg>
+                    </div>
+                    <h2>Built in 2024</h2>
+                    <p>
+                        What started as a weekend project quickly grew into a full-featured application.
+                        Every detail has been carefully crafted—from the glassmorphism effects to the
+                        smart notification system that actually tells you when new episodes drop.
+                    </p>
+                </div>
+
+                <div class="about-card">
+                    <div class="about-card-icon" style="background: linear-gradient(135deg, #10b981, #3b82f6);">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                    </div>
+                    <h2>Open Source</h2>
+                    <p>
+                        AShow Tracker is completely <strong>free and open source</strong>. No ads, no tracking,
+                        no premium tiers. The code is available on GitHub for anyone to inspect,
+                        contribute to, or learn from.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section class="about-section tech-section">
+        <div class="section-container">
+            <h2 class="section-title">Powered By Modern Tech</h2>
+            <p class="section-subtitle">Built with tools that prioritize performance and developer experience</p>
+
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <img src="https://img.shields.io/badge/Tauri-FFC131?style=for-the-badge&logo=tauri&logoColor=black"
+                        alt="Tauri">
+                    <h3>Tauri</h3>
+                    <p>Rust-powered framework for building lightweight, secure desktop apps with web technologies.</p>
+                </div>
+                <div class="tech-item">
+                    <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"
+                        alt="React">
+                    <h3>React</h3>
+                    <p>Modern UI library for building responsive, component-based interfaces.</p>
+                </div>
+                <div class="tech-item">
+                    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"
+                        alt="TypeScript">
+                    <h3>TypeScript</h3>
+                    <p>Type-safe JavaScript for catching bugs before they reach users.</p>
+                </div>
+                <div class="tech-item">
+                    <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white"
+                        alt="Supabase">
+                    <h3>Supabase</h3>
+                    <p>Open-source Firebase alternative for authentication and database.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Roadmap Section -->
+    <section class="about-section">
+        <div class="section-container">
+            <h2 class="section-title">What's Next</h2>
+            <p class="section-subtitle">The journey is just beginning</p>
+
+            <div class="roadmap">
+                <div class="roadmap-item">
+                    <div class="roadmap-dot"></div>
+                    <div class="roadmap-content">
+                        <h3>📱 Mobile App</h3>
+                        <p>Android and iOS versions for tracking on the go.</p>
+                    </div>
+                </div>
+                <div class="roadmap-item">
+                    <div class="roadmap-dot"></div>
+                    <div class="roadmap-content">
+                        <h3>🤖 Smart Recommendations</h3>
+                        <p>AI-driven suggestions based on your watching history.</p>
+                    </div>
+                </div>
+                <div class="roadmap-item">
+                    <div class="roadmap-dot"></div>
+                    <div class="roadmap-content">
+                        <h3>👥 Social Features</h3>
+                        <p>Share lists with friends and see what they're watching.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="about-cta">
+        <div class="section-container">
+            <div class="cta-content">
+                <h2>Ready to start tracking?</h2>
+                <p>Download AShow Tracker and experience the difference.</p>
+                <a href="index.html#download" class="btn btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    Download Now
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="section-container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <img src="logo.png" alt="AShow Tracker" class="footer-logo">
+                    <span>AShow Tracker</span>
+                </div>
+                <p class="footer-tagline">Track your shows. Beautifully.</p>
+                <div class="footer-links">
+                    <a href="https://github.com/barros-luis/show-tracker" target="_blank" rel="noopener">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                        </svg>
+                        GitHub
+                    </a>
+                    <a href="https://github.com/barros-luis/show-tracker/releases" target="_blank" rel="noopener">
+                        Releases
+                    </a>
+                    <a href="https://github.com/barros-luis/show-tracker/issues" target="_blank" rel="noopener">
+                        Report Issue
+                    </a>
+                </div>
+                <p class="footer-copyright">
+                    © 2024 AShow Tracker. Open source under MIT License.
+                </p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
