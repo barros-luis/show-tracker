@@ -66,7 +66,7 @@ export function UserMenu({ session, profile, onLogout, onOpenProfile, onOpenSett
             </button>
             <div className="h-px bg-gray-800 my-1" />
             <button
-              onClick={onLogout}
+              onClick={() => { setIsOpen(false); onLogout(); }}
               className="cursor-pointer w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors"
             >
               <LogOut size={16} /> Sign Out

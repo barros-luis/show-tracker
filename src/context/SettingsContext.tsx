@@ -1,16 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase (reusing client if possible, or new instance)
-// Ideally this should be passed in or imported from a shared config
-// For now duplicating initialization to keep context self-contained or importing if I find where it is best
-// Looking at App.tsx, it's initialized there. I should probably move the Supabase client to a separate file to import it.
-// BUT for now, I will accept the Supabase client as a prop or just re-init it since it's lightweight.
-// Actually, let's just re-init to match App.tsx provided context.
-
-const supabaseUrl = "https://xbosdjujcvfqujtdamun.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhib3NkanVqY3ZmcXVqdGRhbXVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMzUzNjksImV4cCI6MjA4MDkxMTM2OX0.BrKUQ_VGTfCbNW2dST3LHPz0UUbC9ZNn98mbb5FAVig";
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../services/supabase';
 
 type Theme = 'light' | 'dark';
 

@@ -1,5 +1,20 @@
 const BASE_URL = "https://api.jikan.moe/v4";
 
+// Rate limiter - Jikan allows ~3 requests/second
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 350; // ms between requests
+
+async function rateLimitedFetch(url: string): Promise<Response> {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest));
+  }
+
+  lastRequestTime = Date.now();
+  return fetch(url);
+}
 export interface AnimeStudio {
   mal_id: number;
   name: string;
@@ -57,7 +72,7 @@ export interface Anime {
 export async function searchAnime(query: string, sfw = true): Promise<Anime[]> {
   if (query.length < 2) return [];
   const sfwParam = sfw ? '&sfw=true' : '';
-  const response = await fetch(`${BASE_URL}/anime?q=${query}&limit=12${sfwParam}`);
+  const response = await rateLimitedFetch(`${BASE_URL}/anime?q=${query}&limit=12${sfwParam}`);
   const data = await response.json();
   return data.data || [];
 }
@@ -65,7 +80,7 @@ export async function searchAnime(query: string, sfw = true): Promise<Anime[]> {
 // Get full anime details by ID
 export async function getAnimeDetails(malId: number): Promise<Anime | null> {
   try {
-    const response = await fetch(`${BASE_URL}/anime/${malId}`);
+    const response = await rateLimitedFetch(`${BASE_URL}/anime/${malId}`);
     const data = await response.json();
     return data.data || null;
   } catch (error) {
@@ -94,7 +109,7 @@ export async function getAnimeEpisodes(malId: number, page: number = 1): Promise
   lastPage: number;
 }> {
   try {
-    const response = await fetch(`${BASE_URL}/anime/${malId}/episodes?page=${page}`);
+    const response = await rateLimitedFetch(`${BASE_URL}/anime/${malId}/episodes?page=${page}`);
     const data = await response.json();
     return {
       episodes: data.data || [],
@@ -112,16 +127,40 @@ export async function getAllAnimeEpisodes(malId: number): Promise<AnimeEpisode[]
   const allEpisodes: AnimeEpisode[] = [];
   let page = 1;
   let hasMore = true;
+  let retryCount = 0;
 
   while (hasMore) {
-    const result = await getAnimeEpisodes(malId, page);
-    allEpisodes.push(...result.episodes);
-    hasMore = result.hasNextPage;
-    page++;
+    try {
+      const result = await getAnimeEpisodes(malId, page);
 
-    // Rate limiting - Jikan allows 3 requests per second
-    if (hasMore) {
-      await new Promise(resolve => setTimeout(resolve, 350));
+      if (result.episodes.length === 0 && retryCount < 3) {
+        // Retry a few times if we get an empty page unexpectedly
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Longer wait on retry
+        continue;
+      }
+
+      retryCount = 0; // Reset retry on success
+      allEpisodes.push(...result.episodes);
+      hasMore = result.hasNextPage;
+      page++;
+
+      // Safety break to prevent infinite loops on weird API behavior
+      if (page > 50) hasMore = false;
+
+      // Rate limiting - Jikan allows 3 requests per second
+      // We use 400ms to be safe (2.5 req/s)
+      if (hasMore) {
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
+    } catch (e) {
+      console.error(`Error details for page ${page}:`, e);
+      if (retryCount < 3) {
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else {
+        hasMore = false; // Give up on this show if multiple failures
+      }
     }
   }
 
@@ -131,7 +170,7 @@ export async function getAllAnimeEpisodes(malId: number): Promise<AnimeEpisode[]
 // Get single episode details (includes synopsis)
 export async function getEpisodeDetails(malId: number, episodeNumber: number): Promise<AnimeEpisode | null> {
   try {
-    const response = await fetch(`${BASE_URL}/anime/${malId}/episodes/${episodeNumber}`);
+    const response = await rateLimitedFetch(`${BASE_URL}/anime/${malId}/episodes/${episodeNumber}`);
     const data = await response.json();
     return data.data || null;
   } catch (error) {
@@ -153,7 +192,7 @@ export interface AnimeRelation {
 // Get anime relations (sequels, prequels, movies, etc.)
 export async function getAnimeRelations(malId: number): Promise<AnimeRelation[]> {
   try {
-    const response = await fetch(`${BASE_URL}/anime/${malId}/relations`);
+    const response = await rateLimitedFetch(`${BASE_URL}/anime/${malId}/relations`);
     const data = await response.json();
 
     // Transform the API response

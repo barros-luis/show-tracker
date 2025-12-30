@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Calendar, Tv, Clock, Loader2, Trash2, ChevronDown, ChevronUp, Check, AlertTriangle, FolderOpen, Folder, Film, Sparkles, Gamepad2, Book, Music, Heart, Flame, Zap, Moon } from "lucide-react";
-import { getAnimeDetails, getAllAnimeEpisodes, getEpisodeDetails, type Anime } from "../api/jikan";
-import { getTVDetails, getAllTVEpisodes, type TMDBTVShow } from "../api/tmdb";
+import { getAnimeDetails, getAllAnimeEpisodes, getEpisodeDetails, type Anime } from "../../api/jikan";
+import { getTVDetails, getAllTVEpisodes, searchTVShows, getTVSeasonEpisodes, type TMDBTVShow } from "../../api/tmdb";
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { UserList } from "./ListManageModal";
 
@@ -132,16 +132,69 @@ export function MyListDetailModal({
                         filler: ep.filler,
                         recap: ep.recap,
                     }));
+
+                    // Fallback to TMDB for missing episodes (e.g. One Piece where Jikan is stale)
+                    if (eps.length > 0) {
+                        try {
+                            const tmdbResults = await searchTVShows(item.title);
+                            // Filter for Japanese animation
+                            const candidate = tmdbResults.find(show =>
+                                show.origin_country?.includes('JP') &&
+                                show.first_air_date
+                            ) || tmdbResults[0];
+
+                            if (candidate) {
+                                const details = await getTVDetails(candidate.id);
+                                if (details?.last_episode_to_air) {
+                                    const lastJikanEp = eps[eps.length - 1];
+                                    const jikanDate = lastJikanEp.aired ? new Date(lastJikanEp.aired) : null;
+
+                                    // Fetch current season episodes (where latest ep is)
+                                    const seasonNum = details.last_episode_to_air.season_number;
+                                    const seasonData = await getTVSeasonEpisodes(candidate.id, seasonNum);
+
+                                    // Also fetch previous season if current season has few episodes?
+                                    // For One Piece, S22 starts deep in.
+                                    // Jikan stops at 1147 (Oct 26).
+
+                                    if (seasonData?.episodes && jikanDate) {
+                                        const newEpisodes = seasonData.episodes.filter(ep => {
+                                            if (!ep.air_date) return false;
+                                            return new Date(ep.air_date) > jikanDate;
+                                        });
+
+                                        let nextNum = lastJikanEp.mal_id + 1;
+                                        newEpisodes.forEach(ep => {
+                                            // Avoid duplicates if any weirdness
+                                            if (!unifiedEps.find(e => e.number === nextNum)) {
+                                                unifiedEps.push({
+                                                    id: ep.id, // TMDB ID
+                                                    number: nextNum++,
+                                                    title: `S${ep.season_number}E${ep.episode_number}: ${ep.name}`,
+                                                    synopsis: ep.overview,
+                                                    filler: false,
+                                                    recap: false
+                                                });
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Error patching anime episodes:", err);
+                        }
+                    }
+
                     setEpisodes(unifiedEps);
                     setLoadingEpisodes(false);
 
-                    // Update total_episodes if different
-                    if (eps.length > 0 && eps.length !== item.total_episodes) {
+                    // Update total_episodes if different (using unifiedEps length now)
+                    if (unifiedEps.length > 0 && unifiedEps.length > (item.total_episodes || 0)) {
                         await supabase
                             .from('watchlist')
-                            .update({ total_episodes: eps.length })
+                            .update({ total_episodes: unifiedEps.length })
                             .eq('id', item.id);
-                        onTotalEpisodesUpdate(item.id, eps.length);
+                        onTotalEpisodesUpdate(item.id, unifiedEps.length);
                     }
                 });
             } else if (item.media_type === 'tv' && item.tmdb_id) {

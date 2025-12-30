@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Star, Film, Monitor, Tv } from "lucide-react";
-import type { MediaItem } from "../api/mediaTypes";
+import type { MediaItem } from "../../api/mediaTypes";
 
 interface MediaCardProps {
     media: MediaItem;

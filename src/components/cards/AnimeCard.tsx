@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
-import type { Anime } from "../api/jikan";
+import type { Anime } from "../../api/jikan";
 
 interface AnimeCardProps {
   anime: Anime;

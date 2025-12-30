@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Calendar, Tv, Clock, Loader2, Plus, Play, Film, Monitor } from "lucide-react";
-import { getAnimeDetails, type Anime } from "../api/jikan";
-import { getMovieDetails, getTVDetails, getTrailerFromVideos, type TMDBMovie, type TMDBTVShow } from "../api/tmdb";
-import { type MediaItem } from "../api/mediaTypes";
+import { getAnimeDetails, type Anime } from "../../api/jikan";
+import { getMovieDetails, getTVDetails, getTrailerFromVideos, type TMDBMovie, type TMDBTVShow } from "../../api/tmdb";
+import { type MediaItem } from "../../api/mediaTypes";
 
 interface ShowDetailModalProps {
     media: MediaItem | null;

@@ -1,7 +1,11 @@
 // TMDB API - Movies and TV Shows
 const BASE_URL = "https://api.themoviedb.org/3";
-const API_KEY = "7e053d0b819118c8888349b6c1ce5f40";
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY || "";
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
+
+if (!API_KEY) {
+    console.warn("TMDB API key not set. Please check your .env file.");
+}
 
 // Helper to build URLs
 function buildUrl(endpoint: string, params: Record<string, string> = {}): string {
@@ -53,6 +57,7 @@ export interface TMDBTVShow {
     id: number;
     name: string;
     original_name: string;
+    origin_country?: string[];
     poster_path: string | null;
     backdrop_path: string | null;
     overview: string | null;

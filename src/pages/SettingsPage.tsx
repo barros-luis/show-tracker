@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { User, Sun, Moon, Settings as SettingsIcon, Shield, Info, ExternalLink } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
-import { EditProfileForm } from './EditProfileForm';
+import { EditProfileForm } from '../components/forms/EditProfileForm';
+import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 
 type SettingsTab = 'profile' | 'appearance' | 'general' | 'account' | 'about';
 
@@ -16,6 +17,31 @@ interface SettingsPageProps {
 export function SettingsPage({ session, profile, supabase, onProfileUpdate, showToast }: SettingsPageProps) {
     const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
     const { settings, updateSetting } = useSettings();
+
+    const handleTestNotification = async () => {
+        showToast("Verifying configuration...", "info");
+        try {
+            let permissionGranted = await isPermissionGranted();
+
+            if (!permissionGranted) {
+                const permission = await requestPermission();
+                permissionGranted = permission === 'granted';
+            }
+
+            if (permissionGranted) {
+                await sendNotification({
+                    title: 'Test Notification',
+                    body: 'System verified! Notification configuration is correct. 🚀',
+                });
+                showToast("Notification Sent!", "success");
+            } else {
+                showToast("Permission Denied.", "error");
+            }
+        } catch (error) {
+            console.error("Notification Error:", error);
+            showToast("Configuration Error: " + String(error), "error");
+        }
+    };
 
     const tabs = [
         { id: 'profile', label: 'Profile', icon: User },
@@ -272,6 +298,12 @@ export function SettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                 <div>
                                                     <p className="font-medium text-white">System Notifications</p>
                                                     <p className="text-xs text-gray-400">Send notifications to your operating system</p>
+                                                    <button
+                                                        onClick={handleTestNotification}
+                                                        className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                                                    >
+                                                        Test Notification
+                                                    </button>
                                                 </div>
                                                 <button
                                                     onClick={() => updateSetting('notifyOS', !settings.notifyOS)}

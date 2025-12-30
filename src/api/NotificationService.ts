@@ -1,7 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
+
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getTVDetails, getMovieDetails, searchMovies, type TMDBTVShow } from "./tmdb";
-import { getAnimeDetails, getAnimeRelations, type Anime } from "./jikan";
+import { getTVDetails, getMovieDetails, searchMovies, searchTVShows, type TMDBTVShow } from "./tmdb";
+import { getAnimeDetails, getAnimeRelations, getAnimeEpisodes, type Anime } from "./jikan";
+import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 
 export interface AppNotification {
     id: number;
@@ -98,7 +99,7 @@ export async function checkForNewReleases(
                 // Check anime for new episodes
                 const details = await getAnimeDetails(item.mal_id);
                 if (details) {
-                    const result = checkAnimeNewEpisode(details, item.total_episodes);
+                    const result = await checkAnimeNewEpisodeAsync(item.mal_id, details, item.total_episodes);
                     if (result.hasNew) {
                         hasNewContent = true;
                         newContentMessage = `New episode of ${item.title}! ${result.episodeInfo}`;
@@ -175,12 +176,21 @@ export async function checkForNewReleases(
                     }
 
                     // Send OS notification
+                    // Send OS notification
                     if (settings.notifyOS) {
                         try {
-                            await invoke('send_os_notification', {
-                                title: 'AShowTracker',
-                                body: newContentMessage,
-                            });
+                            let permissionGranted = await isPermissionGranted();
+                            if (!permissionGranted) {
+                                const permission = await requestPermission();
+                                permissionGranted = permission === 'granted';
+                            }
+
+                            if (permissionGranted) {
+                                await sendNotification({
+                                    title: 'AShowTracker',
+                                    body: newContentMessage,
+                                });
+                            }
                         } catch (err) {
                             console.log('OS notification failed:', err);
                         }
@@ -243,14 +253,85 @@ function checkTVNewEpisode(
 }
 
 // Check if anime has new episodes (by comparing tracked vs current episode count)
-function checkAnimeNewEpisode(anime: Anime, trackedEpisodes: number | null): { hasNew: boolean; episodeInfo: string } {
-    // Compare the known episode count with what we have tracked
-    if (anime.episodes && anime.episodes > (trackedEpisodes || 0)) {
+// For ongoing anime with unknown total episodes, we fetch the latest page of episodes
+async function checkAnimeNewEpisodeAsync(
+    malId: number,
+    anime: Anime,
+    trackedEpisodes: number | null
+): Promise<{ hasNew: boolean; episodeInfo: string }> {
+    const tracked = trackedEpisodes || 0;
+
+    // Method 1: If anime has a known episode count, use that
+    if (anime.episodes && anime.episodes > tracked) {
         return {
             hasNew: true,
             episodeInfo: `Episode ${anime.episodes}`
         };
     }
+
+    // Method 2: For ongoing anime (no fixed episode count), fetch latest episodes
+    // This handles shows like One Piece where anime.episodes is null
+    if (anime.status === 'Currently Airing' || !anime.episodes) {
+        try {
+            // Fetch the last page of episodes to get the latest episode number
+            const lastPageResult = await getAnimeEpisodes(malId, 1);
+            const lastPage = lastPageResult.lastPage;
+
+            if (lastPage > 1) {
+                // Fetch the actual last page
+                const finalPageResult = await getAnimeEpisodes(malId, lastPage);
+                const latestEpisode = finalPageResult.episodes[finalPageResult.episodes.length - 1];
+
+                if (latestEpisode && latestEpisode.mal_id > tracked) {
+                    return {
+                        hasNew: true,
+                        episodeInfo: `Episode ${latestEpisode.mal_id} - ${latestEpisode.title}`
+                    };
+                }
+            } else if (lastPageResult.episodes.length > 0) {
+                // Only one page
+                const latestEpisode = lastPageResult.episodes[lastPageResult.episodes.length - 1];
+                if (latestEpisode && latestEpisode.mal_id > tracked) {
+                    return {
+                        hasNew: true,
+                        episodeInfo: `Episode ${latestEpisode.mal_id} - ${latestEpisode.title}`
+                    };
+                }
+            }
+        } catch (err) {
+            console.error(`Error fetching latest episodes for anime ${malId}:`, err);
+        }
+
+        // Method 3: Fallback to TMDB (if Jikan is stale)
+        // Search for the anime on TMDB and check for recently aired episodes
+        try {
+            const tmdbResults = await searchTVShows(anime.title);
+            // Filter for Japanese animation to match the Anime
+            const candidate = tmdbResults.find(show =>
+                show.origin_country?.includes('JP') &&
+                show.first_air_date &&
+                Math.abs(new Date(show.first_air_date).getFullYear() - (anime.year || 1999)) < 2
+            ) || tmdbResults[0]; // Fallback to first result if no perfect match
+
+            if (candidate) {
+                const details = await getTVDetails(candidate.id);
+                const lastEp = details?.last_episode_to_air;
+
+                if (lastEp && lastEp.air_date) {
+                    // Check if aired within last 14 days
+                    if (isRecentlyStarted(lastEp.air_date, 14)) {
+                        return {
+                            hasNew: true,
+                            episodeInfo: `New (TMDB): S${lastEp.season_number}E${lastEp.episode_number} - ${lastEp.name}`
+                        };
+                    }
+                }
+            }
+        } catch (err) {
+            console.error(`Error checking TMDB fallback for ${anime.title}:`, err);
+        }
+    }
+
     return { hasNew: false, episodeInfo: '' };
 }
 

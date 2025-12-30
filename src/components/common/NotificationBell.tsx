@@ -8,7 +8,7 @@ import {
     markNotificationRead,
     markAllNotificationsRead,
     clearAllNotifications
-} from '../api/NotificationService';
+} from '../../api/NotificationService';
 
 interface NotificationBellProps {
     supabase: SupabaseClient;
@@ -48,23 +48,39 @@ export function NotificationBell({
     }, [userId]);
 
     const handleMarkRead = async (id: number) => {
-        await markNotificationRead(supabase, id);
+        // Optimistic update
         onNotificationsChange(
             notifications.map(n => n.id === id ? { ...n, read: true } : n)
         );
+        try {
+            await markNotificationRead(supabase, id);
+        } catch (err) {
+            console.error("Failed to mark read:", err);
+            // Revert? (Optional, maybe too complex for now)
+        }
     };
 
     const handleMarkAllRead = async () => {
         if (!userId) return;
-        await markAllNotificationsRead(supabase, userId);
+        // Optimistic
         onNotificationsChange(notifications.map(n => ({ ...n, read: true })));
+        try {
+            await markAllNotificationsRead(supabase, userId);
+        } catch (err) {
+            console.error("Failed to mark all read:", err);
+        }
     };
 
     const handleClearAll = async () => {
         if (!userId) return;
-        await clearAllNotifications(supabase, userId);
+        // Optimistic
         onNotificationsChange([]);
         setIsOpen(false);
+        try {
+            await clearAllNotifications(supabase, userId);
+        } catch (err) {
+            console.error("Failed to clear notifications:", err);
+        }
     };
 
     const formatTime = (dateStr: string) => {
