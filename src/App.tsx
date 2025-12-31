@@ -24,18 +24,39 @@ import { SettingsProvider } from "./context/SettingsContext";
 // Styles
 import "./App.css";
 
-// Simple platform detection hook
+// Synchronous platform detection - computes on first render
 function usePlatform() {
-  const [info, setInfo] = useState({ isMobile: false, isDesktop: true });
+  // Compute initial state synchronously to prevent flash of wrong UI
+  const getInitialPlatform = () => {
+    if (typeof window === 'undefined') return { isMobile: false, isDesktop: true };
 
-  useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
-    const isMobile = /android|iphone|ipad|ipod/i.test(ua);
-    setInfo({ isMobile, isDesktop: !isMobile });
+    const isMobileUA = /android|iphone|ipad|ipod/i.test(ua);
+    const isMobileWidth = window.innerWidth < 768;
+    const isMobile = isMobileUA || isMobileWidth;
+
+    return { isMobile, isDesktop: !isMobile };
+  };
+
+  const [info, setInfo] = useState(getInitialPlatform);
+
+  // Handle resize events (for testing in browser dev tools)
+  useEffect(() => {
+    const handleResize = () => {
+      const ua = navigator.userAgent.toLowerCase();
+      const isMobileUA = /android|iphone|ipad|ipod/i.test(ua);
+      const isMobileWidth = window.innerWidth < 768;
+      const isMobile = isMobileUA || isMobileWidth;
+      setInfo({ isMobile, isDesktop: !isMobile });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return info;
 }
+
 
 function AppContent() {
   const navigate = useNavigate();
@@ -77,7 +98,7 @@ function AppContent() {
 
   return (
     <SettingsProvider session={session}>
-      <div className={`h-screen flex flex-col ${isMobile ? 'mobile-layout' : ''}`}>
+      <div className="h-screen flex flex-col">
         {/* Desktop: Custom Title Bar (Windows only) */}
         {isDesktop && <TitleBar />}
 
@@ -92,11 +113,11 @@ function AppContent() {
         )}
 
         {/* Main Content */}
-        <div className={`flex-1 overflow-y-auto font-sans selection:bg-blue-500 selection:text-white ${isMobile ? 'p-4' : 'p-8'} relative bg-[#e8f0fe] dark:bg-[#070d1c] text-slate-900 dark:text-white transition-colors duration-300`}>
+        <div className={`flex-1 overflow-y-auto font-sans selection:bg-blue-500 selection:text-white ${isMobile ? 'p-4 pb-24' : 'p-8'} relative bg-[#e8f0fe] dark:bg-[#070d1c] text-slate-900 dark:text-white transition-colors duration-300`}>
           {/* Mouse Aura - desktop only for performance */}
           {isDesktop && <MouseAura />}
 
-          <div className={`${isMobile ? 'max-w-full' : 'max-w-6xl'} mx-auto relative z-10`}>
+          <div className={`${isMobile ? 'max-w-full' : 'max-w-6xl'} mx-auto ${isMobile ? '' : 'relative z-10'}`}>
 
             {/* Toast Notifications */}
             <Toast
@@ -227,8 +248,8 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Mobile: Bottom Navigation */}
-        {isMobile && (
+        {/* Mobile: Bottom Navigation - Hide if modal is open */}
+        {isMobile && !location.search.includes('view=modal') && (
           <MobileNav
             isLoggedIn={!!session}
             onAuthClick={() => setAuthModalOpen(true)}

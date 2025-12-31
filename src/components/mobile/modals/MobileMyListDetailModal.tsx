@@ -231,6 +231,13 @@ export function MobileMyListDetailModal({
         }
     };
 
+    // Handle drag end - only from drag bar
+    const handleDragEnd = (_e: any, info: any) => {
+        if (info.offset.y > 80 || info.velocity.y > 300) {
+            onClose();
+        }
+    };
+
     const watchedCount = watchedEpisodes.size;
     const totalCount = episodes.length || item?.total_episodes || 0;
     const progressPercent = totalCount > 0 ? (watchedCount / totalCount) * 100 : 0;
@@ -253,23 +260,19 @@ export function MobileMyListDetailModal({
                         initial={{ y: "100%" }}
                         animate={{ y: 0 }}
                         exit={{ y: "100%" }}
-                        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 400 }} // Faster, snappier
+                        drag="y"
+                        dragConstraints={{ top: 0, bottom: 0 }}
+                        dragElastic={{ top: 0, bottom: 0.5 }} // Less resistance (was 0.2)
+                        onDragEnd={handleDragEnd}
                         className="fixed inset-x-0 bottom-0 z-50 h-[85vh] bg-gray-900 rounded-t-3xl overflow-hidden flex flex-col border-t border-gray-800 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
                     >
                         {/* Drag Handle */}
-                        <div className="flex justify-center pt-4 pb-2 flex-shrink-0 bg-gray-900 z-10" onClick={onClose}>
+                        <div className="flex justify-center pt-4 pb-2 flex-shrink-0 bg-gray-900 z-10 cursor-grab active:cursor-grabbing">
                             <div className="w-12 h-1.5 bg-gray-700 rounded-full" />
                         </div>
 
-                        {/* Top Controls (Safe Area) */}
-                        <div className="absolute top-4 right-4 z-50">
-                            <button
-                                onClick={onClose}
-                                className="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center text-white border border-gray-700 shadow-md active:bg-gray-700 transition-colors"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
+                        {/* Top Controls Removed (X button) */}
 
                         {/* Header Content */}
                         <div className="px-5 pb-4 flex gap-4 flex-shrink-0 relative">

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Film, Tv, Sparkles, ChevronLeft, ChevronRight, ChevronDown, Edit2, X, Folder } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MyListDetailModal } from "../components/modals/MyListDetailModalWrapper";
 import { ListManageModal } from "../components/modals/ListManageModal";
 import { useAuthContext } from "../context/AuthContext";
@@ -9,6 +9,7 @@ import { getListIcon } from "../utils/constants";
 
 export function MyListPage() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const {
         session,
         supabase,
@@ -46,6 +47,17 @@ export function MyListPage() {
     const [selectedItem, setSelectedItem] = useState<any | null>(null);
     const [isListManageModalOpen, setListManageModalOpen] = useState(false);
 
+    // Helpers to sync URL
+    const openModal = (item: any) => {
+        setSelectedItem(item);
+        setSearchParams({ view: 'modal' });
+    };
+
+    const closeModal = () => {
+        setSelectedItem(null);
+        setSearchParams({});
+    };
+
     // Close status dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -60,7 +72,7 @@ export function MyListPage() {
     const handleRemove = async (item: any) => {
         await removeFromList(item.id);
         showToast(`${item.title} removed from your list`, 'success');
-        setSelectedItem(null);
+        closeModal();
     };
 
     if (!session) return null;
@@ -70,7 +82,7 @@ export function MyListPage() {
             <MyListDetailModal
                 item={selectedItem}
                 isOpen={selectedItem !== null}
-                onClose={() => setSelectedItem(null)}
+                onClose={closeModal}
                 onRemove={handleRemove}
                 onEpisodeUpdate={updateEpisodeCount}
                 onTotalEpisodesUpdate={updateTotalEpisodes}
@@ -252,7 +264,7 @@ export function MyListPage() {
                                         {listItems.map((item: any) => (
                                             <div
                                                 key={item.id}
-                                                onClick={() => setSelectedItem(item)}
+                                                onClick={() => openModal(item)}
                                                 className="flex-shrink-0 w-36 cursor-pointer group/card"
                                             >
                                                 <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
@@ -327,7 +339,7 @@ export function MyListPage() {
                                     {uncategorizedItems.map((item: any) => (
                                         <div
                                             key={item.id}
-                                            onClick={() => setSelectedItem(item)}
+                                            onClick={() => openModal(item)}
                                             className="flex-shrink-0 w-36 cursor-pointer group/card"
                                         >
                                             <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">

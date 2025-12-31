@@ -7,19 +7,15 @@ interface MobileNavProps {
     onAuthClick: () => void;
 }
 
-/**
- * Beautiful bottom navigation bar for mobile devices.
- * Features a floating pill design with smooth animations and haptic-like feedback.
- */
 export function MobileNav({ isLoggedIn, onAuthClick }: MobileNavProps) {
     const navigate = useNavigate();
     const location = useLocation();
 
     const tabs = [
-        { path: "/", icon: Search, label: "Search" },
-        { path: "/list", icon: List, label: "My List", requiresAuth: true },
-        { path: "/profile", icon: User, label: "Profile", requiresAuth: true },
-        { path: "/settings", icon: Settings, label: "Settings", requiresAuth: true },
+        { path: "/", icon: Search },
+        { path: "/list", icon: List, requiresAuth: true },
+        { path: "/profile", icon: User, requiresAuth: true },
+        { path: "/settings", icon: Settings, requiresAuth: true },
     ];
 
     const handleTabClick = (tab: typeof tabs[0]) => {
@@ -31,12 +27,15 @@ export function MobileNav({ isLoggedIn, onAuthClick }: MobileNavProps) {
     };
 
     return (
-        <nav className="mobile-nav-container">
-            {/* Glassmorphism background */}
-            <div className="mobile-nav-backdrop" />
-
-            {/* Navigation content */}
-            <div className="mobile-nav-content">
+        <nav
+            className="fixed bottom-0 left-0 right-0 z-[1000]"
+            style={{
+                paddingBottom: 'env(safe-area-inset-bottom)',
+                background: 'linear-gradient(to bottom, transparent 0%, transparent 25%, rgba(0,0,0,0.8) 75%, #000000 100%)',
+                paddingTop: '45px'
+            }}
+        >
+            <div className="flex justify-around items-center h-14 px-6">
                 {tabs.map((tab) => {
                     const isActive = location.pathname === tab.path;
                     const Icon = tab.icon;
@@ -45,53 +44,15 @@ export function MobileNav({ isLoggedIn, onAuthClick }: MobileNavProps) {
                         <motion.button
                             key={tab.path}
                             onClick={() => handleTabClick(tab)}
-                            className="mobile-nav-item"
-                            whileTap={{ scale: 0.9 }}
+                            className="flex items-center justify-center w-14 h-14"
+                            whileTap={{ scale: 0.85 }}
+                            style={{ WebkitTapHighlightColor: 'transparent' }}
                         >
-                            {/* Active indicator pill */}
-                            {isActive && (
-                                <motion.div
-                                    layoutId="activeTab"
-                                    className="mobile-nav-active-indicator"
-                                    initial={false}
-                                    transition={{
-                                        type: "spring",
-                                        stiffness: 500,
-                                        damping: 35,
-                                    }}
-                                />
-                            )}
-
-                            {/* Icon container with glow effect */}
-                            <motion.div
-                                className={`mobile-nav-icon-wrapper ${isActive ? 'active' : ''}`}
-                                animate={{
-                                    y: isActive ? -2 : 0,
-                                }}
-                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                            >
-                                <Icon
-                                    size={22}
-                                    className={`mobile-nav-icon ${isActive ? 'active' : ''}`}
-                                    strokeWidth={isActive ? 2.5 : 2}
-                                />
-
-                                {/* Glow effect for active state */}
-                                {isActive && (
-                                    <div className="mobile-nav-icon-glow" />
-                                )}
-                            </motion.div>
-
-                            {/* Label */}
-                            <motion.span
-                                className={`mobile-nav-label ${isActive ? 'active' : ''}`}
-                                animate={{
-                                    opacity: isActive ? 1 : 0.6,
-                                    y: isActive ? 0 : 2,
-                                }}
-                            >
-                                {tab.label}
-                            </motion.span>
+                            <Icon
+                                size={26}
+                                className={isActive ? "text-blue-500" : "text-gray-500"}
+                                strokeWidth={isActive ? 2.2 : 1.5}
+                            />
                         </motion.button>
                     );
                 })}

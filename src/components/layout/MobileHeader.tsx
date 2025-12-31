@@ -43,17 +43,25 @@ export function MobileHeader({
     const PageIcon = pageInfo.icon;
 
     return (
-        <header className="mobile-header">
-            {/* Logo/Brand */}
+        <header
+            className="mobile-header"
+            style={{
+                paddingTop: 'calc(env(safe-area-inset-top) + 10px)',
+                height: 'auto',
+                minHeight: '42px'
+            }}
+        >
+            {/* Logo/Brand - using actual logo image */}
             <motion.div
                 className="mobile-header-brand"
                 onClick={() => navigate("/")}
                 whileTap={{ scale: 0.95 }}
             >
-                <div className="mobile-header-logo">
-                    <span className="mobile-header-logo-slash">/</span>
-                    <span className="mobile-header-logo-text">AST</span>
-                </div>
+                <img
+                    src="/logo.png"
+                    alt="AST"
+                    className="h-12 w-auto"
+                />
             </motion.div>
 
             {/* Page Title with Icon */}
@@ -78,6 +86,15 @@ export function MobileHeader({
                         className="mobile-header-avatar"
                         onClick={() => navigate("/profile")}
                         whileTap={{ scale: 0.9 }}
+                        style={{
+                            width: '36px',
+                            height: '36px',
+                            minWidth: '36px',
+                            minHeight: '36px',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            padding: 0
+                        }}
                     >
                         {profileAvatar ? (
                             <img

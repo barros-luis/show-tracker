@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import {
     Github, Globe, Linkedin, Twitter, MapPin, Mail,
     Heart, Star, Zap, Code, Coffee,
-    Gamepad2, Clapperboard, Music, Smile, Tv, Film, Sparkles
+    Gamepad2, Clapperboard, Music, Smile
 } from 'lucide-react';
 
 interface MobileProfilePageProps {
@@ -97,15 +97,15 @@ export function MobileProfilePage({ session, profile }: MobileProfilePageProps) 
     const bannerGradient = displayProfile.banner_gradient || 'bg-gradient-to-r from-purple-500 to-indigo-600';
 
     return (
-        <div className="min-h-screen pb-24">
-            {/* Banner + Avatar */}
-            <div className={`h-32 ${bannerGradient} relative`}>
-                <div className="absolute -bottom-12 left-4">
-                    <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800">
+        <div className="min-h-screen pb-24 -mx-4 -mt-4">
+            {/* Banner + Avatar - full width, extends to screen edges */}
+            <div className={`h-40 ${bannerGradient} relative`}>
+                <div className="absolute -bottom-12 left-6">
+                    <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 shadow-xl">
                         {avatarUrl ? (
                             <img src={avatarUrl} alt={nickname} className="w-full h-full object-cover" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white">
+                            <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white bg-gradient-to-br from-blue-500 to-purple-600">
                                 {nickname[0]?.toUpperCase()}
                             </div>
                         )}
@@ -113,8 +113,8 @@ export function MobileProfilePage({ session, profile }: MobileProfilePageProps) 
                 </div>
             </div>
 
-            {/* Name + Stats */}
-            <div className="pt-16 px-4">
+            {/* Name + Email - with padding restored */}
+            <div className="pt-16 px-6">
                 <h1 className="text-2xl font-bold text-white">{nickname}</h1>
                 {session?.user?.email && (
                     <p className="text-gray-500 text-sm">{session.user.email}</p>
@@ -126,18 +126,18 @@ export function MobileProfilePage({ session, profile }: MobileProfilePageProps) 
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mx-4 mt-6 p-4 bg-gray-800/50 rounded-2xl"
+                    className="mx-6 mt-6 p-4 bg-gray-800/50 rounded-2xl overflow-hidden"
                 >
                     <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                         <span>👋</span> About Me
                     </h2>
-                    <p className="text-gray-300 text-sm leading-relaxed">{aboutMe}</p>
+                    <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap overflow-hidden">{aboutMe}</p>
                 </motion.div>
             )}
 
             {/* Custom Fields */}
             {customFields.length > 0 && (
-                <div className="mx-4 mt-4 space-y-3">
+                <div className="mx-6 mt-4 space-y-3">
                     {customFields.map((field: any, idx: number) => {
                         const IconComponent = ICON_MAP[field.icon] || Globe;
                         return (
@@ -161,24 +161,7 @@ export function MobileProfilePage({ session, profile }: MobileProfilePageProps) 
                 </div>
             )}
 
-            {/* Quick Stats */}
-            <div className="mx-4 mt-6 grid grid-cols-3 gap-3">
-                <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-                    <Sparkles className="mx-auto mb-2 text-yellow-400" size={20} />
-                    <p className="text-xl font-bold text-white">0</p>
-                    <p className="text-xs text-gray-500">Anime</p>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-                    <Tv className="mx-auto mb-2 text-blue-400" size={20} />
-                    <p className="text-xl font-bold text-white">0</p>
-                    <p className="text-xs text-gray-500">TV Shows</p>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-                    <Film className="mx-auto mb-2 text-purple-400" size={20} />
-                    <p className="text-xl font-bold text-white">0</p>
-                    <p className="text-xs text-gray-500">Movies</p>
-                </div>
-            </div>
+
         </div>
     );
 }

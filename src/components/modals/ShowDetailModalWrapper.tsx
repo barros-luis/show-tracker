@@ -9,8 +9,8 @@ import { useState, useEffect } from "react";
 import { type MediaItem } from "../../api/mediaTypes";
 
 // Lazy imports for code splitting - only load what's needed
-const DesktopModal = () => import("./ShowDetailModal.desktop");
-const MobileModal = () => import("../mobile/modals/MobileShowDetailModal");
+const DesktopModalImport = () => import("./ShowDetailModal.desktop");
+const MobileModalImport = () => import("../mobile/modals/MobileShowDetailModal");
 
 interface ShowDetailModalWrapperProps {
     media: MediaItem | null;
@@ -20,16 +20,19 @@ interface ShowDetailModalWrapperProps {
     isLoggedIn: boolean;
 }
 
-// Simple platform detection
+// Synchronous platform detection - runs immediately on first render
+function getIsMobile(): boolean {
+    if (typeof window === 'undefined') return false;
+    const ua = navigator.userAgent.toLowerCase();
+    return /android|iphone|ipad|ipod/i.test(ua) || window.innerWidth < 768;
+}
+
 function useIsMobile() {
-    const [isMobile, setIsMobile] = useState(false);
+    // Start with actual value, not false
+    const [isMobile, setIsMobile] = useState(getIsMobile);
 
     useEffect(() => {
-        const check = () => {
-            const ua = navigator.userAgent.toLowerCase();
-            setIsMobile(/android|iphone|ipad|ipod/i.test(ua) || window.innerWidth < 768);
-        };
-        check();
+        const check = () => setIsMobile(getIsMobile());
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
     }, []);
@@ -44,9 +47,9 @@ export function ShowDetailModal(props: ShowDetailModalWrapperProps) {
     useEffect(() => {
         // Dynamically load the appropriate modal
         if (isMobile) {
-            MobileModal().then(mod => setModalComponent(() => mod.MobileShowDetailModal));
+            MobileModalImport().then(mod => setModalComponent(() => mod.MobileShowDetailModal));
         } else {
-            DesktopModal().then(mod => setModalComponent(() => mod.DesktopShowDetailModal));
+            DesktopModalImport().then(mod => setModalComponent(() => mod.DesktopShowDetailModal));
         }
     }, [isMobile]);
 

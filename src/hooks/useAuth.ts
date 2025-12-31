@@ -10,51 +10,52 @@ interface UseAuthReturn {
     refreshProfile: () => Promise<void>;
 }
 
-// Timeout wrapper for async operations (works with PromiseLike)
-function withTimeout<T>(promiseLike: PromiseLike<T>, ms: number): Promise<T> {
-    const promise = Promise.resolve(promiseLike);
-    return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error("Request timeout")), ms);
-        promise
-            .then((value) => {
-                clearTimeout(timer);
-                resolve(value);
-            })
-            .catch((err) => {
-                clearTimeout(timer);
-                reject(err);
-            });
-    });
-}
-
 export function useAuth(): UseAuthReturn {
+    console.log("[Auth] useAuth hook called");
+
     const [session, setSession] = useState<any>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchProfile = useCallback(async (userId: string, retries = 2): Promise<Profile | null> => {
-        for (let i = 0; i <= retries; i++) {
-            try {
-                // Create a proper promise from the Supabase query
-                const queryPromise = supabase
-                    .from("profiles")
-                    .select("*")
-                    .eq("id", userId)
-                    .single()
-                    .then(result => result);
+    // Simple profile fetch with timeout
+    const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+        console.log("[Auth] fetchProfile starting for:", userId);
+        const startTime = Date.now();
 
-                const result = await withTimeout(queryPromise, 10000);
-                if (result.error) throw result.error;
-                return result.data as Profile;
-            } catch (err) {
-                console.warn(`Profile fetch attempt ${i + 1} failed:`, err);
-                if (i === retries) return null;
-                // Wait before retry (exponential backoff)
-                await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        try {
+            // Create a promise that rejects after 10 seconds
+            const timeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(() => reject(new Error("Profile fetch timeout")), 10000);
+            });
+
+            // Create the Supabase query promise
+            const queryPromise = supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", userId)
+                .single()
+                .then(result => {
+                    console.log("[Auth] Supabase query returned in:", Date.now() - startTime, "ms");
+                    return result;
+                });
+
+            // Race between timeout and query
+            const { data, error: queryError } = await Promise.race([queryPromise, timeoutPromise]);
+
+            console.log("[Auth] fetchProfile completed in:", Date.now() - startTime, "ms");
+
+            if (queryError) {
+                console.error("[Auth] Profile query error:", queryError.message);
+                return null;
             }
+
+            console.log("[Auth] Profile data received:", data?.nickname || "no nickname");
+            return data as Profile;
+        } catch (err: any) {
+            console.error("[Auth] fetchProfile exception:", err.message);
+            return null;
         }
-        return null;
     }, []);
 
     const refreshProfile = useCallback(async () => {
@@ -65,130 +66,90 @@ export function useAuth(): UseAuthReturn {
     }, [session?.user?.id, fetchProfile]);
 
     useEffect(() => {
+        console.log("[Auth] useEffect running");
         let isMounted = true;
 
         const initAuth = async () => {
+            console.log("[Auth] initAuth starting");
+
             try {
-                // Try to get the session with timeout
-                const { data: { session: currentSession }, error: sessionError } = await withTimeout(
-                    supabase.auth.getSession(),
-                    10000 // 10 second timeout
-                );
+                // Get session - this should be fast (reads from localStorage)
+                console.log("[Auth] Calling getSession...");
+                const startTime = Date.now();
+                const { data, error: sessionError } = await supabase.auth.getSession();
+                console.log("[Auth] getSession completed in:", Date.now() - startTime, "ms");
 
-                if (!isMounted) return;
+                if (!isMounted) {
+                    console.log("[Auth] Component unmounted, aborting");
+                    return;
+                }
 
-                if (sessionError || !currentSession) {
-                    // No valid session
-                    setSession(null);
-                    setProfile(null);
+                const cachedSession = data?.session;
+                console.log("[Auth] Session result:", cachedSession ? "found" : "none", sessionError?.message || "");
+
+                if (!cachedSession) {
+                    console.log("[Auth] No session, setting loading false");
                     setLoading(false);
                     return;
                 }
 
-                // Verify user is valid
-                const { data: { user }, error: userError } = await withTimeout(
-                    supabase.auth.getUser(),
-                    10000
-                );
+                // Set session immediately
+                console.log("[Auth] Setting session for:", cachedSession.user?.email);
+                setSession(cachedSession);
 
-                if (!isMounted) return;
-
-                if (userError || !user) {
-                    console.log("Session verification failed:", userError?.message);
-
-                    // Only sign out if strictly 401 (unauthorized/invalid token)
-                    // If it's a network error or 5xx, keep the session
-                    if (userError?.status === 401 || userError?.message?.includes("invalid")) {
-                        await supabase.auth.signOut();
-                        setSession(null);
-                        setProfile(null);
-                        setLoading(false);
-                        return;
-                    } else {
-                        // Network error or other issue - keep session but show warning
-                        console.warn("Keeping session despite verification failure (likely offline)");
-                        setSession(currentSession);
-                        setError("Offline mode: User verification failed");
-
-                        // If we have a session user, try to use that ID for profile fetch
-                        // But don't crash if user is null
-                        if (currentSession?.user) {
-                            // Proceed to try fetching profile with session user ID
-                            // user variable might be null, so we use currentSession.user
-                        } else {
-                            setLoading(false);
-                            return;
-                        }
+                // Fetch profile
+                const userId = cachedSession.user?.id;
+                if (userId) {
+                    console.log("[Auth] Starting profile fetch for user:", userId);
+                    const profileData = await fetchProfile(userId);
+                    if (isMounted) {
+                        console.log("[Auth] Setting profile:", profileData ? "success" : "null");
+                        setProfile(profileData);
                     }
                 }
 
-                const targetUser = user || currentSession?.user;
-                if (!targetUser) {
+                if (isMounted) {
+                    console.log("[Auth] Done, setting loading false");
                     setLoading(false);
-                    return;
                 }
-
-                // Fetch profile with retries
-                const profileData = await fetchProfile(targetUser.id);
-
-                if (!isMounted) return;
-
-                if (!profileData) {
-                    console.log("Could not fetch profile. Session may be valid.");
-                    // Still set session so user can at least see they're logged in
-                    setSession(currentSession);
-                    setProfile(null);
-                    setError("Could not load profile. Check your connection.");
-                    setLoading(false);
-                    return;
-                }
-
-                // Success!
-                setSession(currentSession);
-                setProfile(profileData);
-                setError(null);
-                setLoading(false);
 
             } catch (err: any) {
-                console.error("Auth init error:", err);
-                if (!isMounted) return;
-
-                // On timeout/error, check if we have cached session
-                const { data: { session: cachedSession } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
-                if (cachedSession) {
-                    setSession(cachedSession);
-                    setError("Connection issues. Some features may not work.");
+                console.error("[Auth] initAuth error:", err.message);
+                if (isMounted) {
+                    setError(err.message);
+                    setLoading(false);
                 }
-                setLoading(false);
             }
         };
 
         initAuth();
 
-        // Listen for auth changes
+        // Auth state change listener (for login/logout during app usage)
+        console.log("[Auth] Setting up auth listener");
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, newSession) => {
+                console.log("[Auth] Auth state changed:", event, newSession?.user?.email);
                 if (!isMounted) return;
 
-                setSession(newSession);
-                if (newSession) {
-                    const profileData = await fetchProfile(newSession.user.id);
-                    if (isMounted && profileData) {
-                        setProfile(profileData);
-                        setError(null);
-                    }
-                } else if (event === "SIGNED_OUT") {
+                // Only handle actual state changes, not initial
+                if (event === "SIGNED_OUT") {
+                    setSession(null);
                     setProfile(null);
-                    setError(null);
+                    setLoading(false);
+                } else if (event === "SIGNED_IN" && newSession) {
+                    setSession(newSession);
+                    // Profile will be fetched by initAuth, don't double-fetch
                 }
             }
         );
 
         return () => {
+            console.log("[Auth] Cleanup");
             isMounted = false;
             subscription.unsubscribe();
         };
     }, [fetchProfile]);
 
+    console.log("[Auth] Returning - loading:", loading, "session:", !!session, "profile:", !!profile);
     return { session, profile, loading, error, refreshProfile };
 }

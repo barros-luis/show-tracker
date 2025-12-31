@@ -1,14 +1,14 @@
 /**
  * Mobile-optimized Show Detail Modal
  * 
- * A full-screen bottom sheet modal for mobile devices with:
- * - Single column scrollable layout
- * - Large touch-friendly buttons
- * - Optimized for small screens
+ * A bottom sheet modal for mobile devices with:
+ * - Fixed consistent height (85% of viewport)
+ * - Swipe to dismiss via drag bar only
+ * - Proper scroll containment in content area
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Star, Calendar, Tv, Clock, Loader2, Plus, Play, Film, Monitor, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, Calendar, Tv, Clock, Loader2, Plus, Play, Film, Monitor, ChevronDown, ChevronUp } from "lucide-react";
 import { getAnimeDetails, type Anime } from "../../../api/jikan";
 import { getMovieDetails, getTVDetails, getTrailerFromVideos, type TMDBMovie, type TMDBTVShow } from "../../../api/tmdb";
 import { type MediaItem } from "../../../api/mediaTypes";
@@ -33,12 +33,17 @@ export function MobileShowDetailModal({
     const [fullDetails, setFullDetails] = useState<FullDetails>(null);
     const [loading, setLoading] = useState(false);
     const [showTrailer, setShowTrailer] = useState(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     // Fetch full details when modal opens
     useEffect(() => {
         if (isOpen && media) {
             setLoading(true);
             setShowTrailer(false);
+            // Reset scroll position when opening
+            if (scrollRef.current) {
+                scrollRef.current.scrollTop = 0;
+            }
 
             if (media.type === 'anime') {
                 getAnimeDetails(media.sourceId).then((details) => {
@@ -158,6 +163,13 @@ export function MobileShowDetailModal({
     const displayData = getDisplayData();
     const MediaTypeIcon = media?.type === 'movie' ? Film : media?.type === 'tv' ? Monitor : Tv;
 
+    // Handle drag end - only from drag bar
+    const handleDragEnd = (_e: any, info: any) => {
+        if (info.offset.y > 80 || info.velocity.y > 300) {
+            onClose();
+        }
+    };
+
     return (
         <AnimatePresence>
             {isOpen && displayData && (
@@ -167,146 +179,147 @@ export function MobileShowDetailModal({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-50 bg-black/80"
+                        transition={{ duration: 0.15 }}
+                        className="fixed inset-0 bg-black/80"
+                        style={{ zIndex: 1001 }}
                         onClick={onClose}
                     />
 
-                    {/* Modal - Bottom Sheet Style */}
+                    {/* Modal */}
                     <motion.div
                         initial={{ y: "100%" }}
                         animate={{ y: 0 }}
                         exit={{ y: "100%" }}
-                        transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                        className="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] bg-gray-900 rounded-t-3xl overflow-hidden shadow-2xl"
+                        transition={{ type: "spring", damping: 25, stiffness: 400 }} // Faster
+                        drag="y"
+                        dragConstraints={{ top: 0, bottom: 0 }}
+                        dragElastic={{ top: 0, bottom: 0.5 }} // Less resistance
+                        onDragEnd={handleDragEnd}
+                        style={{
+                            position: 'fixed',
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            height: '80vh', // FIXED height - all modals same position
+                            zIndex: 1001,
+                        }}
+                        className="bg-gray-900 rounded-t-3xl shadow-2xl flex flex-col overflow-hidden"
                     >
                         {/* Drag Handle */}
-                        <div className="flex justify-center pt-3 pb-2">
-                            <div className="w-12 h-1.5 bg-gray-600 rounded-full" />
+                        <div
+                            className="flex-shrink-0 py-3 bg-gray-900 cursor-grab active:cursor-grabbing"
+                            style={{ touchAction: 'none' }}
+                        >
+                            <div className="w-12 h-1.5 bg-gray-500 rounded-full mx-auto" />
                         </div>
 
-                        {/* Close Button */}
-                        <button
-                            onClick={onClose}
-                            className="absolute top-3 right-4 w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-white z-10"
-                        >
-                            <X size={20} />
-                        </button>
-
                         {loading ? (
-                            <div className="flex items-center justify-center py-20">
+                            <div className="flex-1 flex items-center justify-center">
                                 <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
                             </div>
                         ) : (
-                            <div className="overflow-y-auto max-h-[calc(90vh-120px)] pb-24">
-                                {/* Header: Poster + Title + Quick Stats */}
-                                <div className="px-4 pb-4">
-                                    <div className="flex gap-4">
-                                        {/* Poster */}
-                                        <img
-                                            src={displayData.imageUrl}
-                                            alt={displayData.title}
-                                            className="w-28 h-40 object-cover rounded-xl shadow-lg flex-shrink-0"
-                                        />
-
-                                        {/* Info */}
-                                        <div className="flex-1 min-w-0">
-                                            <h2 className="text-xl font-bold text-white mb-2 line-clamp-2">
-                                                {displayData.title}
-                                            </h2>
-
-                                            {/* Quick Stats */}
-                                            <div className="flex flex-wrap gap-2 text-xs">
-                                                {displayData.score && (
-                                                    <span className="flex items-center gap-1 bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded-full">
-                                                        <Star size={12} fill="currentColor" />
-                                                        {displayData.score}
-                                                    </span>
-                                                )}
-                                                {displayData.year && (
-                                                    <span className="flex items-center gap-1 bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
-                                                        <Calendar size={12} />
-                                                        {displayData.year}
-                                                    </span>
-                                                )}
-                                                {displayData.episodes && (
-                                                    <span className="flex items-center gap-1 bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
-                                                        <MediaTypeIcon size={12} />
-                                                        {displayData.episodes} eps
-                                                    </span>
-                                                )}
-                                                {displayData.duration && (
-                                                    <span className="flex items-center gap-1 bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
-                                                        <Clock size={12} />
-                                                        {displayData.duration}
+                            <>
+                                {/* Scrollable Content */}
+                                <div
+                                    ref={scrollRef}
+                                    className="flex-1 overflow-y-auto overflow-x-hidden"
+                                    style={{
+                                        WebkitOverflowScrolling: 'touch',
+                                        overscrollBehavior: 'contain',
+                                    }}
+                                >
+                                    {/* Header: Poster + Info */}
+                                    <div className="px-4 pb-4">
+                                        <div className="flex gap-4">
+                                            <img
+                                                src={displayData.imageUrl}
+                                                alt={displayData.title}
+                                                className="w-24 h-36 object-cover rounded-xl shadow-lg flex-shrink-0"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <h2 className="text-lg font-bold text-white mb-2 line-clamp-2">
+                                                    {displayData.title}
+                                                </h2>
+                                                <div className="flex flex-wrap gap-1.5 text-xs">
+                                                    {displayData.score && (
+                                                        <span className="flex items-center gap-1 bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded-full">
+                                                            <Star size={10} fill="currentColor" />
+                                                            {displayData.score}
+                                                        </span>
+                                                    )}
+                                                    {displayData.year && (
+                                                        <span className="flex items-center gap-1 bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+                                                            <Calendar size={10} />
+                                                            {displayData.year}
+                                                        </span>
+                                                    )}
+                                                    {displayData.episodes && (
+                                                        <span className="flex items-center gap-1 bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
+                                                            <MediaTypeIcon size={10} />
+                                                            {displayData.episodes} eps
+                                                        </span>
+                                                    )}
+                                                    {displayData.duration && (
+                                                        <span className="flex items-center gap-1 bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
+                                                            <Clock size={10} />
+                                                            {displayData.duration}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {displayData.status && (
+                                                    <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${displayData.status === "Currently Airing"
+                                                        ? "bg-green-500/20 text-green-400"
+                                                        : "bg-gray-500/20 text-gray-400"
+                                                        }`}>
+                                                        {displayData.status}
                                                     </span>
                                                 )}
                                             </div>
-
-                                            {/* Status */}
-                                            {displayData.status && (
-                                                <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-bold ${displayData.status === "Currently Airing"
-                                                        ? "bg-green-500/20 text-green-400"
-                                                        : "bg-gray-500/20 text-gray-400"
-                                                    }`}>
-                                                    {displayData.status}
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Genres */}
-                                {displayData.genres.length > 0 && (
-                                    <div className="px-4 pb-4">
-                                        <div className="flex flex-wrap gap-2">
-                                            {displayData.genres.map((genre, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    className="px-3 py-1 bg-blue-600/20 text-blue-300 rounded-full text-xs"
-                                                >
-                                                    {genre}
-                                                </span>
-                                            ))}
+                                    {/* Genres */}
+                                    {displayData.genres.length > 0 && (
+                                        <div className="px-4 pb-3">
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {displayData.genres.slice(0, 4).map((genre, idx) => (
+                                                    <span key={idx} className="px-2.5 py-1 bg-blue-600/20 text-blue-300 rounded-full text-xs">
+                                                        {genre}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {/* Synopsis */}
-                                {displayData.synopsis && (
-                                    <div className="px-4 pb-4">
-                                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">
-                                            Synopsis
-                                        </h3>
-                                        <p className="text-gray-300 text-sm leading-relaxed">
-                                            {displayData.synopsis}
-                                        </p>
-                                    </div>
-                                )}
+                                    {/* Synopsis */}
+                                    {displayData.synopsis && (
+                                        <div className="px-4 pb-4">
+                                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                                Synopsis
+                                            </h3>
+                                            <p className="text-gray-300 text-sm leading-relaxed">
+                                                {displayData.synopsis}
+                                            </p>
+                                        </div>
+                                    )}
 
-                                {/* Trailer Section - Collapsible */}
-                                {hasTrailer && (
-                                    <div className="px-4 pb-4">
-                                        <button
-                                            onClick={() => setShowTrailer(!showTrailer)}
-                                            className="w-full flex items-center justify-between py-3 px-4 bg-gray-800 rounded-xl text-white"
-                                        >
-                                            <span className="flex items-center gap-2 font-medium">
-                                                <Play size={18} className="text-blue-500" fill="currentColor" />
-                                                Watch Trailer
-                                            </span>
-                                            {showTrailer ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                                        </button>
+                                    {/* Trailer */}
+                                    {hasTrailer && (
+                                        <div className="px-4 pb-4">
+                                            <button
+                                                onClick={() => setShowTrailer(!showTrailer)}
+                                                className="w-full flex items-center justify-between py-2.5 px-3 bg-gray-800 rounded-xl text-white text-sm"
+                                            >
+                                                <span className="flex items-center gap-2 font-medium">
+                                                    <Play size={16} className="text-blue-500" fill="currentColor" />
+                                                    Watch Trailer
+                                                </span>
+                                                {showTrailer ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                            </button>
 
-                                        <AnimatePresence>
                                             {showTrailer && youtubeId && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: "auto", opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    className="overflow-hidden"
-                                                >
-                                                    <div className="aspect-video mt-3 rounded-xl overflow-hidden bg-black">
+                                                <div className="mt-2">
+                                                    <div className="aspect-video rounded-xl overflow-hidden bg-black">
                                                         <iframe
                                                             src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
                                                             title="Trailer"
@@ -315,28 +328,28 @@ export function MobileShowDetailModal({
                                                             className="w-full h-full"
                                                         />
                                                     </div>
-                                                </motion.div>
+                                                </div>
                                             )}
-                                        </AnimatePresence>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                        </div>
+                                    )}
 
-                        {/* Fixed Bottom Button */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-gray-900 via-gray-900 to-transparent pt-8">
-                            <button
-                                onClick={() => media && onAddToList(media)}
-                                disabled={!isLoggedIn}
-                                className={`w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 ${isLoggedIn
-                                        ? "bg-blue-600 text-white active:bg-blue-700 shadow-lg shadow-blue-500/25"
-                                        : "bg-gray-700 text-gray-400"
-                                    }`}
-                            >
-                                <Plus size={20} />
-                                {isLoggedIn ? "Add to My List" : "Sign in to Add"}
-                            </button>
-                        </div>
+                                    {/* Add to My List Button */}
+                                    <div className="px-4 pt-2 pb-24">
+                                        <button
+                                            onClick={() => media && onAddToList(media)}
+                                            disabled={!isLoggedIn}
+                                            className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 ${isLoggedIn
+                                                ? "bg-blue-600 text-white active:bg-blue-700 shadow-lg shadow-blue-500/30"
+                                                : "bg-gray-700 text-gray-400"
+                                                }`}
+                                        >
+                                            <Plus size={20} />
+                                            {isLoggedIn ? "Add to My List" : "Sign in to Add"}
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </motion.div>
                 </>
             )}
