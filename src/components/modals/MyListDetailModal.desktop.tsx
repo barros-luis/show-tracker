@@ -54,7 +54,7 @@ interface MyListDetailModalProps {
     userId: string | null;
 }
 
-export function MyListDetailModal({
+export function DesktopMyListDetailModal({
     item,
     isOpen,
     onClose,

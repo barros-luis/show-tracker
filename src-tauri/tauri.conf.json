@@ -34,6 +34,12 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "iOS": {
+      "developmentTeam": ""
+    },
+    "android": {
+      "minSdkVersion": 24
+    },
     "macOS": {
       "entitlements": null,
       "exceptionDomain": "",

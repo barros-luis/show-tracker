@@ -17,6 +17,7 @@ interface AuthContextType {
     session: any;
     profile: Profile | null;
     loading: boolean;
+    authError: string | null;
     refreshProfile: () => Promise<void>;
 
     // Toast
@@ -59,7 +60,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-    const { session, profile, loading, refreshProfile } = useAuth();
+    const { session, profile, loading, error: authError, refreshProfile } = useAuth();
     const { toast, showToast, hideToast } = useToast();
 
     const userId = session?.user?.id;
@@ -88,6 +89,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Check for updates on mount
     useEffect(() => {
         const checkForUpdates = async () => {
+            // Skip on mobile - check_for_update command not available
+            const ua = navigator.userAgent.toLowerCase();
+            if (/android|iphone|ipad|ipod/i.test(ua)) {
+                return;
+            }
+
             try {
                 const newVersion = await invoke<string | null>('check_for_update');
                 if (newVersion) {
@@ -171,6 +178,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 session,
                 profile,
                 loading,
+                authError,
                 refreshProfile,
                 toast,
                 showToast,

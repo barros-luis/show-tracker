@@ -4,6 +4,7 @@ import {
     Zap, Heart, Star, Code, Coffee, MapPin, Mail,
     Gamepad2, Clapperboard, Music, Smile
 } from "lucide-react";
+import { MobileProfilePage } from "../components/mobile";
 
 interface ProfilePageProps {
     session: any;
@@ -17,16 +18,78 @@ const ICON_MAP: Record<string, any> = {
     Gamepad2, Clapperboard, Music, Smile
 };
 
+import { usePlatform } from "../hooks/usePlatform";
 
+export function ProfilePage(props: ProfilePageProps) {
+    const { isMobile } = usePlatform();
 
-export function ProfilePage({ session, profile }: ProfilePageProps) {
+    // Render mobile version on mobile devices
+    if (isMobile) {
+        return <MobileProfilePage {...props} />;
+    }
+
+    // Desktop version below
+    return <DesktopProfilePage {...props} />;
+}
+
+function DesktopProfilePage({ session, profile }: ProfilePageProps) {
     const [displayProfile, setDisplayProfile] = useState<any>(null);
+    const [loadingTimeout, setLoadingTimeout] = useState(false);
 
     useEffect(() => {
         if (profile) setDisplayProfile(profile);
+
+        // Set timeout to stop infinite loading
+        const timeout = setTimeout(() => {
+            if (!profile) setLoadingTimeout(true);
+        }, 5000);
+
+        return () => clearTimeout(timeout);
     }, [profile]);
 
-    if (!displayProfile) return <div className="text-white p-10">Loading profile...</div>;
+    // Not logged in
+    if (!session) {
+        return (
+            <div className="text-center py-20">
+                <p className="text-gray-400 text-lg mb-4">Please sign in to view your profile</p>
+            </div>
+        );
+    }
+
+    // Loading with timeout fallback
+    if (!displayProfile) {
+        const handleLogout = () => {
+            // Clear all supabase-related localStorage
+            Object.keys(localStorage)
+                .filter(k => k.startsWith('sb-') || k.includes('supabase'))
+                .forEach(k => localStorage.removeItem(k));
+            window.location.reload();
+        };
+
+        if (loadingTimeout) {
+            return (
+                <div className="text-center py-20">
+                    <p className="text-gray-400 text-lg mb-4">Unable to load profile</p>
+                    <p className="text-gray-500 text-sm mb-6">This might be a session issue. Try logging out and back in.</p>
+                    <div className="flex gap-4 justify-center">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
+                        >
+                            Retry
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500"
+                        >
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        return <div className="text-white p-10 text-center">Loading profile...</div>;
+    }
 
     const nickname = displayProfile.nickname || "Anonymous";
     const aboutMe = displayProfile.about_me || "";

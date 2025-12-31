@@ -1,26 +1,37 @@
 import { useState, useEffect, useRef } from "react";
 import { Minus, Square, X, Copy } from "lucide-react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export function TitleBar() {
     const [isMaximized, setIsMaximized] = useState(true);
-    const [isWindows, setIsWindows] = useState(false);
-    const appWindow = getCurrentWindow();
+    const [shouldRender, setShouldRender] = useState(false);
     const lastClickRef = useRef(0);
+    const appWindowRef = useRef<any>(null);
 
-    // Check platform and maximized state on mount
+    // Check platform on mount - only initialize window API on Windows desktop
     useEffect(() => {
-        // Check if running on Windows using navigator
-        const isWin = navigator.userAgent.includes("Windows") ||
+        const ua = navigator.userAgent.toLowerCase();
+        const isMobile = /android|iphone|ipad|ipod/i.test(ua);
+        const isWindows = navigator.userAgent.includes("Windows") ||
             navigator.platform.toLowerCase().includes("win");
-        setIsWindows(isWin);
 
-        // Check maximized state
-        appWindow.isMaximized().then(setIsMaximized);
+        // Only render on Windows desktop
+        if (isWindows && !isMobile) {
+            // Dynamically import to avoid errors on mobile
+            import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
+                appWindowRef.current = getCurrentWindow();
+                appWindowRef.current.isMaximized().then(setIsMaximized);
+                setShouldRender(true);
+            }).catch(() => {
+                // Not in Tauri environment
+            });
+        }
     }, []);
 
-    // Don't render on non-Windows platforms (they use native title bar)
-    if (!isWindows) return null;
+    // Don't render on non-Windows platforms or mobile
+    if (!shouldRender) return null;
+
+    const appWindow = appWindowRef.current;
+    if (!appWindow) return null;
 
     const handleMinimize = () => appWindow.minimize();
 

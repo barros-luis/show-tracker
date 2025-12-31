@@ -15,5 +15,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
     supabaseUrl || "",
-    supabaseAnonKey || ""
+    supabaseAnonKey || "",
+    {
+        auth: {
+            // Persist session to localStorage (important for mobile)
+            persistSession: true,
+            storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+            // Auto refresh tokens before they expire
+            autoRefreshToken: true,
+            // Detect session from URL (for OAuth redirects)
+            detectSessionInUrl: true,
+        }
+    }
 );

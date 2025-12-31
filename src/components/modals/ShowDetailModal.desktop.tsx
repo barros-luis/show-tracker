@@ -16,7 +16,7 @@ interface ShowDetailModalProps {
 // Type for full details (can be any of the three)
 type FullDetails = Anime | TMDBMovie | TMDBTVShow | null;
 
-export function ShowDetailModal({ media, isOpen, onClose, onAddToList, isLoggedIn }: ShowDetailModalProps) {
+export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, isLoggedIn }: ShowDetailModalProps) {
     const [fullDetails, setFullDetails] = useState<FullDetails>(null);
     const [loading, setLoading] = useState(false);
 

@@ -1,12 +1,15 @@
 import { MemoryRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, List } from "lucide-react";
+import { useState, useEffect } from "react";
 
 // Pages
 import { SearchPage, MyListPage, ProfilePage, SettingsPage } from "./pages";
 
 // Components
 import { TitleBar } from "./components/layout/TitleBar";
+import { MobileNav } from "./components/layout/MobileNav";
+import { MobileHeader } from "./components/layout/MobileHeader";
 import { MouseAura } from "./components/common/MouseAura";
 import { Toast } from "./components/common/Toast";
 import { UpdateBanner } from "./components/common/UpdateBanner";
@@ -14,16 +17,30 @@ import { NotificationBell } from "./components/common/NotificationBell";
 import { UserMenu } from "./components/user/UserMenu";
 import { AuthModal } from "./components/modals/AuthModal";
 
-// Context
+// Context & Hooks
 import { AuthProvider, useAuthContext } from "./context/AuthContext";
 import { SettingsProvider } from "./context/SettingsContext";
 
 // Styles
 import "./App.css";
 
+// Simple platform detection hook
+function usePlatform() {
+  const [info, setInfo] = useState({ isMobile: false, isDesktop: true });
+
+  useEffect(() => {
+    const ua = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod/i.test(ua);
+    setInfo({ isMobile, isDesktop: !isMobile });
+  }, []);
+
+  return info;
+}
+
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isMobile, isDesktop } = usePlatform();
   const {
     session,
     profile,
@@ -50,27 +67,36 @@ function AppContent() {
 
   const handleLogout = async () => {
     console.log("Logging out...");
-    // Clear all supabase auth data from storage
     const keysToRemove = Object.keys(localStorage).filter(key =>
       key.startsWith('sb-') || key.includes('supabase')
     );
     keysToRemove.forEach(key => localStorage.removeItem(key));
-    // Also try signOut (fire and forget)
     supabase.auth.signOut().catch(() => { });
-    // Reload to clear all state
     window.location.reload();
   };
 
   return (
     <SettingsProvider session={session}>
-      <div className="h-screen flex flex-col">
-        {/* Custom Title Bar */}
-        <TitleBar />
+      <div className={`h-screen flex flex-col ${isMobile ? 'mobile-layout' : ''}`}>
+        {/* Desktop: Custom Title Bar (Windows only) */}
+        {isDesktop && <TitleBar />}
+
+        {/* Mobile: Custom Header */}
+        {isMobile && (
+          <MobileHeader
+            isLoggedIn={!!session}
+            profileAvatar={profile?.avatar_url}
+            notificationCount={notifications.length}
+            onAuthClick={() => setAuthModalOpen(true)}
+          />
+        )}
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto font-sans selection:bg-blue-500 selection:text-white p-8 relative bg-[#e8f0fe] dark:bg-[#070d1c] text-slate-900 dark:text-white transition-colors duration-300">
-          <MouseAura />
-          <div className="max-w-6xl mx-auto relative z-10">
+        <div className={`flex-1 overflow-y-auto font-sans selection:bg-blue-500 selection:text-white ${isMobile ? 'p-4' : 'p-8'} relative bg-[#e8f0fe] dark:bg-[#070d1c] text-slate-900 dark:text-white transition-colors duration-300`}>
+          {/* Mouse Aura - desktop only for performance */}
+          {isDesktop && <MouseAura />}
+
+          <div className={`${isMobile ? 'max-w-full' : 'max-w-6xl'} mx-auto relative z-10`}>
 
             {/* Toast Notifications */}
             <Toast
@@ -79,12 +105,12 @@ function AppContent() {
               onClose={hideToast}
             />
 
-            {/* Update Banner */}
-            {updateAvailable && (
+            {/* Update Banner - desktop only (mobile uses app stores) */}
+            {isDesktop && updateAvailable && (
               <UpdateBanner
                 newVersion={updateAvailable}
                 onUpdate={handleInstallUpdate}
-                onDismiss={() => {/* Could add dismiss state if needed */ }}
+                onDismiss={() => { }}
               />
             )}
 
@@ -95,90 +121,92 @@ function AppContent() {
               onClose={() => setAuthModalOpen(false)}
             />
 
-            {/* Header */}
-            <header className="mb-8 flex items-center justify-between relative z-10">
-              {/* Left: Logo */}
-              <div className="w-1/3 text-left">
-                <img
-                  src="/ast-logo-dark.png"
-                  alt="AShow Tracker"
-                  className="h-24 object-contain cursor-pointer hover:opacity-90 transition-opacity dark:hidden"
-                  onClick={() => navigate('/')}
-                />
-                <img
-                  src="/logo.png"
-                  alt="AShow Tracker"
-                  className="h-24 object-contain cursor-pointer hover:opacity-90 transition-opacity hidden dark:block"
-                  onClick={() => navigate('/')}
-                />
-              </div>
-
-              {/* Center: View Toggle */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-100 dark:bg-slate-900/50 backdrop-blur-md p-1.5 rounded-full flex items-center shadow-inner border border-white/5">
-                <div className="absolute inset-0 p-1.5">
-                  <motion.div
-                    className="h-full w-1/2 bg-white dark:bg-gray-800 rounded-full shadow-md"
-                    initial={false}
-                    animate={{ x: view === "search" ? "0%" : "100%" }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            {/* Desktop Header - hidden on mobile */}
+            {isDesktop && (
+              <header className="mb-8 flex items-center justify-between relative z-10">
+                {/* Left: Logo */}
+                <div className="w-1/3 text-left">
+                  <img
+                    src="/ast-logo-dark.png"
+                    alt="AShow Tracker"
+                    className="h-24 object-contain cursor-pointer hover:opacity-90 transition-opacity dark:hidden"
+                    onClick={() => navigate('/')}
+                  />
+                  <img
+                    src="/logo.png"
+                    alt="AShow Tracker"
+                    className="h-24 object-contain cursor-pointer hover:opacity-90 transition-opacity hidden dark:block"
+                    onClick={() => navigate('/')}
                   />
                 </div>
 
-                <button
-                  onClick={() => navigate("/")}
-                  className={`relative px-4 py-2 flex items-center gap-2 text-sm font-semibold rounded-full transition-colors cursor-pointer ${view === "search"
-                    ? "text-gray-900 dark:text-white"
-                    : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
-                    }`}
-                >
-                  <Search size={16} /> Search
-                </button>
-                <button
-                  onClick={() => {
-                    if (!session) {
-                      setAuthModalOpen(true);
-                      return;
-                    }
-                    navigate("/list");
-                  }}
-                  className={`relative px-4 py-2 flex items-center gap-2 text-sm font-semibold rounded-full transition-colors cursor-pointer ${view === "list"
-                    ? "text-gray-900 dark:text-white"
-                    : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
-                    }`}
-                >
-                  <List size={16} /> My List
-                </button>
-              </div>
-
-              {/* Right: User Actions */}
-              <div className="w-1/3 flex items-center justify-end gap-2">
-                {session ? (
-                  <>
-                    <NotificationBell
-                      supabase={supabase}
-                      userId={session?.user?.id || null}
-                      notifications={notifications}
-                      onNotificationsChange={setNotifications}
+                {/* Center: View Toggle */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-100 dark:bg-slate-900/50 backdrop-blur-md p-1.5 rounded-full flex items-center shadow-inner border border-white/5">
+                  <div className="absolute inset-0 p-1.5">
+                    <motion.div
+                      className="h-full w-1/2 bg-white dark:bg-gray-800 rounded-full shadow-md"
+                      initial={false}
+                      animate={{ x: view === "search" ? "0%" : "100%" }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     />
+                  </div>
 
-                    <UserMenu
-                      session={session}
-                      profile={profile}
-                      onOpenProfile={() => navigate("/profile")}
-                      onOpenSettings={() => navigate("/settings")}
-                      onLogout={handleLogout}
-                    />
-                  </>
-                ) : (
                   <button
-                    onClick={() => setAuthModalOpen(true)}
-                    className="btn-animated btn-glow bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-gray-100 text-white dark:text-black px-8 py-2 rounded-full font-bold text-sm transition-all shadow-lg cursor-pointer"
+                    onClick={() => navigate("/")}
+                    className={`relative px-4 py-2 flex items-center gap-2 text-sm font-semibold rounded-full transition-colors cursor-pointer ${view === "search"
+                      ? "text-gray-900 dark:text-white"
+                      : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
+                      }`}
                   >
-                    Sign In
+                    <Search size={16} /> Search
                   </button>
-                )}
-              </div>
-            </header>
+                  <button
+                    onClick={() => {
+                      if (!session) {
+                        setAuthModalOpen(true);
+                        return;
+                      }
+                      navigate("/list");
+                    }}
+                    className={`relative px-4 py-2 flex items-center gap-2 text-sm font-semibold rounded-full transition-colors cursor-pointer ${view === "list"
+                      ? "text-gray-900 dark:text-white"
+                      : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
+                      }`}
+                  >
+                    <List size={16} /> My List
+                  </button>
+                </div>
+
+                {/* Right: User Actions */}
+                <div className="w-1/3 flex items-center justify-end gap-2">
+                  {session ? (
+                    <>
+                      <NotificationBell
+                        supabase={supabase}
+                        userId={session?.user?.id || null}
+                        notifications={notifications}
+                        onNotificationsChange={setNotifications}
+                      />
+
+                      <UserMenu
+                        session={session}
+                        profile={profile}
+                        onOpenProfile={() => navigate("/profile")}
+                        onOpenSettings={() => navigate("/settings")}
+                        onLogout={handleLogout}
+                      />
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setAuthModalOpen(true)}
+                      className="btn-animated btn-glow bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-gray-100 text-white dark:text-black px-8 py-2 rounded-full font-bold text-sm transition-all shadow-lg cursor-pointer"
+                    >
+                      Sign In
+                    </button>
+                  )}
+                </div>
+              </header>
+            )}
 
             {/* Routes */}
             <Routes>
@@ -190,7 +218,7 @@ function AppContent() {
                   session={session}
                   profile={profile}
                   supabase={supabase}
-                  onProfileUpdate={async () => {/* Could add refresh */ }}
+                  onProfileUpdate={async () => { }}
                   showToast={showToast}
                 />
               } />
@@ -198,6 +226,14 @@ function AppContent() {
 
           </div>
         </div>
+
+        {/* Mobile: Bottom Navigation */}
+        {isMobile && (
+          <MobileNav
+            isLoggedIn={!!session}
+            onAuthClick={() => setAuthModalOpen(true)}
+          />
+        )}
       </div>
     </SettingsProvider>
   );

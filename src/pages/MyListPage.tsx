@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Film, Tv, Sparkles, ChevronLeft, ChevronRight, ChevronDown, Edit2, X, Folder } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { MyListDetailModal } from "../components/modals/MyListDetailModal";
+import { MyListDetailModal } from "../components/modals/MyListDetailModalWrapper";
 import { ListManageModal } from "../components/modals/ListManageModal";
 import { useAuthContext } from "../context/AuthContext";
 import { getListIcon } from "../utils/constants";

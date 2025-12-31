@@ -5,7 +5,7 @@ import { searchAnime } from "../api/jikan";
 import { searchMovies, searchTVShows, getTVDetails } from "../api/tmdb";
 import { type MediaItem, animeToMediaItem, movieToMediaItem, tvToMediaItem } from "../api/mediaTypes";
 import { MediaCard } from "../components/cards/MediaCard";
-import { ShowDetailModal } from "../components/modals/ShowDetailModal";
+import { ShowDetailModal } from "../components/modals/ShowDetailModalWrapper";
 import { ListPickerModal } from "../components/modals/ListPickerModal";
 import { useAuthContext } from "../context/AuthContext";
 import type { UserList } from "../types";

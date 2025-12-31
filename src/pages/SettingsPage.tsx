@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Sun, Moon, Settings as SettingsIcon, Shield, Info, ExternalLink } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { EditProfileForm } from '../components/forms/EditProfileForm';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
+import { MobileSettingsPage } from '../components/mobile';
 
 type SettingsTab = 'profile' | 'appearance' | 'general' | 'account' | 'about';
 
@@ -14,7 +15,36 @@ interface SettingsPageProps {
     showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export function SettingsPage({ session, profile, supabase, onProfileUpdate, showToast }: SettingsPageProps) {
+// Platform detection hook
+function useIsMobile() {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const check = () => {
+            const ua = navigator.userAgent.toLowerCase();
+            setIsMobile(/android|iphone|ipad|ipod/i.test(ua) || window.innerWidth < 768);
+        };
+        check();
+        window.addEventListener("resize", check);
+        return () => window.removeEventListener("resize", check);
+    }, []);
+
+    return isMobile;
+}
+
+export function SettingsPage(props: SettingsPageProps) {
+    const isMobile = useIsMobile();
+
+    // Render mobile version on mobile devices
+    if (isMobile) {
+        return <MobileSettingsPage {...props} />;
+    }
+
+    // Desktop version below
+    return <DesktopSettingsPage {...props} />;
+}
+
+function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, showToast }: SettingsPageProps) {
     const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
     const { settings, updateSetting } = useSettings();
 

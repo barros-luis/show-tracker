@@ -74,29 +74,33 @@ export function useDeepLink(options: UseDeepLinkOptions = {}) {
         };
 
         const setupDeepLink = async () => {
-            // 1. Check if app was LAUNCHED by a URL (Cold Start)
-            const initialUrls = await getCurrent();
-            if (initialUrls) {
-                console.log("App launched via URL:", initialUrls);
-                handleDeepLink(initialUrls);
+            try {
+                // 1. Check if app was LAUNCHED by a URL (Cold Start)
+                const initialUrls = await getCurrent();
+                if (initialUrls) {
+                    console.log("App launched via URL:", initialUrls);
+                    handleDeepLink(initialUrls);
+                }
+
+                // 2. Listen for NEW URLs while app is open (Warm Start)
+                const unlisten = await onOpenUrl((urls) => {
+                    console.log("New URL received:", urls);
+                    handleDeepLink(urls);
+                });
+
+                // 3. Listen for Windows Deep Links (via Single Instance args)
+                const unlistenWindows = await listen<string[]>("deep-link-received", (event) => {
+                    console.log("Windows Deep Link received:", event.payload);
+                    handleDeepLink(event.payload);
+                });
+
+                return () => {
+                    unlisten();
+                    unlistenWindows();
+                };
+            } catch (err) {
+                console.log("Deep-link setup failed (may not be available on this platform):", err);
             }
-
-            // 2. Listen for NEW URLs while app is open (Warm Start)
-            const unlisten = await onOpenUrl((urls) => {
-                console.log("New URL received:", urls);
-                handleDeepLink(urls);
-            });
-
-            // 3. Listen for Windows Deep Links (via Single Instance args)
-            const unlistenWindows = await listen<string[]>("deep-link-received", (event) => {
-                console.log("Windows Deep Link received:", event.payload);
-                handleDeepLink(event.payload);
-            });
-
-            return () => {
-                unlisten();
-                unlistenWindows();
-            };
         };
 
         setupDeepLink();
