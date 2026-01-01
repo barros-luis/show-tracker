@@ -205,7 +205,8 @@
           <p class="download-format">.dmg</p>
           <span class="download-btn">Download</span>
         </a>
-        <a href="show-tracker.apk" id="android-download" class="download-card">
+        <a href="https://github.com/barros-luis/show-tracker/releases/latest" id="android-download"
+          class="download-card">
           <div class="download-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -332,7 +333,7 @@
     let downloadLinks = {
       windows: null,
       macos: null,
-      android: 'show-tracker.apk' // Default to local APK
+      android: null // Will be populated from GitHub Releases
     };
 
     // Detect user's OS
