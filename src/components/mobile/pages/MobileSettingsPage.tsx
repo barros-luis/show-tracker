@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Sun, Settings as SettingsIcon,
-    ChevronRight, Bell, Camera, Save, Shuffle, Edit2
+    ChevronRight, Bell, Camera, Save, Shuffle
 } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
@@ -153,8 +153,8 @@ export function MobileSettingsPage({
     const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null);
     const [bannerGradient, setBannerGradient] = useState(profile?.banner_gradient || 'bg-gradient-to-r from-blue-600 to-indigo-600');
 
-    // File Input Ref
-    const fileInputRef = useState<HTMLInputElement | null>(null); // We'll use a direct element ref in the input
+    // File Input Ref - Unused as we use label wrapping for trigger
+    // const fileInputRef = useState<HTMLInputElement | null>(null);
 
     const toggleSection = (id: SectionId) => {
         setOpenSection(prev => prev === id ? null : id);

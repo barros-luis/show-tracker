@@ -205,7 +205,7 @@
           <p class="download-format">.dmg</p>
           <span class="download-btn">Download</span>
         </a>
-        <a href="#" id="android-download" class="download-card disabled">
+        <a href="show-tracker.apk" id="android-download" class="download-card">
           <div class="download-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -214,7 +214,7 @@
           </div>
           <h3>Android</h3>
           <p class="download-format">.apk</p>
-          <span class="download-btn coming-soon">Coming Soon</span>
+          <span class="download-btn">Download</span>
         </a>
       </div>
     </div>
@@ -332,7 +332,7 @@
     let downloadLinks = {
       windows: null,
       macos: null,
-      android: null
+      android: 'show-tracker.apk' // Default to local APK
     };
 
     // Detect user's OS

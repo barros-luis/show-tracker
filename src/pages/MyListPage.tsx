@@ -9,7 +9,7 @@ import { getListIcon } from "../utils/constants";
 
 export function MyListPage() {
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [, setSearchParams] = useSearchParams();
     const {
         session,
         supabase,
