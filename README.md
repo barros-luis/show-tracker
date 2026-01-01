@@ -18,12 +18,13 @@
 ## 🚀 About
 **AShow Tracker** is a premium desktop application built for enthusiasts who want a beautiful, seamless way to track their binge-watching habits. Breaking away from clunky web interfaces, it offers a native, glassmorphism-inspired UI with deep system integration.
 
-## ✨ Features (v1.0.0)
+## ✨ Features (v1.2.0)
 
 ### 🎨 Stunning UI/UX
 - **Glassmorphism Design:** Modern, translucent aesthetics with dynamic gradient backgrounds.
 - **Premium Interactions:** "Shiny" button animations, smooth transitions, and a custom mouse aura effect.
 - **Deep System Integration:** Custom toast notifications and deep linking support.
+- **Responsive Mobile UI:** Fully adapting interface for mobile screens.
 
 ### 🔐 Robust Authentication
 - **Secure Login:** OAuth integration via Google (Supabase Auth).
@@ -48,9 +49,8 @@
 
 ### 🔔 Notification System (New!)
 - **New Episodes:** Get notified when new episodes air for your tracked shows.
-- **New Seasons:** Alerts when a new season is announced or released.
-- **Anime Sequels:** Automatic detection of sequels and spin-offs via relations.
-- **Movie Releases:** Notifications for related movies (e.g., "Teen Wolf: The Movie").
+- **Smart Updates:** "Zombie" notification prevention with database-level deduplication.
+- **Mobile Optimized:** Responsive notification modal with premium "Ring Light" aesthetic.
 - **In-App & OS Notifications:** Choose between in-app bell or native OS notifications.
 
 ### 🔄 Auto-Updates
@@ -64,7 +64,7 @@
 
 We are actively building the future of show tracking. Here is what's coming next:
 
-- [ ] **Mobile Adaptation:** Seamless sync with a future mobile app.
+- [x] **Mobile Adaptation:** Fully responsive mobile app for Android.
 - [ ] **Smart Recommendations:** AI-driven suggestions based on your list.
 - [ ] **Social Features:** Friend lists and shared watchlists.
 
@@ -75,7 +75,7 @@ We are actively building the future of show tracking. Here is what's coming next
 ### Windows
 1. Download the latest `.msi` or `.exe` installer from the [Releases](https://github.com/barros-luis/show-tracker/releases/latest) page.
 2. Run the installer.
-3. **⚠️ Windows SmartScreen Warning:** Since the app is not code-signed with a paid certificate, Windows may show a warning:
+3. **⚠️ Windows SmartScreen Warning:** since the app is not code-signed with a paid certificate, Windows may show a warning:
    - Click **"More info"**
    - Then click **"Run anyway"**
    
@@ -94,6 +94,12 @@ We are actively building the future of show tracking. Here is what's coming next
    
    > The app is safe and open-source! This removes the quarantine flag that macOS adds to downloaded apps.
 
+### Android
+1. Download the `.apk` file from the [Releases](https://github.com/barros-luis/show-tracker/releases/latest) page.
+2. Open the file on your Android device.
+3. **Allow Installation:** If prompted, enable "Install from Unknown Sources" for your browser/file manager.
+4. Tap **Install**.
+
 #### From here forward, you can update it from inside the app every time a new version is released.
 
 
@@ -107,13 +113,15 @@ We are actively building the future of show tracking. Here is what's coming next
 ### Prerequisites
 - Node.js (v18+)
 - Rust (latest stable)
+- Android Studio (for mobile dev)
 
 ### Setup
 ```bash
 git clone https://github.com/barros-luis/show-tracker.git
 cd show-tracker
 npm install
-npm run tauri dev
+npm run tauri dev        # Desktop
+npm run tauri android dev # Mobile
 ```
 </details>
 

@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
     type AppNotification,
-    fetchNotifications, // Kept for type, but function is unused here now
     markNotificationRead,
     markAllNotificationsRead,
     clearAllNotifications

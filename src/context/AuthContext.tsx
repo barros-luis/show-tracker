@@ -8,6 +8,7 @@ import { supabase } from "../services/supabase";
 import { invoke } from "@tauri-apps/api/core";
 import { type AppNotification, checkForNewReleases, fetchNotifications } from "../api/NotificationService";
 import type { Profile, WatchlistItem, UserList, WatchStatus } from "../types";
+import pkg from "../../package.json";
 
 interface AuthContextType {
     // Supabase client
@@ -89,9 +90,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Check for updates on mount
     useEffect(() => {
         const checkForUpdates = async () => {
-            // Skip on mobile - check_for_update command not available
             const ua = navigator.userAgent.toLowerCase();
-            if (/android|iphone|ipad|ipod/i.test(ua)) {
+            const isMobile = /android|iphone|ipad|ipod/i.test(ua);
+
+            if (isMobile) {
+                try {
+                    const response = await fetch('https://github.com/barros-luis/show-tracker/releases/latest/download/latest.json');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const latestVersion = data.version;
+                        const currentVersion = pkg.version;
+
+                        // Simple version comparison
+                        const v1 = latestVersion.split('.').map(Number);
+                        const v2 = currentVersion.split('.').map(Number);
+
+                        let hasNewUpdate = false;
+                        for (let i = 0; i < 3; i++) {
+                            const num1 = v1[i] || 0;
+                            const num2 = v2[i] || 0;
+                            if (num1 > num2) {
+                                hasNewUpdate = true;
+                                break;
+                            }
+                            if (num1 < num2) break;
+                        }
+
+                        if (hasNewUpdate) {
+                            showToast(`New update available: v${latestVersion}`, "info");
+                        }
+                    }
+                } catch (err) {
+                    console.log('Mobile update check failed:', err);
+                }
                 return;
             }
 
