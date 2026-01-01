@@ -137,8 +137,17 @@ export function useAuth(): UseAuthReturn {
                     setProfile(null);
                     setLoading(false);
                 } else if (event === "SIGNED_IN" && newSession) {
+                    console.log("[Auth] SIGNED_IN - fetching profile");
                     setSession(newSession);
-                    // Profile will be fetched by initAuth, don't double-fetch
+                    // Fetch profile immediately on sign in
+                    const userId = newSession.user?.id;
+                    if (userId) {
+                        const profileData = await fetchProfile(userId);
+                        if (isMounted) {
+                            setProfile(profileData);
+                            setLoading(false);
+                        }
+                    }
                 }
             }
         );
