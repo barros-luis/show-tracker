@@ -38,11 +38,12 @@ jobs:
         run: npm run build
 
       - name: Verify build output
+        shell: bash
         run: |
           echo "=== Checking dist folder ==="
           ls -la dist/ || echo "dist/ not found!"
           echo "=== Checking dist/index.html ==="
-          cat dist/index.html || echo "index.html not found!"
+          head -20 dist/index.html || echo "index.html not found!"
 
       - uses: tauri-apps/tauri-action@v0
         env:
