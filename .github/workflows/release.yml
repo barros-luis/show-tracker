@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, windows-latest] 
+        platform: [macos-latest, windows-latest]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -25,7 +25,7 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: install dependencies (ubuntu only) # only needed for ubuntu/ linux
+      - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
@@ -34,6 +34,8 @@ jobs:
       - name: install frontend dependencies
         run: npm install
 
+      # Optional: You can keep this for verification, but Tauri builds it again anyway.
+      # If you keep it, it needs the secrets too.
       - name: Build frontend
         run: npm run build
         env:
@@ -48,11 +50,15 @@ jobs:
           echo "=== Checking dist/index.html ==="
           head -20 dist/index.html || echo "index.html not found!"
 
+      # === FIX 1: Add Secrets Here ===
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # THESE ARE CRITICAL FOR THE INTERNAL BUILD
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         with:
           tagName: v__VERSION__
           releaseName: "AShow Tracker v__VERSION__"
@@ -65,7 +71,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: publish-tauri  # Wait for desktop builds to create the release
+    needs: publish-tauri
     
     steps:
       - uses: actions/checkout@v4
@@ -107,11 +113,15 @@ jobs:
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > show-tracker.keystore
 
+      # === FIX 2: Add Secrets Here ===
       - name: Build Android APK
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          # THESE ARE CRITICAL FOR THE INTERNAL BUILD
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run tauri android build
 
       - name: Rename APK
