@@ -1,13 +1,20 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Search, List, User, Settings, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { NotificationBell } from "../common/NotificationBell";
+import type { AppNotification } from "../../api/NotificationService";
 
 interface MobileHeaderProps {
     isLoggedIn: boolean;
     profileAvatar?: string | null;
     notificationCount?: number;
     onAuthClick: () => void;
-    onNotificationClick?: () => void;
+    // Props for NotificationBell
+    supabase: SupabaseClient;
+    userId: string | null;
+    notifications: AppNotification[];
+    onNotificationsChange: (notifications: AppNotification[]) => void;
 }
 
 /**
@@ -17,8 +24,11 @@ interface MobileHeaderProps {
 export function MobileHeader({
     isLoggedIn,
     profileAvatar,
-    notificationCount = 0,
     onAuthClick,
+    supabase,
+    userId,
+    notifications,
+    onNotificationsChange,
 }: MobileHeaderProps) {
     const navigate = useNavigate();
     const location = useLocation();
@@ -80,44 +90,51 @@ export function MobileHeader({
             </AnimatePresence>
 
             {/* Right Actions */}
-            <div className="mobile-header-actions mr-2"> {/* Moved left by adding margin */}
+            <div className="mobile-header-actions mr-2 flex items-center gap-2"> {/* Moved left by adding margin */}
                 {isLoggedIn ? (
-                    <motion.button
-                        className="mobile-header-avatar"
-                        onClick={() => navigate("/profile")}
-                        whileTap={{ scale: 0.9 }}
-                        style={{
-                            width: '40px', /* Bigger profile */
-                            height: '40px',
-                            minWidth: '40px',
-                            minHeight: '40px',
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            padding: 0
-                        }}
-                    >
-                        {profileAvatar ? (
-                            <img
-                                src={profileAvatar}
-                                alt="Profile"
-                                className="mobile-header-avatar-img"
-                            />
-                        ) : (
-                            <User size={20} className="mobile-header-avatar-placeholder" />
-                        )}
+                    <>
+                        <NotificationBell
+                            supabase={supabase}
+                            userId={userId}
+                            notifications={notifications}
+                            onNotificationsChange={onNotificationsChange}
+                            dropdownClassName="absolute -right-14 top-full mt-3 w-[90vw] max-w-[340px]"
+                        />
 
-                        {/* Notification badge */}
-                        {notificationCount > 0 && (
-                            <motion.div
-                                className="mobile-header-notification-badge"
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                            >
-                                {notificationCount > 9 ? "9+" : notificationCount}
-                            </motion.div>
-                        )}
-                    </motion.button>
+                        <motion.button
+                            className="mobile-header-avatar relative"
+                            onClick={() => navigate("/profile")}
+                            whileTap={{ scale: 0.9 }}
+                            style={{
+                                width: '40px', /* Bigger profile */
+                                height: '40px',
+                                minWidth: '40px',
+                                minHeight: '40px',
+                                padding: 0,
+                                background: 'transparent',
+                                border: 'none'
+                            }}
+                        >
+                            {/* Avatar Image Container - Clips the image */}
+                            <div className="w-full h-full rounded-full overflow-hidden bg-gray-800 relative z-0">
+                                {profileAvatar ? (
+                                    <img
+                                        src={profileAvatar}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                            e.currentTarget.parentElement?.classList.add('fallback-avatar');
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <User size={20} className="text-gray-400" />
+                                    </div>
+                                )}
+                            </div>
+                        </motion.button>
+                    </>
                 ) : (
                     <motion.button
                         className="mobile-header-signin"

@@ -391,6 +391,7 @@
       }
       if (androidBtn && downloadLinks.android) {
         androidBtn.href = downloadLinks.android;
+        androidBtn.setAttribute('target', '_blank');
         androidBtn.classList.remove('disabled');
         androidBtn.querySelector('.download-btn').textContent = 'Download';
         androidBtn.querySelector('.download-btn').classList.remove('coming-soon');
@@ -412,10 +413,12 @@
 
       if (downloadLinks[os]) {
         heroBtn.href = downloadLinks[os];
+        heroBtn.target = '_blank';
         heroText.textContent = `Download for ${osNames[os]}`;
       } else if (downloadLinks.windows) {
         // Default to Windows if we can't detect
         heroBtn.href = downloadLinks.windows;
+        heroBtn.target = '_blank';
         heroText.textContent = 'Download Now';
       } else {
         heroBtn.href = `https://github.com/${REPO}/releases/latest`;

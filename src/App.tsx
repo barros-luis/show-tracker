@@ -32,8 +32,8 @@ function usePlatform() {
 
     const ua = navigator.userAgent.toLowerCase();
     const isMobileUA = /android|iphone|ipad|ipod/i.test(ua);
-    const isMobileWidth = window.innerWidth < 768;
-    const isMobile = isMobileUA || isMobileWidth;
+    // const isMobileWidth = window.innerWidth < 768; // User hates auto-switch on resize
+    const isMobile = isMobileUA; // Only true mobile devices get the mobile UI
 
     return { isMobile, isDesktop: !isMobile };
   };
@@ -45,8 +45,8 @@ function usePlatform() {
     const handleResize = () => {
       const ua = navigator.userAgent.toLowerCase();
       const isMobileUA = /android|iphone|ipad|ipod/i.test(ua);
-      const isMobileWidth = window.innerWidth < 768;
-      const isMobile = isMobileUA || isMobileWidth;
+      // const isMobileWidth = window.innerWidth < 768;
+      const isMobile = isMobileUA;
       setInfo({ isMobile, isDesktop: !isMobile });
     };
 
@@ -110,6 +110,10 @@ function AppContent() {
             profileAvatar={profile?.avatar_url}
             notificationCount={notifications.length}
             onAuthClick={() => setAuthModalOpen(true)}
+            supabase={supabase}
+            userId={session?.user?.id || null}
+            notifications={notifications}
+            onNotificationsChange={setNotifications}
           />
         )}
 

@@ -17,6 +17,51 @@ interface UnifiedEpisode {
     season?: number;
 }
 
+// Episode cache helpers (7-day expiry)
+const CACHE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+
+interface CachedEpisodes {
+    episodes: UnifiedEpisode[];
+    timestamp: number;
+}
+
+function getCacheKey(mediaType: string, id: number | null): string {
+    return `ep_cache_${mediaType}_${id}`;
+}
+
+function getCachedEpisodes(mediaType: string, id: number | null): UnifiedEpisode[] | null {
+    if (!id) return null;
+    try {
+        const cached = localStorage.getItem(getCacheKey(mediaType, id));
+        if (!cached) return null;
+
+        const data: CachedEpisodes = JSON.parse(cached);
+        const isExpired = Date.now() - data.timestamp > CACHE_EXPIRY_MS;
+
+        if (isExpired) {
+            localStorage.removeItem(getCacheKey(mediaType, id));
+            return null;
+        }
+
+        return data.episodes;
+    } catch {
+        return null;
+    }
+}
+
+function setCachedEpisodes(mediaType: string, id: number | null, episodes: UnifiedEpisode[]): void {
+    if (!id || episodes.length === 0) return;
+    try {
+        const data: CachedEpisodes = {
+            episodes,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(getCacheKey(mediaType, id), JSON.stringify(data));
+    } catch {
+        // localStorage full or unavailable, ignore
+    }
+}
+
 // Status options with display labels and colors
 const STATUS_OPTIONS = [
     { value: "PLANNED", label: "Planned", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
@@ -121,9 +166,16 @@ export function DesktopMyListDetailModal({
                     setLoading(false);
                 });
 
-                // Fetch all anime episodes
+                // Check cache first for episodes
+                const cachedEps = getCachedEpisodes('anime', item.mal_id);
+                if (cachedEps) {
+                    console.log(`[Cache] Loaded ${cachedEps.length} episodes from cache`);
+                    setEpisodes(cachedEps);
+                    fetchWatchedEpisodes().then(() => setLoadingEpisodes(false));
+                    return;
+                }
+
                 getAllAnimeEpisodes(item.mal_id).then(async (eps) => {
-                    // Convert to unified format
                     const unifiedEps: UnifiedEpisode[] = eps.map(ep => ({
                         id: ep.mal_id,
                         number: ep.mal_id,  // For anime, mal_id IS the episode number
@@ -170,7 +222,7 @@ export function DesktopMyListDetailModal({
                                                 unifiedEps.push({
                                                     id: ep.id, // TMDB ID
                                                     number: nextNum++,
-                                                    title: `S${ep.season_number}E${ep.episode_number}: ${ep.name}`,
+                                                    title: ep.name,
                                                     synopsis: ep.overview,
                                                     filler: false,
                                                     recap: false
@@ -188,7 +240,10 @@ export function DesktopMyListDetailModal({
                     setEpisodes(unifiedEps);
                     setLoadingEpisodes(false);
 
-                    // Update total_episodes if different (using unifiedEps length now)
+                    setCachedEpisodes('anime', item.mal_id, unifiedEps);
+                    console.log(`[Cache] Saved ${unifiedEps.length} episodes to cache`);
+
+                    // Update total_episodes if different
                     if (unifiedEps.length > 0 && unifiedEps.length > (item.total_episodes || 0)) {
                         await supabase
                             .from('watchlist')
@@ -204,12 +259,21 @@ export function DesktopMyListDetailModal({
                     setLoading(false);
                 });
 
+                // Check cache first
+                const cachedEps = getCachedEpisodes('tv', item.tmdb_id);
+                if (cachedEps) {
+                    console.log(`[Cache] Loaded ${cachedEps.length} TV episodes from cache`);
+                    setEpisodes(cachedEps);
+                    // Fetch watched status, then set loading false
+                    fetchWatchedEpisodes().then(() => setLoadingEpisodes(false));
+                    return;
+                }
+
                 // Fetch all TV episodes from TMDB
                 getAllTVEpisodes(item.tmdb_id).then(async (eps) => {
-                    // Convert to unified format
                     const unifiedEps: UnifiedEpisode[] = eps.map((ep, idx) => ({
                         id: ep.id,
-                        number: idx + 1,  // Sequential episode number across all seasons
+                        number: idx + 1,
                         title: `S${ep.season_number}E${ep.episode_number}: ${ep.name}`,
                         synopsis: ep.overview,
                         season: ep.season_number,
@@ -217,8 +281,11 @@ export function DesktopMyListDetailModal({
                     setEpisodes(unifiedEps);
                     setLoadingEpisodes(false);
 
-                    // Update total_episodes if different
-                    if (eps.length > 0 && eps.length !== item.total_episodes) {
+                    // Cache for fast subsequent loads
+                    setCachedEpisodes('tv', item.tmdb_id, unifiedEps);
+                    console.log(`[Cache] Saved ${unifiedEps.length} TV episodes to cache`);
+
+                    if (eps.length > 0 && eps.length > (item.total_episodes || 0)) {
                         await supabase
                             .from('watchlist')
                             .update({ total_episodes: eps.length })
@@ -242,7 +309,6 @@ export function DesktopMyListDetailModal({
                 setLoadingEpisodes(false);
             }
 
-            // Fetch watched episodes from database
             fetchWatchedEpisodes();
         } else {
             setFullDetails(null);
@@ -253,7 +319,6 @@ export function DesktopMyListDetailModal({
             setShowRemoveConfirm(false);
             setShowStatusDropdown(false);
         }
-        // Reset status when item changes
         if (item) {
             setCurrentStatus(item.status || "PLANNED");
         }
@@ -414,7 +479,8 @@ export function DesktopMyListDetailModal({
     } : null);
 
     const watchedCount = watchedEpisodes.size;
-    const totalEpisodes = episodes.length || item?.total_episodes || 0;
+    // Use the MAX of fetched episodes and saved total (API may be outdated)
+    const totalEpisodes = Math.max(episodes.length, item?.total_episodes || 0);
     const progressPercent = totalEpisodes > 0 ? (watchedCount / totalEpisodes) * 100 : 0;
 
     return (
@@ -446,9 +512,9 @@ export function DesktopMyListDetailModal({
                             {/* Close Button */}
                             <button
                                 onClick={onClose}
-                                className="absolute top-4 right-4 z-20 w-10 h-10 bg-gray-800/80 hover:bg-gray-700 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all hover:scale-110 cursor-pointer border border-gray-700"
+                                className="absolute top-4 right-4 z-20 w-8 h-8 bg-gray-800/80 hover:bg-gray-700 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all hover:scale-110 cursor-pointer border border-gray-700"
                             >
-                                <X size={20} />
+                                <X size={16} />
                             </button>
 
                             {loading ? (

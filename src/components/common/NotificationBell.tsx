@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
     type AppNotification,
-    fetchNotifications,
+    fetchNotifications, // Kept for type, but function is unused here now
     markNotificationRead,
     markAllNotificationsRead,
     clearAllNotifications
@@ -15,13 +15,15 @@ interface NotificationBellProps {
     userId: string | null;
     notifications: AppNotification[];
     onNotificationsChange: (notifications: AppNotification[]) => void;
+    dropdownClassName?: string;
 }
 
 export function NotificationBell({
     supabase,
     userId,
     notifications,
-    onNotificationsChange
+    onNotificationsChange,
+    dropdownClassName
 }: NotificationBellProps) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -39,13 +41,6 @@ export function NotificationBell({
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    // Fetch notifications on mount
-    useEffect(() => {
-        if (userId) {
-            fetchNotifications(supabase, userId).then(onNotificationsChange);
-        }
-    }, [userId]);
 
     const handleMarkRead = async (id: number) => {
         // Optimistic update
@@ -117,13 +112,15 @@ export function NotificationBell({
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden"
+                        initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                        transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+                        style={{ transformOrigin: 'top right' }}
+                        className={`bg-[#0f1729] border border-white/10 z-50 overflow-hidden outline-none rounded-xl ${dropdownClassName || "absolute right-0 top-full mt-2 w-80"}`}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-3 bg-gray-800/50 border-b border-gray-800">
+                        <div className="flex items-center justify-between px-4 py-3 bg-gray-800/50 border-b border-white/5">
                             <span className="font-semibold text-white">Notifications</span>
                             <div className="flex gap-1">
                                 {notifications.length > 0 && (
@@ -159,7 +156,7 @@ export function NotificationBell({
                                     <div
                                         key={notification.id}
                                         onClick={() => handleMarkRead(notification.id)}
-                                        className={`flex items-start gap-3 p-4 border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-500/5' : ''
+                                        className={`flex items-start gap-3 p-4 border-b border-white/5 hover:bg-gray-800/30 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-500/5' : ''
                                             }`}
                                     >
                                         {/* Image */}

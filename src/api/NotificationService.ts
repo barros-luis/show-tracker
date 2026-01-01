@@ -53,8 +53,14 @@ export async function checkForNewReleases(
     settings: { notifyInApp: boolean; notifyOS: boolean }
 ): Promise<AppNotification[]> {
     const newNotifications: AppNotification[] = [];
+    const processedKeys = new Set<string>();
 
     for (const item of watchlist) {
+        // Deduplicate checks: specific show might be in multiple lists or duplicated
+        const key = `${item.media_type}-${item.tmdb_id || item.mal_id}`;
+        if (processedKeys.has(key)) continue;
+        processedKeys.add(key);
+
         try {
             let hasNewContent = false;
             let newContentMessage = '';
@@ -146,15 +152,16 @@ export async function checkForNewReleases(
 
             if (hasNewContent) {
                 // Check if we already have this notification (avoid duplicates, including dismissed ones)
+                // Use limit(1) instead of maybeSingle() to avoid errors if duplicates already exist
                 const { data: existing } = await supabase
                     .from('notifications')
                     .select('id')
                     .eq('user_id', userId)
                     .eq('watchlist_id', item.id)
                     .eq('message', newContentMessage)
-                    .maybeSingle();
+                    .limit(1);
 
-                if (!existing) {
+                if (!existing || existing.length === 0) {
                     // Create notification in database
                     if (settings.notifyInApp) {
                         const { data: newNotif } = await supabase

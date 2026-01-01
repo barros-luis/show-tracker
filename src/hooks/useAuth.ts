@@ -11,46 +11,24 @@ interface UseAuthReturn {
 }
 
 export function useAuth(): UseAuthReturn {
-    console.log("[Auth] useAuth hook called");
-
     const [session, setSession] = useState<any>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Simple profile fetch with timeout
+    // Fetch profile without blocking
     const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
-        console.log("[Auth] fetchProfile starting for:", userId);
-        const startTime = Date.now();
-
         try {
-            // Create a promise that rejects after 10 seconds
-            const timeoutPromise = new Promise<never>((_, reject) => {
-                setTimeout(() => reject(new Error("Profile fetch timeout")), 10000);
-            });
-
-            // Create the Supabase query promise
-            const queryPromise = supabase
+            const { data, error: queryError } = await supabase
                 .from("profiles")
                 .select("*")
                 .eq("id", userId)
-                .single()
-                .then(result => {
-                    console.log("[Auth] Supabase query returned in:", Date.now() - startTime, "ms");
-                    return result;
-                });
-
-            // Race between timeout and query
-            const { data, error: queryError } = await Promise.race([queryPromise, timeoutPromise]);
-
-            console.log("[Auth] fetchProfile completed in:", Date.now() - startTime, "ms");
+                .single();
 
             if (queryError) {
                 console.error("[Auth] Profile query error:", queryError.message);
                 return null;
             }
-
-            console.log("[Auth] Profile data received:", data?.nickname || "no nickname");
             return data as Profile;
         } catch (err: any) {
             console.error("[Auth] fetchProfile exception:", err.message);
@@ -66,51 +44,36 @@ export function useAuth(): UseAuthReturn {
     }, [session?.user?.id, fetchProfile]);
 
     useEffect(() => {
-        console.log("[Auth] useEffect running");
         let isMounted = true;
 
         const initAuth = async () => {
-            console.log("[Auth] initAuth starting");
-
             try {
-                // Get session - this should be fast (reads from localStorage)
-                console.log("[Auth] Calling getSession...");
-                const startTime = Date.now();
-                const { data, error: sessionError } = await supabase.auth.getSession();
-                console.log("[Auth] getSession completed in:", Date.now() - startTime, "ms");
+                // 1. Get Session fast
+                const { data } = await supabase.auth.getSession();
 
-                if (!isMounted) {
-                    console.log("[Auth] Component unmounted, aborting");
-                    return;
-                }
+                if (!isMounted) return;
 
                 const cachedSession = data?.session;
-                console.log("[Auth] Session result:", cachedSession ? "found" : "none", sessionError?.message || "");
 
                 if (!cachedSession) {
-                    console.log("[Auth] No session, setting loading false");
                     setLoading(false);
                     return;
                 }
 
-                // Set session immediately
-                console.log("[Auth] Setting session for:", cachedSession.user?.email);
+                // 2. Set Session & UNBLOCK THE APP IMMEDIATELY
                 setSession(cachedSession);
+                setLoading(false);
 
-                // Fetch profile
-                const userId = cachedSession.user?.id;
-                if (userId) {
-                    console.log("[Auth] Starting profile fetch for user:", userId);
-                    const profileData = await fetchProfile(userId);
-                    if (isMounted) {
-                        console.log("[Auth] Setting profile:", profileData ? "success" : "null");
+                // 3. Fetch Profile in background
+                if (cachedSession.user?.id) {
+                    const profileData = await fetchProfile(cachedSession.user.id);
+                    if (isMounted && profileData) {
                         setProfile(profileData);
+                        // Optional: Cache locally if needed, but session-first strategy relies less on it
+                        try {
+                            localStorage.setItem(`profile_${cachedSession.user.id}`, JSON.stringify(profileData));
+                        } catch (e) { /* ignore */ }
                     }
-                }
-
-                if (isMounted) {
-                    console.log("[Auth] Done, setting loading false");
-                    setLoading(false);
                 }
 
             } catch (err: any) {
@@ -122,43 +85,41 @@ export function useAuth(): UseAuthReturn {
             }
         };
 
+
+
         initAuth();
 
-        // Auth state change listener (for login/logout during app usage)
-        console.log("[Auth] Setting up auth listener");
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, newSession) => {
-                console.log("[Auth] Auth state changed:", event, newSession?.user?.email);
                 if (!isMounted) return;
 
-                // Only handle actual state changes, not initial
                 if (event === "SIGNED_OUT") {
                     setSession(null);
                     setProfile(null);
                     setLoading(false);
                 } else if (event === "SIGNED_IN" && newSession) {
-                    console.log("[Auth] SIGNED_IN - fetching profile");
                     setSession(newSession);
-                    // Fetch profile immediately on sign in
+                    setLoading(false); // Immediate unlock
+
+                    // Fetch profile in background
                     const userId = newSession.user?.id;
                     if (userId) {
-                        const profileData = await fetchProfile(userId);
-                        if (isMounted) {
-                            setProfile(profileData);
-                            setLoading(false);
-                        }
+                        fetchProfile(userId).then(data => {
+                            if (isMounted && data) {
+                                setProfile(data);
+                                localStorage.setItem(`profile_${userId}`, JSON.stringify(data));
+                            }
+                        });
                     }
                 }
             }
         );
 
         return () => {
-            console.log("[Auth] Cleanup");
             isMounted = false;
             subscription.unsubscribe();
         };
     }, [fetchProfile]);
 
-    console.log("[Auth] Returning - loading:", loading, "session:", !!session, "profile:", !!profile);
     return { session, profile, loading, error, refreshProfile };
 }

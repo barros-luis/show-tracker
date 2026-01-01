@@ -197,6 +197,11 @@ pub fn run() {
                     })
                     .build(app)?;
 
+                if let Some(window) = app.get_webview_window("main") {
+                    // Force maximize on startup as per user request
+                    let _ = window.maximize();
+                }
+
                 if std::env::args().any(|arg| arg == "--minimized") {
                     if let Some(window) = app.get_webview_window("main") {
                         let _ = window.hide();

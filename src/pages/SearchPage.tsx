@@ -233,7 +233,7 @@ export function SearchPage() {
                         placeholder="Search anime, movies, or TV shows..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full py-4 pl-12 pr-14 text-lg text-slate-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-xl"
+                        className="w-full bg-white dark:bg-gray-900 rounded-full py-4 pl-12 pr-14 text-lg text-slate-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-none border-none ring-2 ring-white/5 ring-inset"
                     />
 
                     {/* Clear Button */}

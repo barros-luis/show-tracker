@@ -31,7 +31,7 @@ export function MobileNav({ isLoggedIn, onAuthClick }: MobileNavProps) {
             className="fixed bottom-0 left-0 right-0 z-[1000]"
             style={{
                 paddingBottom: 'env(safe-area-inset-bottom)',
-                background: 'linear-gradient(to bottom, transparent 0%, transparent 25%, rgba(0,0,0,0.8) 60%, #000000 100%)',
+                background: 'linear-gradient(to bottom, transparent 0%, transparent 27%, rgba(0,0,0,0.8) 67%, #000000 100%)',
                 paddingTop: '45px'
             }}
         >

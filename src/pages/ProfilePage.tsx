@@ -33,16 +33,19 @@ export function ProfilePage(props: ProfilePageProps) {
 }
 
 function DesktopProfilePage({ session, profile }: ProfilePageProps) {
-    const [displayProfile, setDisplayProfile] = useState<any>(null);
+    const [displayProfile, setDisplayProfile] = useState<any>(profile || null);
     const [loadingTimeout, setLoadingTimeout] = useState(false);
 
     useEffect(() => {
-        if (profile) setDisplayProfile(profile);
+        if (profile) {
+            setDisplayProfile(profile);
+            return; // No need for timeout if we have profile
+        }
 
-        // Set timeout to stop infinite loading
+        // Set timeout to stop infinite loading - match the 20s from useAuth
         const timeout = setTimeout(() => {
             if (!profile) setLoadingTimeout(true);
-        }, 5000);
+        }, 20000);
 
         return () => clearTimeout(timeout);
     }, [profile]);
@@ -106,7 +109,7 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                 {/* LEFT COLUMN: PROFILE CARD */}
                 <div className="lg:col-span-1">
                     <div className="sticky top-8">
-                        <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-gray-900/40 backdrop-blur-xl min-h-[500px] flex flex-col">
+                        <div className="relative rounded-3xl overflow-hidden shadow-none border-none outline-none ring-2 ring-white/5 ring-inset bg-gray-900/40 backdrop-blur-xl min-h-[500px] flex flex-col">
 
                             {/* Header Gradient */}
                             <div className={`h-48 ${bannerGradientClass} relative flex items-center justify-center`}>
@@ -139,7 +142,7 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                                                 </div>
                                                 <div className="flex flex-col min-w-0">
                                                     <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">{field.label}</span>
-                                                    <span className="text-sm font-semibold text-white/90 truncate">{field.value}</span>
+                                                    <span className={`text-[15px] font-bold truncate bg-clip-text text-transparent brightness-150 ${bannerGradientClass}`}>{field.value}</span>
                                                 </div>
                                             </div>
                                         );
@@ -152,12 +155,12 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
 
                 {/* RIGHT COLUMN: ABOUT ME */}
                 <div className="lg:col-span-2">
-                    <div className="bg-gray-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-8 min-h-[400px] relative shadow-xl flex flex-col">
-                        <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3 shrink-0 border-b border-white/5 pb-4">
+                    <div className="bg-gray-900/40 backdrop-blur-md rounded-3xl p-8 min-h-[400px] relative shadow-none border-none outline-none ring-2 ring-white/5 ring-inset flex flex-col">
+                        <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3 shrink-0 border-b border-white/10 pb-4">
                             About Me <span className="text-blue-500 text-4xl">!</span>
                         </h2>
 
-                        <div className="prose prose-invert max-w-none flex-1">
+                        <div className="prose prose-invert max-w-none flex-1 prose-hr:border-white/10 prose-hr:my-4">
                             {aboutMe ? (
                                 <div className="whitespace-pre-wrap text-gray-300 leading-relaxed text-lg font-light tracking-wide">
                                     {aboutMe}

@@ -122,11 +122,37 @@ export function MobileMyListDetailModal({
         if (!item) return;
         setLoadingEpisodes(true);
 
+        const cacheKey = `episodes_${item.media_type}_${item.media_type === 'anime' ? item.mal_id : item.tmdb_id}`;
+
+        // 1. Try Cache First
         try {
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                const { data, timestamp } = JSON.parse(cached);
+                const isStale = Date.now() - timestamp > 7 * 24 * 60 * 60 * 1000; // 7 days
+
+                if (data && data.length > 0) {
+                    setEpisodes(data);
+                    // If not stale, we can stop loading early!
+                    if (!isStale) {
+                        setLoadingEpisodes(false);
+                        // Still fetch watched data though
+                        await fetchWatchedData();
+                        return;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Cache read error", e);
+        }
+
+        try {
+            let unifiedEps: UnifiedEpisode[] = [];
+
             if (item.media_type === 'anime' && item.mal_id) {
                 // Fetch Anime Episodes
                 const eps = await getAllAnimeEpisodes(item.mal_id);
-                const unifiedEps: UnifiedEpisode[] = eps.map(ep => ({
+                unifiedEps = eps.map(ep => ({
                     id: ep.mal_id,
                     number: ep.mal_id,
                     title: ep.title,
@@ -191,7 +217,7 @@ export function MobileMyListDetailModal({
             } else if (item.media_type === 'tv' && item.tmdb_id) {
                 // Fetch TV Episodes
                 const eps = await getAllTVEpisodes(item.tmdb_id);
-                const unifiedEps: UnifiedEpisode[] = eps.map((ep, idx) => ({
+                unifiedEps = eps.map((ep, idx) => ({
                     id: ep.id,
                     number: idx + 1,
                     title: `S${ep.season_number}E${ep.episode_number}: ${ep.name}`,
@@ -200,16 +226,31 @@ export function MobileMyListDetailModal({
                 }));
                 setEpisodes(unifiedEps);
 
-                if (eps.length !== item.total_episodes) {
+                if (eps.length > (item.total_episodes || 0)) {
                     await supabase.from('watchlist').update({ total_episodes: eps.length }).eq('id', item.id);
                     onTotalEpisodesUpdate(item.id, eps.length);
                 }
             } else if (item.media_type === 'movie') {
-                setEpisodes([{ id: 1, number: 1, title: item.title, synopsis: "Movie" }]);
+                unifiedEps = [{ id: 1, number: 1, title: item.title, synopsis: "Movie" }];
+                setEpisodes(unifiedEps);
             }
+
+            // Save to Cache
+            if (unifiedEps.length > 0) {
+                try {
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        data: unifiedEps,
+                        timestamp: Date.now()
+                    }));
+                } catch (e) {
+                    console.error("Cache write error", e);
+                }
+            }
+
         } catch (err) {
             console.error("Failed to fetch episodes", err);
         } finally {
+            await fetchWatchedData(); // Ensure this always runs
             setLoadingEpisodes(false);
         }
     };
@@ -281,7 +322,7 @@ export function MobileMyListDetailModal({
     };
 
     const watchedCount = watchedEpisodes.size;
-    const totalCount = episodes.length || item?.total_episodes || 0;
+    const totalCount = Math.max(episodes.length, item?.total_episodes || 0);
     const progressPercent = totalCount > 0 ? (watchedCount / totalCount) * 100 : 0;
 
     // Auto-scroll to first unwatched episode with retry strategy

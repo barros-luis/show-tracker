@@ -251,6 +251,25 @@ body {
   background: #94a3b8;
 }
 
+/* Dark Mode Scrollbar */
+.dark ::-webkit-scrollbar {
+  width: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #020617; /* Very dark background */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b; /* Slate 800 */
+  border-radius: 5px;
+  border: 2px solid #020617; /* Creates padding effect */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155; /* Slate 700 */
+}
+
 .anime-card {
   cursor: pointer;
 }

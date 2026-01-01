@@ -91,10 +91,10 @@ export function MouseAura() {
                     const element = particlesRef.current[i];
 
                     const scale = (count - i) / count;
-                    const size = 70 + (scale * 110);
+                    const size = 20 + (scale * 50); // Original large soft glow
 
                     // Multiply base opacity by our global interaction alpha
-                    const opacity = (scale * 0.6) * currentGlobalAlpha;
+                    const opacity = (scale * 0.5) * currentGlobalAlpha;
 
                     element.style.left = `${p.currentX}px`;
                     element.style.top = `${p.currentY}px`;

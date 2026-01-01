@@ -23,7 +23,10 @@ export function MyListPage() {
         userLists,
         updateUserLists,
         showToast,
+        watchlistLoading,
     } = useAuthContext();
+
+    console.log("[MyListPage] Render. Session:", !!session, "Loading:", watchlistLoading, "Items:", myList.length);
 
     // Redirect to search if not logged in
     useEffect(() => {
@@ -76,6 +79,14 @@ export function MyListPage() {
     };
 
     if (!session) return null;
+
+    if (watchlistLoading && myList.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <>

@@ -27,15 +27,18 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export function MobileProfilePage({ session, profile }: MobileProfilePageProps) {
-    const [displayProfile, setDisplayProfile] = useState<any>(null);
+    const [displayProfile, setDisplayProfile] = useState<any>(profile || null);
     const [loadingTimeout, setLoadingTimeout] = useState(false);
 
     useEffect(() => {
-        if (profile) setDisplayProfile(profile);
+        if (profile) {
+            setDisplayProfile(profile);
+            return;
+        }
 
         const timeout = setTimeout(() => {
             if (!profile) setLoadingTimeout(true);
-        }, 5000);
+        }, 20000);
 
         return () => clearTimeout(timeout);
     }, [profile]);

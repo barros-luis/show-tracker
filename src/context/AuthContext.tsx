@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react";
+import { createContext, useContext, ReactNode, useCallback, useState, useEffect, useRef } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useToast, ToastType } from "../hooks/useToast";
 import { useDeepLink } from "../hooks/useDeepLink";
@@ -111,11 +111,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await invoke('install_update');
     };
 
+    const isCheckingRef = useRef(false);
+
     // Check for new releases (notifications)
     useEffect(() => {
         if (!session?.user?.id) return;
 
         const checkNotifications = async () => {
+            if (isCheckingRef.current) return;
+
             const savedSettings = localStorage.getItem('app_settings');
             const settings = savedSettings ? JSON.parse(savedSettings) : {};
             const notifyInApp = settings.notifyInApp ?? true;
@@ -123,10 +127,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (!notifyInApp && !notifyOS) return;
 
+            isCheckingRef.current = true;
             try {
+                // Fetch current first to ensure we have latest state
                 const currentNotifs = await fetchNotifications(supabase, session.user.id);
                 setNotifications(currentNotifs);
 
+                // Then check for new stuff
                 const newNotifs = await checkForNewReleases(
                     supabase,
                     session.user.id,
@@ -135,10 +142,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 );
 
                 if (newNotifs.length > 0) {
-                    setNotifications(prev => [...newNotifs, ...prev]);
+                    setNotifications(prev => {
+                        // Dedup before setting state just in case
+                        const existingIds = new Set(prev.map(n => n.id));
+                        const uniqueNew = newNotifs.filter(n => !existingIds.has(n.id));
+                        return [...uniqueNew, ...prev];
+                    });
                 }
             } catch (err) {
                 console.error('Notification check failed:', err);
+            } finally {
+                isCheckingRef.current = false;
             }
         };
 
