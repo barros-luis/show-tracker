@@ -188,9 +188,9 @@ export function ListManageModal({
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         className="fixed inset-0 z-50 flex items-center justify-center p-4"
                     >
-                        <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-800 w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden">
+                        <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-800 w-full max-w-sm max-h-[60vh] flex flex-col relative"> {/* Reduced height and width */}
                             {/* Header */}
-                            <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                            <div className="flex items-center justify-between p-4 border-b border-gray-800 flex-shrink-0">
                                 <h2 className="text-lg font-bold text-white">Manage Lists</h2>
                                 <button
                                     onClick={onClose}
@@ -201,13 +201,13 @@ export function ListManageModal({
                             </div>
 
                             {/* List Items */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                            <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
                                 {lists
                                     .sort((a, b) => a.position - b.position)
                                     .map((list, index, sortedArr) => (
                                         <div
                                             key={list.id}
-                                            className="flex items-center gap-3 p-3 rounded-xl border transition-all bg-gray-800/50 border-gray-700/50 hover:bg-gray-800"
+                                            className="relative flex items-center gap-3 p-3 rounded-xl border transition-all bg-gray-800/50 border-gray-700/50 hover:bg-gray-800"
                                         >
                                             {/* Reorder Buttons */}
                                             <div className="flex flex-col gap-0.5">
@@ -242,9 +242,9 @@ export function ListManageModal({
                                                     {getIconComponent(list.icon, 18)}
                                                 </button>
 
-                                                {/* Icon Picker */}
+                                                {/* Icon Picker - Absolute Popup */}
                                                 {showEmojiPicker === list.id && (
-                                                    <div className="absolute top-12 left-0 z-10 bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-4 gap-1 min-w-[160px]">
+                                                    <div className="absolute top-12 left-0 z-[70] bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-4 gap-1 min-w-[160px]">
                                                         {ICON_OPTIONS.map(iconOpt => (
                                                             <button
                                                                 key={iconOpt.value}
@@ -283,15 +283,16 @@ export function ListManageModal({
                                                 </span>
                                             )}
 
-                                            {/* Color Picker */}
-                                            <div className="relative">
+                                            {/* Color Picker Container */}
+                                            <div className="relative static"> {/* static to prevent clipping contexts if possible, but we need relative for positioning */}
                                                 <button
                                                     onClick={() => setShowColorPicker(showColorPicker === list.id ? null : list.id)}
                                                     className={`w-6 h-6 rounded-full ${getColorClasses(list.color).bg} cursor-pointer hover:scale-110 transition-transform`}
                                                 />
 
+                                                {/* Color Picker Popup */}
                                                 {showColorPicker === list.id && (
-                                                    <div className="absolute top-8 right-0 z-10 bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl flex gap-1">
+                                                    <div className="absolute top-8 right-0 z-[70] bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-5 gap-2 w-[180px]">
                                                         {COLOR_OPTIONS.map(color => (
                                                             <button
                                                                 key={color.value}
@@ -300,7 +301,7 @@ export function ListManageModal({
                                                                     updateList(updated);
                                                                     setShowColorPicker(null);
                                                                 }}
-                                                                className={`w-6 h-6 rounded-full ${color.bg} cursor-pointer hover:scale-110 transition-transform ${list.color === color.value ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800" : ""
+                                                                className={`w-7 h-7 rounded-full ${color.bg} cursor-pointer hover:scale-110 transition-transform ${list.color === color.value ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800" : ""
                                                                     }`}
                                                             />
                                                         ))}
@@ -320,7 +321,7 @@ export function ListManageModal({
 
                                 {/* New List Form */}
                                 {showNewForm ? (
-                                    <div className="flex items-center gap-3 p-3 rounded-xl border border-blue-500/30 bg-blue-500/10">
+                                    <div className="relative flex items-center gap-3 p-3 rounded-xl border border-blue-500/30 bg-blue-500/10">
                                         {/* Icon selector */}
                                         <div className="relative">
                                             <button
@@ -331,12 +332,12 @@ export function ListManageModal({
                                             </button>
 
                                             {showEmojiPicker === "new" && (
-                                                <div className="absolute top-12 left-0 z-10 bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-4 gap-1 min-w-[160px]">
+                                                <div className="absolute top-12 left-0 z-[70] bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-4 gap-1 min-w-[160px]">
                                                     {ICON_OPTIONS.map(iconOpt => (
                                                         <button
                                                             key={iconOpt.value}
                                                             onClick={() => { setNewListIcon(iconOpt.value); setShowEmojiPicker(null); }}
-                                                            className={`p-2 hover:bg-gray-700 rounded cursor-pointer flex items-center justify-center ${newListIcon === iconOpt.value ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400'}`}
+                                                            className={`p-2 hover:bg-gray-700 rounded-lg cursor-pointer flex items-center justify-center transition-colors ${newListIcon === iconOpt.value ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400'}`}
                                                             title={iconOpt.label}
                                                         >
                                                             <iconOpt.Icon size={16} />
@@ -364,12 +365,12 @@ export function ListManageModal({
                                             />
 
                                             {showColorPicker === "new" && (
-                                                <div className="absolute top-8 right-0 z-10 bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl flex gap-1">
+                                                <div className="absolute top-8 right-0 z-[70] bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-5 gap-2 w-[180px]">
                                                     {COLOR_OPTIONS.map(color => (
                                                         <button
                                                             key={color.value}
                                                             onClick={() => { setNewListColor(color.value); setShowColorPicker(null); }}
-                                                            className={`w-6 h-6 rounded-full ${color.bg} cursor-pointer hover:scale-110 transition-transform ${newListColor === color.value ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800" : ""
+                                                            className={`w-7 h-7 rounded-full ${color.bg} cursor-pointer hover:scale-110 transition-transform ${newListColor === color.value ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800" : ""
                                                                 }`}
                                                         />
                                                     ))}
@@ -410,6 +411,18 @@ export function ListManageModal({
                                 </p>
                             </div>
                         </div>
+
+                        {/* Click Outside Backdrop for Pickers (Inside Stacking Context) */}
+                        {(showColorPicker !== null || showEmojiPicker !== null) && (
+                            <div
+                                className="fixed inset-0 z-[60] bg-transparent"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowColorPicker(null);
+                                    setShowEmojiPicker(null);
+                                }}
+                            />
+                        )}
                     </motion.div>
 
                     {/* Delete Confirmation Dialog */}

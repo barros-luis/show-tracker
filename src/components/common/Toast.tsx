@@ -8,10 +8,11 @@ interface ToastProps {
     message: string | null;
     type?: ToastType;
     onClose: () => void;
+    isMobile?: boolean; // Added isMobile prop
     duration?: number;
 }
 
-export function Toast({ message, type = "success", onClose, duration = 4000 }: ToastProps) {
+export function Toast({ message, type = "success", onClose, duration = 4000, isMobile = false }: ToastProps) {
     useEffect(() => {
         if (message) {
             const timer = setTimeout(onClose, duration);
@@ -31,17 +32,30 @@ export function Toast({ message, type = "success", onClose, duration = 4000 }: T
         info: Info,
     }[type];
 
+    // Mobile Animations (Slide Left) vs Desktop (Slide Up)
+    const initial = isMobile ? { opacity: 0, x: 20, scale: 0.95 } : { opacity: 0, y: 50, scale: 0.9 };
+    const animate = { opacity: 1, x: 0, y: 0, scale: 1 };
+    const exit = isMobile ? { opacity: 0, x: 20, scale: 0.95 } : { opacity: 0, y: 20, scale: 0.95 };
+
+    // Mobile vs Desktop Styles
+    const baseClasses = "fixed z-[100] flex items-center gap-3 backdrop-blur-md border shadow-2xl transition-all";
+    // Mobile: Top Right, Compact
+    const mobileClasses = "top-16 right-4 w-auto max-w-[220px] py-2.5 px-3 rounded-xl text-xs bg-gray-900/90 border-gray-700/50";
+    // Desktop: Bottom Center, Standard
+    const desktopClasses = "bottom-8 left-1/2 -translate-x-1/2 px-6 py-4 rounded-xl";
+
     return (
         <AnimatePresence>
             {message && (
                 <motion.div
-                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                    className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md border ${bgColors[type]}`}
+                    initial={initial}
+                    animate={animate}
+                    exit={exit}
+                    className={`${baseClasses} ${isMobile ? mobileClasses : desktopClasses} ${isMobile ? '' : bgColors[type]}`}
+                    style={isMobile ? { borderLeftWidth: '4px', borderColor: type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6' } : {}}
                 >
-                    <Icon size={20} />
-                    <span className="font-semibold text-white/90">{message}</span>
+                    <Icon size={isMobile ? 16 : 20} className={`flex-shrink-0 ${isMobile ? (type === 'success' ? 'text-green-400' : type === 'error' ? 'text-red-400' : 'text-blue-400') : ''}`} />
+                    <span className="font-medium text-white/90 truncate">{message}</span>
                 </motion.div>
             )}
         </AnimatePresence>

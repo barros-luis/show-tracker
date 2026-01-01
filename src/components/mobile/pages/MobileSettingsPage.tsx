@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Sun, Settings as SettingsIcon,
-    ChevronRight, Bell
+    ChevronRight, Bell, Camera, Save, Shuffle, Edit2
 } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
@@ -23,7 +23,7 @@ interface MobileSettingsPageProps {
     showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-type SectionId = 'appearance' | 'notifications' | 'content' | 'about';
+type SectionId = 'profile' | 'appearance' | 'notifications' | 'content' | 'about';
 
 // Toggle Switch Component
 function Toggle({ enabled, onToggle, color = 'blue' }: {
@@ -36,15 +36,28 @@ function Toggle({ enabled, onToggle, color = 'blue' }: {
         : (enabled ? 'bg-blue-500' : 'bg-gray-600');
 
     return (
-        <button
+        <div
             onClick={onToggle}
-            className={`relative w-14 h-8 rounded-full transition-colors ${colorClass}`}
+            className={`relative rounded-full transition-colors flex-shrink-0 cursor-pointer ${colorClass}`}
+            style={{
+                width: '50px',
+                height: '30px',
+                minWidth: '50px',
+                minHeight: '30px',
+                flexShrink: 0
+            }}
         >
             <div
-                className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${enabled ? 'translate-x-7' : 'translate-x-1'
-                    }`}
+                className={`absolute bg-white rounded-full shadow-sm transition-transform`}
+                style={{
+                    width: '24px',
+                    height: '24px',
+                    top: '3px',
+                    left: '3px',
+                    transform: enabled ? 'translateX(20px)' : 'translateX(0)'
+                }}
             />
-        </button>
+        </div>
     );
 }
 
@@ -126,13 +139,90 @@ function Section({
 export function MobileSettingsPage({
     session,
     profile,
-    showToast
+    showToast,
+    supabase,
+    onProfileUpdate
 }: MobileSettingsPageProps) {
     const { settings, updateSetting } = useSettings();
-    const [openSection, setOpenSection] = useState<SectionId | null>('appearance');
+    const [openSection, setOpenSection] = useState<SectionId | null>(null);
+
+    // Profile Edit State
+    const [loading, setLoading] = useState(false);
+    const [nickname, setNickname] = useState(profile?.nickname || "");
+    const [aboutMe, setAboutMe] = useState(profile?.about_me || "");
+    const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null);
+    const [bannerGradient, setBannerGradient] = useState(profile?.banner_gradient || 'bg-gradient-to-r from-blue-600 to-indigo-600');
+
+    // File Input Ref
+    const fileInputRef = useState<HTMLInputElement | null>(null); // We'll use a direct element ref in the input
 
     const toggleSection = (id: SectionId) => {
         setOpenSection(prev => prev === id ? null : id);
+    };
+
+    const handleSaveProfile = async () => {
+        setLoading(true);
+        try {
+            const updates = {
+                id: session.user.id,
+                nickname,
+                about_me: aboutMe,
+                banner_gradient: bannerGradient,
+                avatar_url: avatarUrl,
+                updated_at: new Date(),
+            };
+
+            const { error } = await supabase.from("profiles").upsert(updates);
+            if (error) throw error;
+
+            await onProfileUpdate();
+            showToast("Profile saved! ✅", "success");
+        } catch (error: any) {
+            console.error("Error updating profile:", error);
+            showToast("Failed to save: " + (error.message || "Unknown error"), "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files || event.target.files.length === 0) return;
+
+        try {
+            setLoading(true);
+            const file = event.target.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${session.user.id}/${Date.now()}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(fileName, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+            setAvatarUrl(data.publicUrl);
+            showToast("Avatar uploaded! Don't forget to save.", "info");
+        } catch (error: any) {
+            showToast("Upload failed: " + error.message, "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const GRADIENTS = [
+        'bg-gradient-to-r from-pink-500 to-violet-600',
+        'bg-gradient-to-r from-cyan-500 to-blue-600',
+        'bg-gradient-to-r from-emerald-500 to-teal-600',
+        'bg-gradient-to-r from-purple-500 to-indigo-600',
+        'bg-gradient-to-r from-orange-500 to-red-600',
+        'bg-gradient-to-r from-gray-800 to-black',
+    ];
+
+    const shuffleGradient = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent closing section
+        const random = GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)];
+        setBannerGradient(random);
     };
 
     const handleTestNotification = async () => {
@@ -171,23 +261,74 @@ export function MobileSettingsPage({
                 </p>
             </div>
 
-            {/* Profile Quick View */}
-            {session && profile && (
-                <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-2xl p-4 mb-6 border border-blue-500/20">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-gray-700 rounded-full flex items-center justify-center text-xl font-bold text-white overflow-hidden">
-                            {profile.avatar_url ? (
-                                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                            ) : (
-                                profile.nickname?.[0]?.toUpperCase() || 'U'
-                            )}
+            {/* Account & Profile Section */}
+            {session && (
+                <Section
+                    title="Account & Profile"
+                    icon={User}
+                    isOpen={openSection === 'profile'}
+                    onToggle={() => toggleSection('profile')}
+                >
+                    <div className="space-y-6 pt-2">
+                        {/* Visual Identity Editor */}
+                        <div className={`h-40 ${bannerGradient} rounded-xl relative flex items-center justify-center transition-colors duration-500`}>
+                            <button
+                                onClick={shuffleGradient}
+                                className="absolute top-3 right-3 p-2 bg-black/30 text-white rounded-full backdrop-blur-md border border-white/10 shadow-lg cursor-pointer"
+                                title="Shuffle Banner"
+                            >
+                                <Shuffle size={16} />
+                            </button>
+
+                            <div className="relative group">
+                                <div className="h-24 w-24 rounded-full border-4 border-gray-900 shadow-xl overflow-hidden bg-gray-800 flex items-center justify-center">
+                                    {avatarUrl ? (
+                                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-3xl font-bold text-white">{nickname?.[0]?.toUpperCase() || 'U'}</span>
+                                    )}
+                                </div>
+                                <label className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                    <Camera size={24} className="text-white" />
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleFileSelect} />
+                                </label>
+                            </div>
                         </div>
-                        <div className="flex-1">
-                            <p className="text-white font-semibold">{profile.nickname || 'User'}</p>
-                            <p className="text-gray-400 text-sm">{session.user.email}</p>
+
+                        {/* Fields */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest ml-1">Display Name</label>
+                                <input
+                                    type="text"
+                                    value={nickname}
+                                    onChange={(e) => setNickname(e.target.value)}
+                                    className="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    placeholder="Your Nickname"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest ml-1">About Me</label>
+                                <textarea
+                                    value={aboutMe}
+                                    onChange={(e) => setAboutMe(e.target.value)}
+                                    className="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[160px]"
+                                    placeholder="Tell us about yourself..."
+                                />
+                            </div>
                         </div>
+
+                        {/* Save Button */}
+                        <button
+                            onClick={handleSaveProfile}
+                            disabled={loading}
+                            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? "Saving..." : <><Save size={18} /> Save Changes</>}
+                        </button>
                     </div>
-                </div>
+                </Section>
             )}
 
             {/* Appearance Section */}
@@ -201,13 +342,6 @@ export function MobileSettingsPage({
                     <Toggle
                         enabled={settings.theme === 'dark'}
                         onToggle={() => updateSetting('theme', settings.theme === 'dark' ? 'light' : 'dark')}
-                    />
-                </SettingRow>
-
-                <SettingRow label="Mouse Aura" description="Cursor glow effect (desktop)">
-                    <Toggle
-                        enabled={settings.mouseAura}
-                        onToggle={() => updateSetting('mouseAura', !settings.mouseAura)}
                     />
                 </SettingRow>
             </Section>

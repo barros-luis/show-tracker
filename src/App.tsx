@@ -75,6 +75,7 @@ function AppContent() {
     handleInstallUpdate,
     isAuthModalOpen,
     setAuthModalOpen,
+    refreshProfile,
   } = useAuthContext();
 
   // Determine active view from route
@@ -124,6 +125,7 @@ function AppContent() {
               message={toast?.message || null}
               type={toast?.type}
               onClose={hideToast}
+              isMobile={isMobile}
             />
 
             {/* Update Banner - desktop only (mobile uses app stores) */}
@@ -239,7 +241,7 @@ function AppContent() {
                   session={session}
                   profile={profile}
                   supabase={supabase}
-                  onProfileUpdate={async () => { }}
+                  onProfileUpdate={refreshProfile}
                   showToast={showToast}
                 />
               } />

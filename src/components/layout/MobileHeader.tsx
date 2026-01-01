@@ -60,7 +60,7 @@ export function MobileHeader({
                 <img
                     src="/logo.png"
                     alt="AST"
-                    className="h-12 w-auto"
+                    className="h-14 w-auto ml-2" /* Bigger logo, moved right */
                 />
             </motion.div>
 
@@ -68,7 +68,7 @@ export function MobileHeader({
             <AnimatePresence mode="wait">
                 <motion.div
                     key={location.pathname}
-                    className="mobile-header-title"
+                    className="mobile-header-title absolute left-1/2 -translate-x-1/2" /* Perfectly centered */
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
@@ -80,17 +80,17 @@ export function MobileHeader({
             </AnimatePresence>
 
             {/* Right Actions */}
-            <div className="mobile-header-actions">
+            <div className="mobile-header-actions mr-2"> {/* Moved left by adding margin */}
                 {isLoggedIn ? (
                     <motion.button
                         className="mobile-header-avatar"
                         onClick={() => navigate("/profile")}
                         whileTap={{ scale: 0.9 }}
                         style={{
-                            width: '36px',
-                            height: '36px',
-                            minWidth: '36px',
-                            minHeight: '36px',
+                            width: '40px', /* Bigger profile */
+                            height: '40px',
+                            minWidth: '40px',
+                            minHeight: '40px',
                             borderRadius: '50%',
                             overflow: 'hidden',
                             padding: 0

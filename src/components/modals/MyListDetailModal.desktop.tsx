@@ -272,6 +272,26 @@ export function DesktopMyListDetailModal({
         }
     };
 
+    // Auto-scroll to first unwatched episode
+    useEffect(() => {
+        if (!loadingEpisodes && episodes.length > 0 && watchedEpisodes.size > 0 && isOpen) {
+            const maxWatched = Math.max(...Array.from(watchedEpisodes));
+            const targetEp = maxWatched + 1;
+
+            setTimeout(() => {
+                const element = document.getElementById(`episode-${targetEp}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    const lastWatchedElement = document.getElementById(`episode-${maxWatched}`);
+                    if (lastWatchedElement) {
+                        lastWatchedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }, 300);
+        }
+    }, [loadingEpisodes, isOpen, item?.id]); // Run when episodes load or modal opens
+
     // Handle ESC key
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -792,6 +812,7 @@ export function DesktopMyListDetailModal({
                                             ) : (
                                                 episodes.map((episode) => (
                                                     <div
+                                                        id={`episode-${episode.number}`}
                                                         key={episode.number}
                                                         className={`rounded-lg border transition-all ${watchedEpisodes.has(episode.number)
                                                             ? "bg-blue-500/10 border-blue-500/30"

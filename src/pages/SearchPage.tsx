@@ -233,10 +233,22 @@ export function SearchPage() {
                         placeholder="Search anime, movies, or TV shows..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full py-4 pl-12 pr-6 text-lg text-slate-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-xl"
+                        className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full py-4 pl-12 pr-14 text-lg text-slate-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-xl"
                     />
+
+                    {/* Clear Button */}
+                    {query && (
+                        <button
+                            onClick={() => setQuery("")}
+                            className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer"
+                        >
+                            <X size={20} />
+                        </button>
+                    )}
+
+                    {/* Loading Spinner */}
                     {loading && (
-                        <div className="absolute inset-y-0 right-4 flex items-center">
+                        <div className={`absolute inset-y-0 flex items-center ${query ? "right-12" : "right-4"}`}>
                             <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
                         </div>
                     )}

@@ -1,16 +1,16 @@
 /**
- * Mobile My List Detail Modal
- * 
- * Mobile-optimized modal with full feature set:
- * - Episode tracking (list view)
- * - Synopsis viewing
- * - Progress management
- * - Status updates
- */
+* Mobile My List Detail Modal
+* 
+* Mobile-optimized modal with full feature set:
+* - Episode tracking (list view)
+* - Synopsis viewing
+* - Progress management
+* - Status updates
+*/
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Tv, Trash2, ChevronDown, Check, AlertTriangle, Eye, EyeOff } from "lucide-react";
-import { getAllTVEpisodes } from "../../../api/tmdb";
+import { Tv, Trash2, ChevronDown, Check, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { getAllTVEpisodes, searchTVShows, getTVDetails, getTVSeasonEpisodes } from "../../../api/tmdb";
 import { getAllAnimeEpisodes, getEpisodeDetails } from "../../../api/jikan";
 import { SupabaseClient } from "@supabase/supabase-js";
 
@@ -54,6 +54,7 @@ interface MobileMyListDetailModalProps {
     onStatusUpdate: (itemId: number, status: string) => void;
     supabase: SupabaseClient;
     userId: string | null;
+    showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export function MobileMyListDetailModal({
@@ -65,7 +66,8 @@ export function MobileMyListDetailModal({
     onTotalEpisodesUpdate,
     onStatusUpdate,
     supabase,
-    userId
+    userId,
+    showToast
 }: MobileMyListDetailModalProps) {
     const [episodes, setEpisodes] = useState<UnifiedEpisode[]>([]);
     const [watchedEpisodes, setWatchedEpisodes] = useState<Set<number>>(new Set());
@@ -131,11 +133,51 @@ export function MobileMyListDetailModal({
                     synopsis: ep.synopsis,
                 }));
 
-                // TMDB Fallback logic for missing anime episodes (simplified from desktop)
+                // TMDB Fallback logic for missing anime episodes (Ported from Desktop)
                 if (eps.length > 0) {
-                    // ... (Use simplified fallback or skip for now to keep mobile light? 
-                    // Let's keep it light but correct. If user complains about missing One Piece episodes, we add it later.
-                    // Actually, let's include the basic fallback if we can, but maybe just trust Jikan for now to be safe/fast.)
+                    try {
+                        const tmdbResults = await searchTVShows(item.title);
+                        // Filter for Japanese animation
+                        const candidate = tmdbResults.find(show =>
+                            show.origin_country?.includes('JP') &&
+                            show.first_air_date
+                        ) || tmdbResults[0];
+
+                        if (candidate) {
+                            const details = await getTVDetails(candidate.id);
+                            if (details?.last_episode_to_air) {
+                                const lastJikanEp = eps[eps.length - 1];
+                                const jikanDate = lastJikanEp.aired ? new Date(lastJikanEp.aired) : null;
+
+                                // Fetch current season episodes (where latest ep is)
+                                const seasonNum = details.last_episode_to_air.season_number;
+                                const seasonData = await getTVSeasonEpisodes(candidate.id, seasonNum);
+
+                                if (seasonData?.episodes && jikanDate) {
+                                    const newEpisodes = seasonData.episodes.filter(ep => {
+                                        if (!ep.air_date) return false;
+                                        return new Date(ep.air_date) > jikanDate;
+                                    });
+
+                                    let nextNum = lastJikanEp.mal_id + 1;
+                                    newEpisodes.forEach(ep => {
+                                        // Avoid duplicates
+                                        if (!unifiedEps.find(e => e.number === nextNum)) {
+                                            unifiedEps.push({
+                                                id: ep.id,
+                                                number: nextNum++,
+                                                title: `S${ep.season_number}E${ep.episode_number}: ${ep.name}`,
+                                                synopsis: ep.overview,
+                                                season: ep.season_number,
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Error patching anime episodes:", err);
+                    }
                 }
 
                 setEpisodes(unifiedEps);
@@ -241,6 +283,36 @@ export function MobileMyListDetailModal({
     const watchedCount = watchedEpisodes.size;
     const totalCount = episodes.length || item?.total_episodes || 0;
     const progressPercent = totalCount > 0 ? (watchedCount / totalCount) * 100 : 0;
+
+    // Auto-scroll to first unwatched episode with retry strategy
+    useEffect(() => {
+        if (!loadingEpisodes && episodes.length > 0 && watchedEpisodes.size > 0 && isOpen) {
+            // Find highest watched episode number
+            const maxWatched = Math.max(...Array.from(watchedEpisodes));
+            // Target first unwatched (next one)
+            const targetEp = maxWatched + 1;
+
+            const attemptScroll = (attempt: number) => {
+                const element = document.getElementById(`mobile-episode-${targetEp}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    // If target not found (e.g. caught up), try maxWatched
+                    const lastWatchedElement = document.getElementById(`mobile-episode-${maxWatched}`);
+                    if (lastWatchedElement) {
+                        lastWatchedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else if (attempt < 8) {
+                        // Retry with increasing backoff (up to ~3.5s total)
+                        const delay = [100, 200, 300, 500, 800, 1000, 1500, 2000][attempt];
+                        setTimeout(() => attemptScroll(attempt + 1), delay);
+                    }
+                }
+            };
+
+            // Start attempts
+            setTimeout(() => attemptScroll(0), 100);
+        }
+    }, [loadingEpisodes, episodes.length, item?.id, watchedEpisodes, isOpen]);
 
     return (
         <AnimatePresence>
@@ -376,6 +448,7 @@ export function MobileMyListDetailModal({
 
                                             return (
                                                 <div
+                                                    id={`mobile-episode-${ep.number}`}
                                                     key={ep.number}
                                                     className={`rounded-xl border transition-all ${isWatched
                                                         ? "bg-blue-500/5 border-blue-500/20"
@@ -446,6 +519,49 @@ export function MobileMyListDetailModal({
                                     {/* Batch Actions */}
                                     <div className="bg-gray-800/50 rounded-xl p-4">
                                         <h3 className="text-sm font-bold text-white mb-3">Bulk Actions</h3>
+
+                                        {/* Fill Gaps Button */}
+                                        <button
+                                            onClick={async () => {
+                                                if (!item || !userId) return;
+                                                const maxWatched = Math.max(...Array.from(watchedEpisodes), 0);
+                                                if (maxWatched === 0) return;
+
+                                                // Find all episodes from 1 to maxWatched that aren't checked
+                                                const episodesToAdd = episodes
+                                                    .filter(ep => ep.number <= maxWatched && !watchedEpisodes.has(ep.number))
+                                                    .map(ep => ep.number);
+
+                                                if (episodesToAdd.length === 0) return;
+
+                                                // Update local state
+                                                const newWatched = new Set(watchedEpisodes);
+                                                episodesToAdd.forEach(ep => newWatched.add(ep));
+                                                setWatchedEpisodes(newWatched);
+
+                                                // Batch insert to database
+                                                const insertData = episodesToAdd.map(ep => ({
+                                                    user_id: userId,
+                                                    watchlist_id: item.id,
+                                                    mal_id: item.mal_id,
+                                                    tmdb_id: item.tmdb_id,
+                                                    episode_number: ep
+                                                }));
+                                                await supabase.from('watched_episodes').insert(insertData);
+
+                                                // Update count
+                                                await supabase.from('watchlist').update({ watched_episodes: newWatched.size }).eq('id', item.id);
+                                                onEpisodeUpdate(item.id, newWatched.size);
+
+                                                showToast(`Filled ${episodesToAdd.length} missing episode${episodesToAdd.length > 1 ? 's' : ''}!`, 'success');
+                                            }}
+                                            disabled={watchedEpisodes.size === 0}
+                                            className="w-full mb-3 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                        >
+                                            <ChevronDown size={18} className="rotate-90" />
+                                            Fill Gaps Up To Latest
+                                        </button>
+
                                         <div className="grid grid-cols-2 gap-3">
                                             <button
                                                 onClick={async () => {

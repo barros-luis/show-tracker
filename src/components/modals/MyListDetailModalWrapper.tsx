@@ -21,6 +21,7 @@ export interface MyListDetailModalProps {
     userLists: UserList[];
     supabase: SupabaseClient;
     userId: string | null;
+    showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export function MyListDetailModal(props: MyListDetailModalProps) {
@@ -41,6 +42,7 @@ export function MyListDetailModal(props: MyListDetailModalProps) {
                     onStatusUpdate={props.onStatusUpdate}
                     supabase={props.supabase}
                     userId={props.userId}
+                    showToast={props.showToast}
                 />
             </Suspense>
         );

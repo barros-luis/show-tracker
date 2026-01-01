@@ -91,6 +91,7 @@ export function MyListPage() {
                 userLists={userLists}
                 supabase={supabase}
                 userId={session?.user?.id || null}
+                showToast={showToast}
             />
 
             <ListManageModal
