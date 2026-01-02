@@ -378,6 +378,22 @@
       }
     }
 
+    // Force open in external browser (escapes WebViews/in-app browsers)
+    function forceExternalBrowser(url) {
+      const intentUrl = 'intent://' + url.replace(/^https?:\/\//, '') +
+        '#Intent;scheme=https;package=com.android.chrome;end';
+
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = intentUrl;
+      document.body.appendChild(iframe);
+
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        window.open(url, '_system');
+      }, 500);
+    }
+
     function setupDownloadHandlers() {
       const windowsBtn = document.getElementById('windows-download');
       const macosBtn = document.getElementById('macos-download');
@@ -396,6 +412,12 @@
         androidBtn.classList.remove('disabled');
         androidBtn.querySelector('.download-btn').textContent = 'Download';
         androidBtn.querySelector('.download-btn').classList.remove('coming-soon');
+
+        // Force external browser on click for Android
+        androidBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          forceExternalBrowser(downloadLinks.android);
+        });
       }
     }
 
@@ -416,8 +438,14 @@
         heroBtn.href = downloadLinks[os];
         heroBtn.target = '_blank';
         heroText.textContent = `Download for ${osNames[os]}`;
+
+        if (os === 'android') {
+          heroBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            forceExternalBrowser(downloadLinks.android);
+          });
+        }
       } else if (downloadLinks.windows) {
-        // Default to Windows if we can't detect
         heroBtn.href = downloadLinks.windows;
         heroBtn.target = '_blank';
         heroText.textContent = 'Download Now';
