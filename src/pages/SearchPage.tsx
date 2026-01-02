@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { searchAnime } from "../api/jikan";
 import { searchMovies, searchTVShows, getTVDetails } from "../api/tmdb";
 import { type MediaItem, animeToMediaItem, movieToMediaItem, tvToMediaItem } from "../api/mediaTypes";
+import { calculateRelevanceScore } from "../utils/searchUtils";
 import { MediaCard } from "../components/cards/MediaCard";
 import { ShowDetailModal } from "../components/modals/ShowDetailModalWrapper";
 import { ListPickerModal } from "../components/modals/ListPickerModal";
@@ -48,10 +49,21 @@ export function SearchPage() {
                     const movieItems = movieData.map(movieToMediaItem);
                     const tvItems = tvData.map(tvToMediaItem);
 
-                    const allItems = [...animeItems, ...movieItems, ...tvItems]
-                        .filter(item => item.imageUrl);
+                    const allItems = [...animeItems, ...movieItems, ...tvItems];
 
-                    // Deduplicate
+                    // Sort by Relevance and then Popularity
+                    const sorted = allItems
+                        .filter(item => item.imageUrl)
+                        .sort((a, b) => {
+                            const relevanceA = calculateRelevanceScore(a.title, query);
+                            const relevanceB = calculateRelevanceScore(b.title, query);
+
+                            if (relevanceA !== relevanceB) {
+                                return relevanceB - relevanceA; // Higher relevance first
+                            }
+                            return (b.popularity || 0) - (a.popularity || 0); // Then higher popularit
+                        });
+
                     const normalizeTitle = (title: string): string => {
                         return title
                             .toLowerCase()
@@ -60,36 +72,84 @@ export function SearchPage() {
                             .trim();
                     };
 
-                    const areSameTitleDifferentSource = (item1: MediaItem, item2: MediaItem): boolean => {
-                        const differentSources = (item1.type === 'anime' && item2.type !== 'anime') ||
-                            (item1.type !== 'anime' && item2.type === 'anime');
-                        if (!differentSources) return false;
+                    const seenIds = new Set<string>();
+                    const dedupedResults: MediaItem[] = [];
 
-                        const norm1 = normalizeTitle(item1.title);
-                        const norm2 = normalizeTitle(item2.title);
+                    // First pass: Group potential duplicates by normalized title
+                    const titleMap = new Map<string, MediaItem[]>();
 
-                        // Only match exact titles (after normalization)
-                        return norm1 === norm2;
-                    };
+                    for (const item of sorted) {
+                        const normTitle = normalizeTitle(item.title);
+                        if (!titleMap.has(normTitle)) {
+                            titleMap.set(normTitle, []);
+                        }
+                        titleMap.get(normTitle)?.push(item);
+                    }
 
-                    const deduplicated: MediaItem[] = [];
-                    for (const item of allItems) {
-                        const existingIdx = deduplicated.findIndex(existing =>
-                            areSameTitleDifferentSource(item, existing)
-                        );
+                    const enrichmentQueue: { jikanItem: MediaItem; tmdbItem: MediaItem }[] = [];
 
-                        if (existingIdx === -1) {
-                            deduplicated.push(item);
-                        } else {
-                            const existing = deduplicated[existingIdx];
-                            if (item.type === 'anime' && existing.type !== 'anime') {
-                                deduplicated[existingIdx] = item;
+                    // Process groups
+                    titleMap.forEach((items, key) => {
+                        const hasJikanAnime = items.some(i => i.type === 'anime');
+
+                        items.forEach(item => {
+                            if (seenIds.has(item.id)) return;
+
+                            if (item.type === 'tv' && item.isAnime && hasJikanAnime) {
+                                const jikanItem = items.find(i => i.type === 'anime');
+                                if (jikanItem) {
+                                    // Queue for video enrichment (requires detail fetch)
+                                    enrichmentQueue.push({ jikanItem, tmdbItem: item });
+
+                                    // Sync Enrichment: Image (available in list result)
+                                    if (item.largeImageUrl) {
+                                        jikanItem.imageUrl = item.imageUrl;
+                                        jikanItem.largeImageUrl = item.largeImageUrl;
+                                    }
+                                }
+                                return; // Skip adding the TMDB item to results
                             }
+
+                            seenIds.add(item.id);
+                            dedupedResults.push(item);
+                        });
+                    });
+
+                    // Execute Async Enrichment
+                    if (enrichmentQueue.length > 0) {
+                        try {
+                            await Promise.all(enrichmentQueue.map(async ({ jikanItem, tmdbItem }) => {
+                                const details = await getTVDetails(tmdbItem.sourceId);
+
+                                if (details?.videos?.results) {
+                                    const videos = details.videos.results;
+
+                                    const trailer = videos.find(v => v.site === "YouTube" && v.type === "Trailer")?.key
+                                        || videos.find(v => v.site === "YouTube")?.key;
+
+                                    if (trailer && !jikanItem.trailerUrl) {
+                                        const trailerUrl = `https://www.youtube.com/watch?v=${trailer}`;
+                                        jikanItem.trailerUrl = trailerUrl;
+                                    }
+                                }
+                            }));
+                        } catch (e) {
+                            console.error("Enrichment failed", e);
                         }
                     }
 
-                    const combined = deduplicated.sort((a, b) => (b.score || 0) - (a.score || 0));
-                    setResults(combined);
+
+                    const finalResults = dedupedResults.sort((a, b) => {
+                        const relevanceA = calculateRelevanceScore(a.title, query);
+                        const relevanceB = calculateRelevanceScore(b.title, query);
+
+                        if (relevanceA !== relevanceB) {
+                            return relevanceB - relevanceA; // Higher relevance first
+                        }
+                        return (b.popularity || 0) - (a.popularity || 0); // Then higher popularity
+                    });
+
+                    setResults(finalResults);
                 } catch (err) {
                     console.error(err);
                 } finally {

@@ -48,6 +48,7 @@ export interface TMDBMovie {
     vote_count: number;
     popularity: number;
     runtime: number | null;
+    genre_ids?: number[];
     genres?: TMDBGenre[];
     videos?: { results: TMDBVideo[] };
     status?: string;
@@ -68,6 +69,7 @@ export interface TMDBTVShow {
     number_of_episodes: number | null;
     number_of_seasons: number | null;
     episode_run_time?: number[];
+    genre_ids?: number[];
     genres?: TMDBGenre[];
     videos?: { results: TMDBVideo[] };
     status?: string;

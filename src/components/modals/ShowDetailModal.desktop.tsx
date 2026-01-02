@@ -70,6 +70,13 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
 
     // Helper to extract YouTube ID based on media type
     const getYoutubeId = (): string | null => {
+        if (media?.trailerUrl) {
+            const match = media.trailerUrl.match(/embed\/([a-zA-Z0-9_-]+)/);
+            if (match) return match[1];
+            const vMatch = media.trailerUrl.match(/v=([a-zA-Z0-9_-]+)/);
+            if (vMatch) return vMatch[1];
+        }
+
         if (!fullDetails) return null;
 
         if (media?.type === 'anime') {
@@ -98,7 +105,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                 const anime = fullDetails as Anime;
                 return {
                     title: anime.title,
-                    imageUrl: anime.images.jpg.large_image_url,
+                    imageUrl: media.largeImageUrl || anime.images.jpg.large_image_url, // Prefer enriched image
                     year: anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null),
                     score: anime.score,
                     synopsis: anime.synopsis,
@@ -167,7 +174,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
             imageUrl: media.largeImageUrl,
             year: media.year,
             score: media.score,
-            synopsis: media.synopsis,
+            synopsis: media.description,
             episodes: media.episodes,
             status: null,
             type: media.type === 'anime' ? 'Anime' : media.type === 'movie' ? 'Movie' : 'TV Series',
@@ -196,7 +203,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-[2px]"
+                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-[2px]"
                         onClick={onClose}
                     />
 
@@ -206,16 +213,15 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none"
                     >
                         <div
                             className="w-full max-w-6xl max-h-[85vh] bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800 pointer-events-auto flex flex-col relative"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Close Button - Inside modal */}
                             <button
                                 onClick={onClose}
-                                className="absolute top-4 right-4 z-20 w-10 h-10 bg-gray-800/80 hover:bg-gray-700 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all hover:scale-110 cursor-pointer border border-gray-700"
+                                className="absolute top-4 right-4 z-20 w-10 h-10 bg-gray-200/80 dark:bg-gray-800/80 hover:bg-gray-300 dark:hover:bg-gray-700 backdrop-blur-md rounded-full flex items-center justify-center text-gray-600 dark:text-white transition-all hover:scale-110 cursor-pointer border border-gray-300 dark:border-gray-700"
                             >
                                 <X size={20} />
                             </button>
@@ -283,25 +289,25 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                             {/* Quick Stats */}
                                             <div className="flex flex-wrap gap-2 text-xs">
                                                 {displayData.score && (
-                                                    <div className="flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded-full font-semibold">
+                                                    <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-500 px-2 py-1 rounded-full font-semibold">
                                                         <Star size={12} fill="currentColor" />
                                                         {displayData.score}
                                                     </div>
                                                 )}
                                                 {displayData.year && (
-                                                    <div className="flex items-center gap-1 bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full">
+                                                    <div className="flex items-center gap-1 bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full">
                                                         <Calendar size={12} />
                                                         {displayData.year}
                                                     </div>
                                                 )}
                                                 {displayData.episodes && (
-                                                    <div className="flex items-center gap-1 bg-purple-500/10 text-purple-400 px-2 py-1 rounded-full">
+                                                    <div className="flex items-center gap-1 bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 px-2 py-1 rounded-full">
                                                         <Tv size={12} />
                                                         {displayData.episodes} eps
                                                     </div>
                                                 )}
                                                 {displayData.duration && (
-                                                    <div className="flex items-center gap-1 bg-green-500/10 text-green-400 px-2 py-1 rounded-full">
+                                                    <div className="flex items-center gap-1 bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
                                                         <Clock size={12} />
                                                         {displayData.duration}
                                                     </div>
@@ -367,7 +373,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                                 }}
                                                 disabled={!isLoggedIn}
                                                 className={`btn-animated w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${isLoggedIn
-                                                    ? "btn-glow bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 active:scale-[0.98]"
+                                                    ? "btn-glow bg-blue-500 hover:bg-blue-600 !text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 active:scale-[0.98]"
                                                     : "bg-gray-700 text-gray-400 cursor-not-allowed"
                                                     }`}
                                             >

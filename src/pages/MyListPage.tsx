@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Film, Tv, Sparkles, ChevronLeft, ChevronRight, ChevronDown, Edit2, X, Folder } from "lucide-react";
+import { Film, Tv, Sparkles, ChevronDown, Edit2, X, Folder } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MyListDetailModal } from "../components/modals/MyListDetailModalWrapper";
 import { ListManageModal } from "../components/modals/ListManageModal";
 import { useAuthContext } from "../context/AuthContext";
 import { getListIcon } from "../utils/constants";
+import { ScrollableRow } from "../components/common/ScrollableRow";
 
 export function MyListPage() {
     const navigate = useNavigate();
@@ -268,59 +269,7 @@ export function MyListPage() {
                                     <span className="text-gray-500 text-sm">({listItems.length})</span>
                                 </div>
 
-                                <div className="relative group">
-                                    <div
-                                        className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
-                                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                    >
-                                        {listItems.map((item: any) => (
-                                            <div
-                                                key={item.id}
-                                                onClick={() => openModal(item)}
-                                                className="flex-shrink-0 w-36 cursor-pointer group/card"
-                                            >
-                                                <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
-                                                    <img
-                                                        src={item.image_url}
-                                                        alt={item.title}
-                                                        className="h-full w-full object-cover"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                                        <div className="absolute bottom-0 left-0 right-0 p-2">
-                                                            <p className="text-xs font-medium line-clamp-2" style={{ color: 'white' }}>{item.title}</p>
-                                                            <p className="text-blue-400 text-[10px] font-mono">EP {item.watched_episodes}/{item.total_episodes || '?'}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/80">
-                                                        <div
-                                                            className="h-full bg-blue-500"
-                                                            style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <button
-                                        onClick={(e) => {
-                                            const container = (e.target as HTMLElement).parentElement?.querySelector('.overflow-x-auto');
-                                            container?.scrollBy({ left: -300, behavior: 'smooth' });
-                                        }}
-                                        className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white dark:bg-black/70 rounded-full flex items-center justify-center text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-100 dark:hover:bg-black shadow-lg"
-                                    >
-                                        <ChevronLeft size={18} />
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            const container = (e.target as HTMLElement).parentElement?.querySelector('.overflow-x-auto');
-                                            container?.scrollBy({ left: 300, behavior: 'smooth' });
-                                        }}
-                                        className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white dark:bg-black/70 rounded-full flex items-center justify-center text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-100 dark:hover:bg-black shadow-lg"
-                                    >
-                                        <ChevronRight size={18} />
-                                    </button>
-                                </div>
+                                <ScrollableRow items={listItems} onItemClick={openModal} />
                             </div>
                         );
                     })}
@@ -343,40 +292,7 @@ export function MyListPage() {
                                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">Uncategorized</h2>
                                 <span className="text-gray-500 text-sm">({uncategorizedItems.length})</span>
                             </div>
-                            <div className="relative group">
-                                <div
-                                    className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
-                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                >
-                                    {uncategorizedItems.map((item: any) => (
-                                        <div
-                                            key={item.id}
-                                            onClick={() => openModal(item)}
-                                            className="flex-shrink-0 w-36 cursor-pointer group/card"
-                                        >
-                                            <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
-                                                <img
-                                                    src={item.image_url}
-                                                    alt={item.title}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent">
-                                                    <div className="absolute bottom-0 left-0 right-0 p-2">
-                                                        <p className="text-xs font-medium line-clamp-2 drop-shadow-lg" style={{ color: 'white' }}>{item.title}</p>
-                                                        <p className="text-blue-400 text-[10px] font-mono drop-shadow-lg">EP {item.watched_episodes}/{item.total_episodes || '?'}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/80">
-                                                    <div
-                                                        className="h-full bg-blue-500"
-                                                        style={{ width: `${Math.min(100, (item.watched_episodes / (item.total_episodes || 1)) * 100)}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            <ScrollableRow items={uncategorizedItems} onItemClick={openModal} />
                         </div>
                     );
                 })()}

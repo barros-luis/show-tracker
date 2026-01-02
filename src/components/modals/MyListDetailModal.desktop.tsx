@@ -489,7 +489,7 @@ export function DesktopMyListDetailModal({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-[2px]"
+                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-[2px]"
                         onClick={onClose}
                     />
 
@@ -499,7 +499,7 @@ export function DesktopMyListDetailModal({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none"
                     >
                         <div
                             className="w-full max-w-6xl max-h-[85vh] bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800 pointer-events-auto flex flex-col relative"

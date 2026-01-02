@@ -216,7 +216,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                             </div>
                                             <input
                                                 type="range"
-                                                min="75"
+                                                min="50"
                                                 max="150"
                                                 step="5"
                                                 value={settings.zoomLevel}
@@ -224,7 +224,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                 className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                             />
                                             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
-                                                <span>75%</span>
+                                                <span>50%</span>
                                                 <span>100%</span>
                                                 <span>150%</span>
                                             </div>

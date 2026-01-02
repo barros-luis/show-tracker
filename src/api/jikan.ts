@@ -65,6 +65,7 @@ export interface Anime {
   genres: AnimeGenre[];
   themes: AnimeGenre[];
   demographics: AnimeGenre[];
+  members: number | null;
   trailer: AnimeTrailer | null;
 }
 

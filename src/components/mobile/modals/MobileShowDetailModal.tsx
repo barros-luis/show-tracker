@@ -80,6 +80,13 @@ export function MobileShowDetailModal({
 
     // Helper to extract YouTube ID
     const getYoutubeId = (): string | null => {
+        if (media?.trailerUrl) {
+            const match = media.trailerUrl.match(/embed\/([a-zA-Z0-9_-]+)/);
+            if (match) return match[1];
+            const vMatch = media.trailerUrl.match(/v=([a-zA-Z0-9_-]+)/);
+            if (vMatch) return vMatch[1];
+        }
+
         if (!fullDetails) return null;
 
         if (media?.type === 'anime') {
@@ -108,7 +115,7 @@ export function MobileShowDetailModal({
                 const anime = fullDetails as Anime;
                 return {
                     title: anime.title,
-                    imageUrl: anime.images.jpg.large_image_url,
+                    imageUrl: media.largeImageUrl || anime.images.jpg.large_image_url, // Prefer enriched image
                     year: anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null),
                     score: anime.score,
                     synopsis: anime.synopsis,
@@ -152,7 +159,7 @@ export function MobileShowDetailModal({
             imageUrl: media.largeImageUrl,
             year: media.year,
             score: media.score,
-            synopsis: media.synopsis,
+            synopsis: media.description,
             episodes: media.episodes,
             status: null,
             genres: [],
