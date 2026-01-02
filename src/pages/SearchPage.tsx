@@ -256,7 +256,7 @@ export function SearchPage() {
 
                 {/* Search Filters */}
                 <div className="flex justify-center gap-2 mb-8">
-                    <div className="flex gap-1 bg-gray-800/50 rounded-lg p-1">
+                    <div className="flex gap-1 bg-white/80 dark:bg-gray-800/50 rounded-lg p-1 border border-gray-200 dark:border-transparent">
                         {[
                             { value: 'anime', label: 'Animes', icon: <Sparkles size={12} />, color: 'purple' },
                             { value: 'movie', label: 'Movies', icon: <Film size={12} />, color: 'red' },
@@ -277,7 +277,7 @@ export function SearchPage() {
                                     }}
                                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${isActive
                                         ? `bg-${type.color}-500 text-white`
-                                        : 'text-gray-400 hover:text-white'
+                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                                         }`}
                                 >
                                     {type.icon} {type.label}

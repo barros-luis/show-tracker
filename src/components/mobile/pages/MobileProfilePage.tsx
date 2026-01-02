@@ -104,7 +104,7 @@ export function MobileProfilePage({ session, profile }: MobileProfilePageProps) 
             {/* Banner + Avatar - full width, extends to screen edges */}
             <div className={`h-40 ${bannerGradient} relative`}>
                 <div className="absolute -bottom-12 left-6">
-                    <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 shadow-xl">
+                    <div className="w-24 h-24 rounded-full border-4 border-gray-900 dark:border-gray-900 overflow-hidden bg-white dark:bg-gray-800 shadow-xl">
                         {avatarUrl ? (
                             <img src={avatarUrl} alt={nickname} className="w-full h-full object-cover" />
                         ) : (
@@ -118,7 +118,7 @@ export function MobileProfilePage({ session, profile }: MobileProfilePageProps) 
 
             {/* Name + Email - with padding restored */}
             <div className="pt-16 px-6">
-                <h1 className="text-2xl font-bold text-white">{nickname}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{nickname}</h1>
                 {session?.user?.email && (
                     <p className="text-gray-500 text-sm">{session.user.email}</p>
                 )}
@@ -129,12 +129,12 @@ export function MobileProfilePage({ session, profile }: MobileProfilePageProps) 
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mx-6 mt-6 p-4 bg-gray-800/50 rounded-2xl overflow-hidden"
+                    className="mx-6 mt-6 p-4 bg-white/80 dark:bg-gray-800/50 rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-transparent backdrop-blur-sm"
                 >
-                    <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                         <span>👋</span> About Me
                     </h2>
-                    <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap overflow-hidden">{aboutMe}</p>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap overflow-hidden">{aboutMe}</p>
                 </motion.div>
             )}
 
@@ -149,14 +149,14 @@ export function MobileProfilePage({ session, profile }: MobileProfilePageProps) 
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: idx * 0.1 }}
-                                className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-xl"
+                                className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800/30 rounded-xl shadow-sm border border-gray-100 dark:border-transparent"
                             >
-                                <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                    <IconComponent size={18} className="text-blue-400" />
+                                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                    <IconComponent size={18} className="text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500">{field.label}</p>
-                                    <p className="text-white font-medium">{field.value}</p>
+                                    <p className="text-gray-900 dark:text-white font-medium">{field.value}</p>
                                 </div>
                             </motion.div>
                         );

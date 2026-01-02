@@ -32,10 +32,10 @@ export function UserMenu({ session, profile, onLogout, onOpenProfile, onOpenSett
       {/* TRIGGER BUTTON */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="cursor-pointer flex items-center gap-3 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-full pl-5 pr-3 py-2 transition-all"
+        className="cursor-pointer flex items-center gap-3 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-100 dark:border-white/5 rounded-full pl-5 pr-3 py-2 transition-all"
       >
-        <span className="text-sm font-medium text-white max-w-[100px] truncate">{displayName}</span>
-        <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden border border-gray-700">
+        <span className="text-sm font-medium text-gray-900 dark:text-white max-w-[100px] truncate">{displayName}</span>
+        <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden border border-gray-100 dark:border-gray-700">
           {avatar ? (
             <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
           ) : (
@@ -46,28 +46,28 @@ export function UserMenu({ session, profile, onLogout, onOpenProfile, onOpenSett
 
       {/* DROPDOWN MENU */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden z-40">
-          <div className="p-4 border-b border-gray-800">
+        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 rounded-xl shadow-md overflow-hidden z-40">
+          <div className="p-4 border-b border-gray-100 dark:border-white/5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Signed in as</p>
-            <p className="text-sm font-bold text-white truncate">{session.user.email}</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{session.user.email}</p>
           </div>
           <div className="p-1">
             <button
               onClick={() => { setIsOpen(false); onOpenProfile(); }}
-              className="cursor-pointer w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
+              className="cursor-pointer w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors"
             >
               <User size={16} /> Profile
             </button>
             <button
               onClick={() => { setIsOpen(false); onOpenSettings(); }}
-              className="cursor-pointer w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
+              className="cursor-pointer w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors"
             >
               <Settings size={16} /> Settings
             </button>
-            <div className="h-px bg-gray-800 my-1" />
+            <div className="h-px bg-gray-200 dark:bg-white/5 my-1" />
             <button
               onClick={() => { setIsOpen(false); onLogout(); }}
-              className="cursor-pointer w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors"
+              className="cursor-pointer w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 rounded-lg transition-colors"
             >
               <LogOut size={16} /> Sign Out
             </button>

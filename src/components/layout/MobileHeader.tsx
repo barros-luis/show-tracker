@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { NotificationBell } from "../common/NotificationBell";
 import type { AppNotification } from "../../api/NotificationService";
+import { useSettings } from "../../context/SettingsContext";
 
 interface MobileHeaderProps {
     isLoggedIn: boolean;
@@ -32,6 +33,7 @@ export function MobileHeader({
 }: MobileHeaderProps) {
     const navigate = useNavigate();
     const location = useLocation();
+    const { settings } = useSettings();
 
     // Get current page info
     const getPageInfo = () => {
@@ -68,7 +70,7 @@ export function MobileHeader({
                 whileTap={{ scale: 0.95 }}
             >
                 <img
-                    src="/logo.png"
+                    src={settings.theme === 'dark' ? "/logo.png" : "/ast-logo-dark.png"}
                     alt="AST"
                     className="h-14 w-auto ml-2" /* Bigger logo, moved right */
                 />

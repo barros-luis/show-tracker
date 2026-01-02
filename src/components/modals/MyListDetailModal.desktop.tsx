@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Star, Calendar, Tv, Clock, Loader2, Trash2, ChevronDown, ChevronUp, Check, AlertTriangle, FolderOpen, Folder, Film, Sparkles, Gamepad2, Book, Music, Heart, Flame, Zap, Moon } from "lucide-react";
+import { X, Star, Calendar, Tv, Clock, Loader2, Trash2, ChevronDown, ChevronUp, Check, AlertTriangle } from "lucide-react";
 import { getAnimeDetails, getAllAnimeEpisodes, getEpisodeDetails, type Anime } from "../../api/jikan";
 import { getTVDetails, getAllTVEpisodes, searchTVShows, getTVSeasonEpisodes, type TMDBTVShow } from "../../api/tmdb";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -9,7 +9,7 @@ import type { UserList } from "./ListManageModal";
 // Unified episode type for both anime and TV
 interface UnifiedEpisode {
     id: number;  // mal_id for anime, episode id for TMDB
-    number: number;  // episode number (for tracking)
+    number: number;
     title: string;
     synopsis?: string | null;
     filler?: boolean;
@@ -62,15 +62,8 @@ function setCachedEpisodes(mediaType: string, id: number | null, episodes: Unifi
     }
 }
 
-// Status options with display labels and colors
-const STATUS_OPTIONS = [
-    { value: "PLANNED", label: "Planned", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
-    { value: "WATCHING", label: "Watching", color: "bg-green-500/20 text-green-400 border-green-500/30" },
-    { value: "ON_HOLD", label: "On Hold", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
-    { value: "FINISHED", label: "Finished", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-    { value: "REWATCHING", label: "Re-watching", color: "bg-pink-500/20 text-pink-400 border-pink-500/30" },
-    { value: "REWATCHED", label: "Re-watched", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30" },
-] as const;
+import { StatusDropdown, ListDropdown } from "./MyListDropdowns";
+
 
 interface WatchlistItem {
     id: number;
@@ -122,28 +115,11 @@ export function DesktopMyListDetailModal({
     const [loadingSynopsis, setLoadingSynopsis] = useState<number | null>(null);
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
     const [currentStatus, setCurrentStatus] = useState<string>(item?.status || "PLANNED");
-    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [currentListId, setCurrentListId] = useState<number | null>(item?.list_id ?? null);
-    const [showListDropdown, setShowListDropdown] = useState(false);
 
-    // Icon helper for lists
-    const getListIcon = (iconName: string | null, size: number = 12) => {
-        const icons: Record<string, React.ReactNode> = {
-            folder: <Folder size={size} />,
-            film: <Film size={size} />,
-            tv: <Tv size={size} />,
-            sparkles: <Sparkles size={size} />,
-            gamepad: <Gamepad2 size={size} />,
-            book: <Book size={size} />,
-            music: <Music size={size} />,
-            star: <Star size={size} />,
-            heart: <Heart size={size} />,
-            flame: <Flame size={size} />,
-            zap: <Zap size={size} />,
-            moon: <Moon size={size} />,
-        };
-        return icons[iconName || 'folder'] || <Folder size={size} />;
-    };
+    // Helper removed (moved to MyListDropdowns.tsx)
+
+
 
     // Sync status and list_id when item changes
     useEffect(() => {
@@ -317,12 +293,31 @@ export function DesktopMyListDetailModal({
             setExpandedEpisode(null);
             setEpisodeSynopsis({});
             setShowRemoveConfirm(false);
-            setShowStatusDropdown(false);
-        }
-        if (item) {
-            setCurrentStatus(item.status || "PLANNED");
+            if (item) {
+                setCurrentStatus(item.status || "PLANNED");
+            }
         }
     }, [isOpen, item]);
+
+    const handleStatusChange = async (status: string) => {
+        if (!item) return;
+        setCurrentStatus(status);
+        await supabase
+            .from('watchlist')
+            .update({ status: status })
+            .eq('id', item.id);
+        onStatusUpdate(item.id, status);
+    };
+
+    const handleListChange = async (listId: number | null) => {
+        if (!item) return;
+        setCurrentListId(listId);
+        await supabase
+            .from('watchlist')
+            .update({ list_id: listId })
+            .eq('id', item.id);
+        onListChange(item.id, listId);
+    };
 
     const fetchWatchedEpisodes = async () => {
         if (!item || !userId) return;
@@ -372,7 +367,8 @@ export function DesktopMyListDetailModal({
         return () => window.removeEventListener("keydown", handleEsc);
     }, [isOpen, onClose, showRemoveConfirm]);
 
-    // Prevent body scroll when modal is open
+
+
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = "hidden";
@@ -506,13 +502,13 @@ export function DesktopMyListDetailModal({
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
                     >
                         <div
-                            className="w-full max-w-6xl max-h-[85vh] bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800 pointer-events-auto flex flex-col relative"
+                            className="w-full max-w-6xl max-h-[85vh] bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800 pointer-events-auto flex flex-col relative"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {/* Close Button */}
                             <button
                                 onClick={onClose}
-                                className="absolute top-4 right-4 z-20 w-8 h-8 bg-gray-800/80 hover:bg-gray-700 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all hover:scale-110 cursor-pointer border border-gray-700"
+                                className="absolute top-4 right-4 z-20 w-8 h-8 bg-gray-200/80 dark:bg-gray-800/80 hover:bg-gray-300 dark:hover:bg-gray-700 backdrop-blur-md rounded-full flex items-center justify-center text-gray-600 dark:text-white transition-all hover:scale-110 cursor-pointer border border-gray-300 dark:border-gray-700"
                             >
                                 <X size={16} />
                             </button>
@@ -593,121 +589,17 @@ export function DesktopMyListDetailModal({
                                             </div>
 
                                             {/* Status Dropdown */}
-                                            <div className="relative">
-                                                <button
-                                                    onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center gap-2 cursor-pointer transition-all border ${STATUS_OPTIONS.find(s => s.value === currentStatus)?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30"
-                                                        }`}
-                                                >
-                                                    {STATUS_OPTIONS.find(s => s.value === currentStatus)?.label || currentStatus}
-                                                    <ChevronDown size={12} className={`transition-transform ${showStatusDropdown ? "rotate-180" : ""}`} />
-                                                </button>
-
-                                                {/* Dropdown Menu */}
-                                                <AnimatePresence>
-                                                    {showStatusDropdown && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, y: -5 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0, y: -5 }}
-                                                            className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[140px]"
-                                                        >
-                                                            {STATUS_OPTIONS.map((option) => (
-                                                                <button
-                                                                    key={option.value}
-                                                                    onClick={async () => {
-                                                                        setCurrentStatus(option.value);
-                                                                        setShowStatusDropdown(false);
-                                                                        // Update database
-                                                                        await supabase
-                                                                            .from('watchlist')
-                                                                            .update({ status: option.value })
-                                                                            .eq('id', item.id);
-                                                                        // Update parent
-                                                                        onStatusUpdate(item.id, option.value);
-                                                                    }}
-                                                                    className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors ${currentStatus === option.value
-                                                                        ? "bg-blue-500/20 text-white"
-                                                                        : "text-gray-300 hover:bg-gray-700"
-                                                                        }`}
-                                                                >
-                                                                    {currentStatus === option.value && <Check size={12} />}
-                                                                    {option.label}
-                                                                </button>
-                                                            ))}
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
+                                            <StatusDropdown
+                                                currentStatus={currentStatus}
+                                                onStatusChange={handleStatusChange}
+                                            />
 
                                             {/* Move to List Dropdown */}
-                                            <div className="relative">
-                                                <button
-                                                    onClick={() => setShowListDropdown(!showListDropdown)}
-                                                    className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 cursor-pointer transition-all bg-gray-700/50 hover:bg-gray-700 text-gray-300 border border-gray-600/30"
-                                                >
-                                                    <FolderOpen size={12} />
-                                                    {currentListId
-                                                        ? userLists.find(l => l.id === currentListId)?.name || "Move to List"
-                                                        : "Uncategorized"
-                                                    }
-                                                    <ChevronDown size={12} className={`transition-transform ${showListDropdown ? "rotate-180" : ""}`} />
-                                                </button>
-
-                                                {/* Dropdown Menu */}
-                                                <AnimatePresence>
-                                                    {showListDropdown && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, y: -5 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0, y: -5 }}
-                                                            className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[160px]"
-                                                        >
-                                                            {/* Uncategorized option */}
-                                                            <button
-                                                                onClick={async () => {
-                                                                    setCurrentListId(null);
-                                                                    setShowListDropdown(false);
-                                                                    await supabase
-                                                                        .from('watchlist')
-                                                                        .update({ list_id: null })
-                                                                        .eq('id', item.id);
-                                                                    onListChange(item.id, null);
-                                                                }}
-                                                                className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors ${currentListId === null
-                                                                    ? "bg-blue-500/20 text-white"
-                                                                    : "text-gray-300 hover:bg-gray-700"
-                                                                    }`}
-                                                            >
-                                                                {currentListId === null && <Check size={12} />}
-                                                                <Folder size={12} /> Uncategorized
-                                                            </button>
-
-                                                            {userLists.map((list) => (
-                                                                <button
-                                                                    key={list.id}
-                                                                    onClick={async () => {
-                                                                        setCurrentListId(list.id);
-                                                                        setShowListDropdown(false);
-                                                                        await supabase
-                                                                            .from('watchlist')
-                                                                            .update({ list_id: list.id })
-                                                                            .eq('id', item.id);
-                                                                        onListChange(item.id, list.id);
-                                                                    }}
-                                                                    className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors ${currentListId === list.id
-                                                                        ? "bg-blue-500/20 text-white"
-                                                                        : "text-gray-300 hover:bg-gray-700"
-                                                                        }`}
-                                                                >
-                                                                    {currentListId === list.id && <Check size={12} />}
-                                                                    {getListIcon(list.icon, 12)} {list.name}
-                                                                </button>
-                                                            ))}
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
+                                            <ListDropdown
+                                                currentListId={currentListId}
+                                                userLists={userLists}
+                                                onListChange={handleListChange}
+                                            />
 
                                             {/* Synopsis */}
                                             {((item.media_type === 'anime' && fullDetails && 'synopsis' in fullDetails && fullDetails.synopsis) ||
@@ -812,7 +704,7 @@ export function DesktopMyListDetailModal({
                                                             onEpisodeUpdate(item.id, newWatched.size);
                                                         }}
                                                         disabled={watchedEpisodes.size === 0}
-                                                        className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 hover:border-purple-500/50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                        className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-purple-500/20 hover:bg-purple-500/30 text-purple-600 dark:text-purple-300 border border-purple-500/30 hover:border-purple-500/50 disabled:opacity-40 disabled:cursor-not-allowed"
                                                     >
                                                         <ChevronDown size={14} className="rotate-90" />
                                                         Fill Gaps
@@ -849,7 +741,7 @@ export function DesktopMyListDetailModal({
                                                             onEpisodeUpdate(item.id, newWatched.size);
                                                         }}
                                                         disabled={watchedEpisodes.size === episodes.length}
-                                                        className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 hover:border-green-500/50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                        className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-green-500/20 hover:bg-green-500/30 text-green-600 dark:text-green-300 border border-green-500/30 hover:border-green-500/50 disabled:opacity-40 disabled:cursor-not-allowed"
                                                     >
                                                         <Check size={14} />
                                                         Check All
@@ -920,12 +812,12 @@ export function DesktopMyListDetailModal({
                                                             {/* Badges */}
                                                             <div className="flex gap-1">
                                                                 {episode.filler && (
-                                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-orange-500/20 text-orange-400">
+                                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-orange-500/20 text-orange-600 dark:text-orange-400">
                                                                         Filler
                                                                     </span>
                                                                 )}
                                                                 {episode.recap && (
-                                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-500/20 text-purple-400">
+                                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-500/20 text-purple-600 dark:text-purple-400">
                                                                         Recap
                                                                     </span>
                                                                 )}

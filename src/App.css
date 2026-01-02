@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/*Configure class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ===========================================
    THEME SYSTEM - Light/Dark Mode Support
    =========================================== */
@@ -257,17 +260,21 @@ body {
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #020617; /* Very dark background */
+  background: #020617;
+  /* Very dark background */
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #1e293b; /* Slate 800 */
+  background: #1e293b;
+  /* Slate 800 */
   border-radius: 5px;
-  border: 2px solid #020617; /* Creates padding effect */
+  border: 2px solid #020617;
+  /* Creates padding effect */
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #334155; /* Slate 700 */
+  background: #334155;
+  /* Slate 700 */
 }
 
 .anime-card {
@@ -342,16 +349,19 @@ body {
   padding: 0 16px;
   padding-top: calc(env(safe-area-inset-top) + 12px);
   box-sizing: content-box;
-  background: #070d1c;
+  background: var(--bg-card);
+  /* Adapted to theme */
   /* backdrop-filter: blur(0px); */
   /* -webkit-backdrop-filter: blur(20px); */
   position: sticky;
   top: 0;
   z-index: 100;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .dark .mobile-header {
   background: #070d1c;
+  border-bottom: none;
 }
 
 .mobile-header-brand {

@@ -121,7 +121,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         }
                     }
                 } catch (err) {
-                    console.log('Mobile update check failed:', err);
+                    // console.log('Mobile update check failed:', err);
                 }
                 return;
             }

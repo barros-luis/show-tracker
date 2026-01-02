@@ -1,6 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Search, List, User, Settings } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface MobileNavProps {
     isLoggedIn: boolean;
@@ -31,29 +30,43 @@ export function MobileNav({ isLoggedIn, onAuthClick }: MobileNavProps) {
             className="fixed bottom-0 left-0 right-0 z-[1000]"
             style={{
                 paddingBottom: 'env(safe-area-inset-bottom)',
-                background: 'linear-gradient(to bottom, transparent 0%, transparent 27%, rgba(0,0,0,0.8) 67%, #000000 100%)',
-                paddingTop: '45px'
+                background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 25%, rgba(0,0,0,0.8) 65%, #000000 100%)',
+                paddingTop: '15px'
             }}
         >
-            <div className="flex justify-around items-center h-14 px-6">
+            <div className="flex justify-around items-end h-14 px-2 pb-2">
                 {tabs.map((tab) => {
                     const isActive = location.pathname === tab.path;
                     const Icon = tab.icon;
+                    // Map paths to labels
+                    const getLabel = (path: string) => {
+                        if (path === "/") return "Search";
+                        if (path === "/list") return "My List";
+                        if (path === "/profile") return "Profile";
+                        if (path === "/settings") return "Settings";
+                        return "";
+                    };
 
                     return (
-                        <motion.button
+                        <button
                             key={tab.path}
                             onClick={() => handleTabClick(tab)}
-                            className="flex items-center justify-center w-14 h-14"
-                            whileTap={{ scale: 0.85 }}
+                            className="flex flex-col items-center justify-end w-16 gap-1"
                             style={{ WebkitTapHighlightColor: 'transparent' }}
                         >
                             <Icon
-                                size={26}
-                                className={isActive ? "text-blue-500" : "text-gray-500"}
-                                strokeWidth={isActive ? 2.2 : 1.5}
+                                size={22}
+                                className={`${isActive
+                                    ? "text-blue-400 drop-shadow-[0_0_12px_rgba(96,165,250,0.6)]"
+                                    : "text-stone-400"
+                                    } transition-all duration-300`}
+                                strokeWidth={isActive ? 2.5 : 2}
                             />
-                        </motion.button>
+                            <span className={`text-[10px] font-medium tracking-wide transition-all duration-300 ${isActive ? "text-blue-400 opacity-100 transform scale-100" : "text-stone-500 opacity-80 transform scale-95"
+                                }`}>
+                                {getLabel(tab.path)}
+                            </span>
+                        </button>
                     );
                 })}
             </div>

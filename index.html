@@ -5,12 +5,19 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#070d1c" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Tauri + React + Typescript</title>
   <style>
+    :root {
+      --splash-bg: #070d1c;
+      --splash-text: #ffffff;
+    }
+
     /* Splash Screen Styles - loads instantly */
     body {
       margin: 0;
-      background-color: #070d1c;
+      /* Background handled by App.css */
     }
 
     .app-splash {
@@ -20,12 +27,13 @@
       justify-content: center;
       height: 100vh;
       width: 100vw;
-      background-color: #070d1c;
-      color: white;
+      background-color: var(--splash-bg);
+      color: var(--splash-text);
       position: fixed;
       top: 0;
       left: 0;
       z-index: 9999;
+      transition: background-color 0.3s ease;
     }
 
     .splash-logo {
@@ -53,6 +61,7 @@
       }
     }
   </style>
+
 </head>
 
 <body>
@@ -62,6 +71,30 @@
     </div>
   </div>
   <script type="module" src="/src/main.tsx"></script>
+  <script>
+    (function () {
+      try {
+        const savedSettings = localStorage.getItem('app_settings');
+        if (savedSettings) {
+          const settings = JSON.parse(savedSettings);
+          if (settings.theme === 'light') {
+            document.documentElement.style.setProperty('--splash-bg', '#f8fafc'); // White/Paper color
+            document.documentElement.style.setProperty('--splash-text', '#0f172a');
+
+            // Switch logo to dark version
+            const logo = document.querySelector('.splash-logo');
+            if (logo) logo.src = "/ast-logo-dark.png";
+
+            // Also set meta theme color immediately
+            const metaThemeColor = document.querySelector("meta[name=theme-color]");
+            if (metaThemeColor) metaThemeColor.setAttribute("content", "#ffffff");
+          }
+        }
+      } catch (e) {
+        // Fallback to default (dark)
+      }
+    })();
+  </script>
 </body>
 
 </html>

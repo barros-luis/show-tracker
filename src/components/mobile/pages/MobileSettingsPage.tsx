@@ -32,8 +32,8 @@ function Toggle({ enabled, onToggle, color = 'blue' }: {
     color?: 'blue' | 'red';
 }) {
     const colorClass = color === 'red'
-        ? (enabled ? 'bg-red-500' : 'bg-gray-600')
-        : (enabled ? 'bg-blue-500' : 'bg-gray-600');
+        ? (enabled ? 'bg-red-500' : 'bg-gray-300 dark:bg-gray-600')
+        : (enabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600');
 
     return (
         <div
@@ -72,11 +72,11 @@ function SettingRow({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex items-center justify-between py-4 border-b border-gray-800 last:border-0">
+        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-white/5 last:border-0">
             <div className="flex-1 pr-4">
-                <p className="text-white font-medium">{label}</p>
+                <p className="text-gray-900 dark:text-white font-medium">{label}</p>
                 {description && (
-                    <p className="text-gray-500 text-sm mt-0.5">{description}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{description}</p>
                 )}
             </div>
             {children}
@@ -99,16 +99,16 @@ function Section({
     children: React.ReactNode;
 }) {
     return (
-        <div className="bg-gray-900/50 rounded-2xl overflow-hidden mb-3">
+        <div className="bg-white/50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 rounded-2xl overflow-hidden mb-3 shadow-sm">
             <button
                 onClick={onToggle}
                 className="w-full flex items-center justify-between p-4 text-left"
             >
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                        <Icon size={20} className="text-blue-400" />
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center">
+                        <Icon size={20} className="text-blue-500 dark:text-blue-400" />
                     </div>
-                    <span className="text-white font-semibold">{title}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">{title}</span>
                 </div>
                 <motion.div
                     animate={{ rotate: isOpen ? 90 : 0 }}
@@ -252,11 +252,11 @@ export function MobileSettingsPage({
         <div className="min-h-screen px-4 py-6 pb-24">
             {/* Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                    <SettingsIcon className="text-blue-400" size={24} />
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <SettingsIcon className="text-blue-500 dark:text-blue-400" size={24} />
                     Settings
                 </h1>
-                <p className="text-gray-500 text-sm mt-1">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                     Customize your experience
                 </p>
             </div>
@@ -281,11 +281,11 @@ export function MobileSettingsPage({
                             </button>
 
                             <div className="relative group">
-                                <div className="h-24 w-24 rounded-full border-4 border-gray-900 shadow-xl overflow-hidden bg-gray-800 flex items-center justify-center">
+                                <div className="h-24 w-24 rounded-full border-4 border-white dark:border-gray-900 shadow-xl overflow-hidden bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
                                     {avatarUrl ? (
                                         <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                                     ) : (
-                                        <span className="text-3xl font-bold text-white">{nickname?.[0]?.toUpperCase() || 'U'}</span>
+                                        <span className="text-3xl font-bold text-gray-500 dark:text-white">{nickname?.[0]?.toUpperCase() || 'U'}</span>
                                     )}
                                 </div>
                                 <label className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
@@ -298,22 +298,22 @@ export function MobileSettingsPage({
                         {/* Fields */}
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest ml-1">Display Name</label>
+                                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Display Name</label>
                                 <input
                                     type="text"
                                     value={nickname}
                                     onChange={(e) => setNickname(e.target.value)}
-                                    className="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                                     placeholder="Your Nickname"
                                 />
                             </div>
 
                             <div>
-                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest ml-1">About Me</label>
+                                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">About Me</label>
                                 <textarea
                                     value={aboutMe}
                                     onChange={(e) => setAboutMe(e.target.value)}
-                                    className="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[160px]"
+                                    className="w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[160px]"
                                     placeholder="Tell us about yourself..."
                                 />
                             </div>
@@ -390,7 +390,7 @@ export function MobileSettingsPage({
                     />
                 </SettingRow>
                 {settings.adultContent && (
-                    <p className="text-red-400 text-xs mt-2">
+                    <p className="text-red-500 dark:text-red-400 text-xs mt-2">
                         ⚠️ Adult content will be shown in search results.
                     </p>
                 )}
@@ -404,21 +404,21 @@ export function MobileSettingsPage({
                 onToggle={() => toggleSection('about')}
             >
                 <div className="space-y-4 text-sm">
-                    <p className="text-gray-400">
+                    <p className="text-gray-500 dark:text-gray-400">
                         AShow Tracker helps you track your favorite anime, movies, and TV shows.
                     </p>
 
-                    <div className="bg-gray-800/50 rounded-xl p-3">
-                        <p className="text-gray-500 text-xs mb-1">Data provided by:</p>
+                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3">
+                        <p className="text-gray-500 dark:text-gray-500 text-xs mb-1">Data provided by:</p>
                         <div className="flex items-center gap-4">
-                            <span className="text-white font-medium">TMDB</span>
-                            <span className="text-gray-600">•</span>
-                            <span className="text-white font-medium">Jikan/MAL</span>
+                            <span className="text-gray-900 dark:text-white font-medium">TMDB</span>
+                            <span className="text-gray-400 dark:text-gray-600">•</span>
+                            <span className="text-gray-900 dark:text-white font-medium">Jikan/MAL</span>
                         </div>
                     </div>
 
-                    <p className="text-center text-gray-600 text-xs pt-2">
-                        AShow Tracker v1.0.0 • Made with ❤️
+                    <p className="text-center text-gray-500 dark:text-gray-600 text-xs pt-2">
+                        AShow Tracker v1.2.1 • Made with ❤️
                     </p>
                 </div>
             </Section>

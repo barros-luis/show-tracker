@@ -122,7 +122,7 @@ export function MyListPage() {
                 {/* Filter Bar */}
                 <div className="flex flex-wrap items-center gap-3">
                     {/* Media Type Filters */}
-                    <div className="flex gap-1 bg-gray-800/50 rounded-lg p-1">
+                    <div className="flex gap-1 bg-white/80 dark:bg-gray-800/50 rounded-lg p-1 border border-gray-200 dark:border-transparent">
                         {[
                             { value: 'anime', label: 'Anime', icon: <Sparkles size={12} />, color: 'purple' },
                             { value: 'movie', label: 'Movies', icon: <Film size={12} />, color: 'red' },
@@ -143,7 +143,7 @@ export function MyListPage() {
                                     }}
                                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${isActive
                                         ? `bg-${type.color}-500 text-white`
-                                        : 'text-gray-400 hover:text-white'
+                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                                         }`}
                                 >
                                     {type.icon} {type.label}
@@ -156,7 +156,7 @@ export function MyListPage() {
                     <div className="relative" ref={statusDropdownRef}>
                         <button
                             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/80 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all cursor-pointer flex items-center gap-1.5 border border-gray-200 dark:border-transparent"
                         >
                             {statusFilters.size === 0
                                 ? 'All Statuses'
@@ -172,7 +172,7 @@ export function MyListPage() {
                                     initial={{ opacity: 0, y: -5 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -5 }}
-                                    className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[160px]"
+                                    className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[160px]"
                                 >
                                     <button
                                         onClick={() => {
@@ -180,8 +180,8 @@ export function MyListPage() {
                                             setShowStatusDropdown(false);
                                         }}
                                         className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors ${statusFilters.size === 0
-                                            ? 'bg-blue-500/20 text-white'
-                                            : 'text-gray-300 hover:bg-gray-700'
+                                            ? 'bg-blue-500/20 text-blue-600 dark:text-white'
+                                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                             }`}
                                     >
                                         All Statuses
@@ -241,7 +241,7 @@ export function MyListPage() {
                     {/* Edit Lists Button */}
                     <button
                         onClick={() => setListManageModalOpen(true)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 ml-auto"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/80 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all cursor-pointer flex items-center gap-1.5 ml-auto border border-gray-200 dark:border-transparent"
                     >
                         <Edit2 size={12} /> Edit Lists
                     </button>

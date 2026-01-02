@@ -178,15 +178,15 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
         const SelectedIcon = ICON_MAP[selected] || Globe;
         return (
             <div className="relative">
-                <button onClick={() => setIsOpen(!isOpen)} className="p-1.5 bg-gray-800 border border-gray-600 rounded text-gray-300 hover:text-white">
+                <button onClick={() => setIsOpen(!isOpen)} className="p-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                     <SelectedIcon size={16} />
                 </button>
                 {isOpen && (
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl grid grid-cols-4 gap-1 p-2 z-50">
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl grid grid-cols-4 gap-1 p-2 z-50">
                         {Object.keys(ICON_MAP).map((iconKey) => {
                             const Icon = ICON_MAP[iconKey];
                             return (
-                                <button key={iconKey} onClick={() => { onChange(iconKey); setIsOpen(false); }} className={`p-2 rounded hover:bg-gray-700 flex justify-center ${selected === iconKey ? 'bg-blue-600 text-white' : 'text-gray-400'}`}>
+                                <button key={iconKey} onClick={() => { onChange(iconKey); setIsOpen(false); }} className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex justify-center ${selected === iconKey ? 'bg-blue-500 text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                                     <Icon size={16} />
                                 </button>
                             );
@@ -207,7 +207,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
             <div className="flex flex-col gap-8">
 
                 {/* 1. VISUAL IDENTIY */}
-                <section className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+                <section className="bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6">
                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                         <Camera size={20} className="text-blue-400" /> Visual Identity
                     </h3>
@@ -243,12 +243,12 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
 
                         {/* Nickname */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Display Name</label>
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Display Name</label>
                             <input
                                 type="text"
                                 value={nickname}
                                 onChange={(e) => handleInputChange(setNickname, e.target.value)}
-                                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 placeholder="Your Nickname"
                             />
                         </div>
@@ -256,18 +256,18 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                 </section>
 
                 {/* 2. DETAILS */}
-                <section className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 flex flex-col">
-                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <UserIconStub size={20} className="text-purple-400" /> Details
+                <section className="bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6 flex flex-col">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                        <UserIconStub size={20} className="text-purple-500 dark:text-purple-400" /> Details
                     </h3>
 
                     <div className="flex-1 flex flex-col gap-6">
                         <div className="flex-1">
-                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">About Me</label>
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">About Me</label>
                             <textarea
                                 value={aboutMe}
                                 onChange={(e) => handleInputChange(setAboutMe, e.target.value)}
-                                className="w-full min-h-[400px] bg-gray-900 border border-gray-700 rounded-lg p-4 text-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y transition-all text-sm leading-relaxed"
+                                className="w-full min-h-[400px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-gray-900 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y transition-all text-sm leading-relaxed"
                                 placeholder="Tell us a bit about yourself..."
                             />
                         </div>
@@ -276,37 +276,37 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
             </div>
 
             {/* 3. SOCIAL LINKS */}
-            <section className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                    <Globe size={20} className="text-green-400" /> Social Links & Stats
+            <section className="bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                    <Globe size={20} className="text-green-500 dark:text-green-400" /> Social Links & Stats
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {customFields.map((field, index) => (
-                        <div key={index} className="flex items-center gap-2 bg-gray-900/50 p-3 rounded-lg border border-gray-800">
+                        <div key={index} className="flex items-center gap-2 bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg border border-gray-200 dark:border-gray-800">
                             <IconSelector selected={field.icon || "Globe"} onChange={(icon) => updateCustomField(index, "icon", icon)} />
                             <input
                                 type="text"
                                 value={field.label}
                                 onChange={(e) => updateCustomField(index, "label", e.target.value)}
-                                className="w-1/3 bg-transparent border-b border-gray-700 px-1 py-1 text-xs text-gray-500 focus:text-white focus:border-blue-500 outline-none"
+                                className="w-1/3 bg-transparent border-b border-gray-300 dark:border-gray-700 px-1 py-1 text-xs text-gray-500 dark:text-gray-500 focus:text-gray-900 dark:focus:text-white focus:border-blue-500 outline-none"
                                 placeholder="Label"
                             />
                             <input
                                 type="text"
                                 value={field.value}
                                 onChange={(e) => updateCustomField(index, "value", e.target.value)}
-                                className="flex-1 bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                className="flex-1 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                 placeholder="Value / URL"
                             />
-                            <button onClick={() => removeCustomField(index)} className="text-gray-600 hover:text-red-500 transition-colors p-1">
+                            <button onClick={() => removeCustomField(index)} className="text-gray-400 dark:text-gray-600 hover:text-red-500 transition-colors p-1">
                                 <Trash2 size={16} />
                             </button>
                         </div>
                     ))}
 
                     {customFields.length < 5 && (
-                        <button onClick={addCustomField} className="cursor-pointer border border-dashed border-gray-700 rounded-lg p-3 text-gray-500 hover:text-white hover:bg-gray-800 hover:border-gray-500 transition-all flex items-center justify-center gap-2 text-sm">
+                        <button onClick={addCustomField} className="cursor-pointer border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-3 text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 transition-all flex items-center justify-center gap-2 text-sm">
                             <Plus size={16} /> Add Link or Stat
                         </button>
                     )}
