@@ -205,8 +205,8 @@
           <p class="download-format">.dmg</p>
           <span class="download-btn">Download</span>
         </a>
-        <a href="https://github.com/barros-luis/show-tracker/releases/latest" id="android-download"
-          class="download-card">
+        <a href="https://github.com/barros-luis/show-tracker/releases/latest" id="android-download" target="_blank"
+          rel="noopener noreferrer" class="download-card">
           <div class="download-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -392,6 +392,7 @@
       if (androidBtn && downloadLinks.android) {
         androidBtn.href = downloadLinks.android;
         androidBtn.setAttribute('target', '_blank');
+        androidBtn.setAttribute('rel', 'noopener noreferrer');
         androidBtn.classList.remove('disabled');
         androidBtn.querySelector('.download-btn').textContent = 'Download';
         androidBtn.querySelector('.download-btn').classList.remove('coming-soon');
