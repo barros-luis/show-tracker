@@ -207,7 +207,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
             <div className="flex flex-col gap-8">
 
                 {/* 1. VISUAL IDENTIY */}
-                <section className="bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6">
+                <section className="bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6 shadow-sm">
                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                         <Camera size={20} className="text-blue-400" /> Visual Identity
                     </h3>
@@ -218,10 +218,10 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
 
                             <button
                                 onClick={shuffleGradient}
-                                className="absolute top-4 right-4 p-2 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md transition-all duration-500 hover:rotate-180 hover:scale-110 border border-white/10 shadow-lg cursor-pointer z-10"
+                                className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/60 !text-white rounded-full shadow-lg backdrop-blur-md border border-white/20 transition-all duration-300 hover:rotate-180 hover:scale-110 cursor-pointer z-10"
                                 title="Shuffle Banner Color"
                             >
-                                <Shuffle size={18} />
+                                <Shuffle size={18} color="white" />
                             </button>
 
                             <div className="relative group z-10">
@@ -248,7 +248,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                                 type="text"
                                 value={nickname}
                                 onChange={(e) => handleInputChange(setNickname, e.target.value)}
-                                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                className="w-full bg-blue-100/50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 placeholder="Your Nickname"
                             />
                         </div>
@@ -256,7 +256,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                 </section>
 
                 {/* 2. DETAILS */}
-                <section className="bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6 flex flex-col">
+                <section className="bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6 flex flex-col shadow-sm">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                         <UserIconStub size={20} className="text-purple-500 dark:text-purple-400" /> Details
                     </h3>
@@ -267,7 +267,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                             <textarea
                                 value={aboutMe}
                                 onChange={(e) => handleInputChange(setAboutMe, e.target.value)}
-                                className="w-full min-h-[400px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-gray-900 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y transition-all text-sm leading-relaxed"
+                                className="w-full min-h-[400px] bg-blue-100/50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-gray-900 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y transition-all text-sm leading-relaxed"
                                 placeholder="Tell us a bit about yourself..."
                             />
                         </div>
@@ -276,7 +276,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
             </div>
 
             {/* 3. SOCIAL LINKS */}
-            <section className="bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6">
+            <section className="bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6 shadow-sm">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                     <Globe size={20} className="text-green-500 dark:text-green-400" /> Social Links & Stats
                 </h3>
@@ -296,7 +296,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                                 type="text"
                                 value={field.value}
                                 onChange={(e) => updateCustomField(index, "value", e.target.value)}
-                                className="flex-1 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                className="flex-1 bg-blue-100/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                 placeholder="Value / URL"
                             />
                             <button onClick={() => removeCustomField(index)} className="text-gray-400 dark:text-gray-600 hover:text-red-500 transition-colors p-1">
@@ -314,11 +314,11 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
             </section>
 
             {/* SAVE ACTION - Outside main container */}
-            <div className="flex justify-start pt-6">
+            <div className="flex justify-start pt-2">
                 <button
                     onClick={handleSave}
                     disabled={loading}
-                    className="btn-animated bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 transition-all"
+                    className="cursor-pointer bg-blue-500 hover:bg-blue-600 !text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                     {loading ? "Saving..." : <><Save size={20} /> Save Changes</>}
                 </button>

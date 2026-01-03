@@ -100,11 +100,11 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as SettingsTab)}
                                 className={`cursor-pointer w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${isActive
-                                    ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
+                                    ? 'bg-blue-500 !text-white shadow-md shadow-blue-500/20'
                                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                                     }`}
                             >
-                                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`} />
+                                <Icon className={`w-4 h-4 ${isActive ? '!text-white' : 'text-gray-500 dark:text-gray-400'}`} />
                                 {tab.label}
                             </button>
                         );

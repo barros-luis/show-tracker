@@ -239,7 +239,7 @@ function MainLayout() {
                 ) : (
                   <button
                     onClick={() => setAuthModalOpen(true)}
-                    className="btn-animated btn-glow bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-gray-100 text-white dark:text-black px-8 py-2 rounded-full font-bold text-sm transition-all shadow-lg cursor-pointer"
+                    className="btn-animated btn-glow bg-blue-500 hover:bg-blue-600 !text-white px-8 py-2 rounded-full font-bold text-sm transition-all shadow-lg cursor-pointer"
                   >
                     Sign In
                   </button>

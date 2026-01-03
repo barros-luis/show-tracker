@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Sun, Settings as SettingsIcon,
-    ChevronRight, Bell, Camera, Save, Shuffle
+    ChevronRight, Bell, Camera, Save, Shuffle, LogOut
 } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
@@ -323,7 +323,7 @@ export function MobileSettingsPage({
                         <button
                             onClick={handleSaveProfile}
                             disabled={loading}
-                            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-3 bg-blue-500 hover:bg-blue-600 !text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
                             {loading ? "Saving..." : <><Save size={18} /> Save Changes</>}
                         </button>
@@ -422,6 +422,20 @@ export function MobileSettingsPage({
                     </p>
                 </div>
             </Section>
+            {/* Sign Out Button */}
+            {session && (
+                <div className="mt-8 mb-4">
+                    <button
+                        onClick={async () => {
+                            await supabase.auth.signOut();
+                            window.location.reload(); // Force reload to clear state
+                        }}
+                        className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                    >
+                        <LogOut size={18} /> Sign Out
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

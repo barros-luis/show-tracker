@@ -68,16 +68,16 @@ export function TitleBar() {
     return (
         <div
             onMouseDown={handleMouseDown}
-            className="h-9 bg-gray-900 flex items-center justify-between select-none border-b border-gray-800/50 shrink-0"
+            className="h-9 bg-[var(--bg-primary)] dark:bg-gray-900 flex items-center justify-between select-none border-b border-transparent dark:border-gray-800/50 shrink-0 transition-colors duration-300 relative z-50 shadow-sm dark:shadow-none"
         >
             {/* Left: App Logo & Title */}
             <div className="flex items-center gap-2 px-3 h-full">
                 {/* AST Logo */}
                 <div className="flex items-center gap-1">
-                    <span className="text-white font-bold text-sm tracking-tight">/</span>
+                    <span className="text-slate-900 dark:text-white font-bold text-sm tracking-tight">/</span>
                     <span className="text-blue-500 font-bold text-sm">AST</span>
                 </div>
-                <span className="text-gray-500 text-xs">AShowTracker</span>
+                <span className="text-slate-500 dark:text-gray-500 text-xs">AShowTracker</span>
             </div>
 
             {/* Right: Window Controls */}
@@ -85,22 +85,22 @@ export function TitleBar() {
                 {/* Minimize */}
                 <button
                     onClick={handleMinimize}
-                    className="w-12 h-full flex items-center justify-center hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    className="w-12 h-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
                     title="Minimize"
                 >
-                    <Minus className="w-4 h-4 text-gray-400" />
+                    <Minus className="w-4 h-4 text-slate-500 dark:text-gray-400" />
                 </button>
 
                 {/* Maximize/Restore */}
                 <button
                     onClick={handleMaximize}
-                    className="w-12 h-full flex items-center justify-center hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    className="w-12 h-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
                     title={isMaximized ? "Restore" : "Maximize"}
                 >
                     {isMaximized ? (
-                        <Copy className="w-3.5 h-3.5 text-gray-400" />
+                        <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
                     ) : (
-                        <Square className="w-3.5 h-3.5 text-gray-400" />
+                        <Square className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
                     )}
                 </button>
 
@@ -110,7 +110,7 @@ export function TitleBar() {
                     className="w-12 h-full flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer group"
                     title="Close"
                 >
-                    <X className="w-4 h-4 text-gray-400 group-hover:text-white" />
+                    <X className="w-4 h-4 text-slate-500 dark:text-gray-400 group-hover:text-white" />
                 </button>
             </div>
         </div>

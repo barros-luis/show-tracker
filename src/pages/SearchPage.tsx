@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { Search, Loader2, Film, Tv, Sparkles, X } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { Search, Loader2, Film, Tv, Sparkles, X, ChevronDown, Filter } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { searchAnime } from "../api/jikan";
 import { searchMovies, searchTVShows, getTVDetails } from "../api/tmdb";
 import { type MediaItem, animeToMediaItem, movieToMediaItem, tvToMediaItem } from "../api/mediaTypes";
@@ -29,6 +29,8 @@ export function SearchPage() {
     const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
     const [isListPickerOpen, setListPickerOpen] = useState(false);
     const [pendingMedia, setPendingMedia] = useState<MediaItem | null>(null);
+    const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+    const filterDropdownRef = useRef<HTMLDivElement>(null);
 
     // Search effect with debounce
     useEffect(() => {
@@ -89,7 +91,7 @@ export function SearchPage() {
                     const enrichmentQueue: { jikanItem: MediaItem; tmdbItem: MediaItem }[] = [];
 
                     // Process groups
-                    titleMap.forEach((items, key) => {
+                    titleMap.forEach((items) => {
                         const hasJikanAnime = items.some(i => i.type === 'anime');
 
                         items.forEach(item => {
@@ -161,6 +163,17 @@ export function SearchPage() {
         }, 500);
         return () => clearTimeout(timer);
     }, [query]);
+
+    // Close filter dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
+                setShowFilterDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Add to watchlist
     async function addToWatchlist(media: MediaItem, listId: number | null = null) {
@@ -314,46 +327,80 @@ export function SearchPage() {
                     )}
                 </div>
 
-                {/* Search Filters */}
-                <div className="flex justify-center gap-2 mb-8">
-                    <div className="flex gap-1 bg-white/80 dark:bg-gray-800/50 rounded-lg p-1 border border-gray-200 dark:border-transparent">
-                        {[
-                            { value: 'anime', label: 'Animes', icon: <Sparkles size={12} />, color: 'purple' },
-                            { value: 'movie', label: 'Movies', icon: <Film size={12} />, color: 'red' },
-                            { value: 'tv', label: 'Series', icon: <Tv size={12} />, color: 'green' },
-                        ].map(type => {
-                            const isActive = searchMediaTypeFilter.has(type.value);
-                            return (
-                                <button
-                                    key={type.value}
-                                    onClick={() => {
-                                        const newFilters = new Set(searchMediaTypeFilter);
-                                        if (isActive) {
-                                            newFilters.delete(type.value);
-                                        } else {
-                                            newFilters.add(type.value);
-                                        }
-                                        setSearchMediaTypeFilter(newFilters);
-                                    }}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${isActive
-                                        ? `bg-${type.color}-500 text-white`
-                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                                        }`}
-                                >
-                                    {type.icon} {type.label}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {searchMediaTypeFilter.size > 0 && (
+                {/* Filter Dropdown */}
+                <div className="flex justify-center mb-6 sm:mb-8">
+                    <div className="relative" ref={filterDropdownRef}>
                         <button
-                            onClick={() => setSearchMediaTypeFilter(new Set())}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all cursor-pointer flex items-center gap-1"
+                            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                            className="h-9 px-4 rounded-full text-sm font-medium bg-white/80 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all cursor-pointer flex items-center gap-2 border border-gray-200 dark:border-gray-700"
                         >
-                            <X size={12} /> Clear
+                            <Filter size={14} />
+                            {searchMediaTypeFilter.size === 0
+                                ? 'All Types'
+                                : searchMediaTypeFilter.size === 3
+                                    ? 'All Types'
+                                    : `${searchMediaTypeFilter.size} Selected`}
+                            <ChevronDown size={14} className={`transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`} />
                         </button>
-                    )}
+
+                        <AnimatePresence>
+                            {showFilterDropdown && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-20 overflow-hidden min-w-[180px]"
+                                >
+                                    {/* All Types Option */}
+                                    <button
+                                        onClick={() => {
+                                            setSearchMediaTypeFilter(new Set());
+                                        }}
+                                        className={`w-full px-4 py-2.5 text-left text-sm font-medium cursor-pointer transition-colors flex items-center gap-3 ${searchMediaTypeFilter.size === 0
+                                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                            }`}
+                                    >
+                                        <div className={`w-2 h-2 rounded-full ${searchMediaTypeFilter.size === 0 ? 'bg-blue-500' : 'bg-transparent'}`} />
+                                        All Types
+                                    </button>
+
+                                    <div className="h-[1px] bg-gray-200 dark:bg-gray-700" />
+
+                                    {/* Individual Type Options */}
+                                    {[
+                                        { value: 'anime', label: 'Animes', icon: <Sparkles size={14} />, color: 'purple' },
+                                        { value: 'movie', label: 'Movies', icon: <Film size={14} />, color: 'red' },
+                                        { value: 'tv', label: 'Series', icon: <Tv size={14} />, color: 'green' },
+                                    ].map(type => {
+                                        const isActive = searchMediaTypeFilter.has(type.value);
+                                        return (
+                                            <button
+                                                key={type.value}
+                                                onClick={() => {
+                                                    const newFilters = new Set(searchMediaTypeFilter);
+                                                    if (isActive) {
+                                                        newFilters.delete(type.value);
+                                                    } else {
+                                                        newFilters.add(type.value);
+                                                    }
+                                                    setSearchMediaTypeFilter(newFilters);
+                                                }}
+                                                className={`w-full px-4 py-2.5 text-left text-sm font-medium cursor-pointer transition-colors flex items-center gap-3 ${isActive
+                                                    ? `bg-${type.color}-500/10 text-${type.color}-600 dark:text-${type.color}-400`
+                                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                    }`}
+                                            >
+                                                <div className={`w-2 h-2 rounded-full ${isActive ? `bg-${type.color}-500` : 'bg-transparent'}`} />
+                                                <span className={isActive ? `text-${type.color}-500` : 'opacity-60'}>{type.icon}</span>
+                                                {type.label}
+                                            </button>
+                                        );
+                                    })}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
 
                 {/* Results Grid */}

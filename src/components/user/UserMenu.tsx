@@ -32,7 +32,7 @@ export function UserMenu({ session, profile, onLogout, onOpenProfile, onOpenSett
       {/* TRIGGER BUTTON */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="cursor-pointer flex items-center gap-3 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-100 dark:border-white/5 rounded-full pl-5 pr-3 py-2 transition-all"
+        className="cursor-pointer flex items-center gap-3 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-100 dark:border-white/5 rounded-full pl-5 pr-3 py-2 transition-all shadow-sm dark:shadow-none"
       >
         <span className="text-sm font-medium text-gray-900 dark:text-white max-w-[100px] truncate">{displayName}</span>
         <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden border border-gray-100 dark:border-gray-700">

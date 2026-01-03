@@ -109,7 +109,7 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                 {/* LEFT COLUMN: PROFILE CARD */}
                 <div className="lg:col-span-1">
                     <div className="sticky top-8">
-                        <div className="relative rounded-3xl overflow-hidden shadow-none border-none outline-none ring-2 ring-white/5 ring-inset bg-gray-900/40 backdrop-blur-xl min-h-[500px] flex flex-col">
+                        <div className="relative rounded-3xl overflow-hidden shadow-sm dark:shadow-none border border-gray-100 dark:border-none dark:ring-2 dark:ring-white/5 dark:ring-inset bg-white dark:bg-gray-900/40 backdrop-blur-xl min-h-[500px] flex flex-col">
 
                             {/* Header Gradient */}
                             <div className={`h-48 ${bannerGradientClass} relative flex items-center justify-center`}>
@@ -127,8 +127,8 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                             {/* Content */}
                             <div className="p-6 flex-1 flex flex-col">
                                 <div className="mb-8 text-center lg:text-left">
-                                    <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-sm">{nickname}</h1>
-                                    <p className="text-gray-400 text-sm font-medium">{session.user.email}</p>
+                                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1 drop-shadow-sm">{nickname}</h1>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">{session.user.email}</p>
                                 </div>
 
                                 {/* Custom Fields */}
@@ -136,13 +136,13 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                                     {customFields.map((field: any, index: number) => {
                                         const IconComponent = ICON_MAP[field.icon || "Globe"] || Globe;
                                         return (
-                                            <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+                                            <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                                 <div className="text-gray-400 shrink-0">
                                                     <IconComponent size={20} />
                                                 </div>
                                                 <div className="flex flex-col min-w-0">
                                                     <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">{field.label}</span>
-                                                    <span className={`text-[15px] font-bold truncate bg-clip-text text-transparent brightness-150 ${bannerGradientClass}`}>{field.value}</span>
+                                                    <span className={`text-[15px] font-bold truncate bg-clip-text text-transparent brightness-110 dark:brightness-150 ${bannerGradientClass}`}>{field.value}</span>
                                                 </div>
                                             </div>
                                         );
@@ -155,14 +155,14 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
 
                 {/* RIGHT COLUMN: ABOUT ME */}
                 <div className="lg:col-span-2">
-                    <div className="bg-gray-900/40 backdrop-blur-md rounded-3xl p-8 min-h-[400px] relative shadow-none border-none outline-none ring-2 ring-white/5 ring-inset flex flex-col">
-                        <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3 shrink-0 border-b border-white/10 pb-4">
+                    <div className="bg-white dark:bg-gray-900/40 backdrop-blur-md rounded-3xl p-8 min-h-[400px] relative shadow-sm dark:shadow-none border border-gray-100 dark:border-none dark:ring-2 dark:ring-white/5 dark:ring-inset flex flex-col">
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3 shrink-0 border-b border-gray-100 dark:border-white/10 pb-4">
                             About Me <span className="text-blue-500 text-4xl">!</span>
                         </h2>
 
-                        <div className="prose prose-invert max-w-none flex-1 prose-hr:border-white/10 prose-hr:my-4">
+                        <div className="prose prose-lg max-w-none flex-1 prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-strong:text-gray-900 dark:prose-strong:text-white prose-hr:border-gray-200 dark:prose-hr:border-white/10 prose-hr:my-4">
                             {aboutMe ? (
-                                <div className="whitespace-pre-wrap text-gray-300 leading-relaxed text-lg font-light tracking-wide">
+                                <div className="whitespace-pre-wrap leading-relaxed text-lg font-light tracking-wide">
                                     {aboutMe}
                                 </div>
                             ) : (

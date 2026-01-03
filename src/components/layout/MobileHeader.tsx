@@ -139,7 +139,7 @@ export function MobileHeader({
                     </>
                 ) : (
                     <motion.button
-                        className="mobile-header-signin"
+                        className="mobile-header-signin !text-white text-white"
                         onClick={onAuthClick}
                         whileTap={{ scale: 0.95 }}
                     >

@@ -341,12 +341,12 @@ export function MobileShowDetailModal({
                                     )}
 
                                     {/* Add to My List Button */}
-                                    <div className="px-4 pt-2 pb-24">
+                                    <div className="px-4 pt-2 pb-8">
                                         <button
                                             onClick={() => media && onAddToList(media)}
                                             disabled={!isLoggedIn}
                                             className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 ${isLoggedIn
-                                                ? "bg-blue-600 text-white active:bg-blue-700 shadow-lg shadow-blue-500/30"
+                                                ? "bg-blue-600 !text-white active:bg-blue-700 shadow-lg shadow-blue-500/30"
                                                 : "bg-gray-700 text-gray-400"
                                                 }`}
                                         >

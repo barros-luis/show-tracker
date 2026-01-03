@@ -30,15 +30,16 @@ export function MobileNav({ isLoggedIn, onAuthClick }: MobileNavProps) {
             className="fixed bottom-0 left-0 right-0 z-[1000]"
             style={{
                 paddingBottom: 'env(safe-area-inset-bottom)',
-                background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 25%, rgba(0,0,0,0.8) 65%, #000000 100%)',
-                paddingTop: '15px'
+                paddingTop: '6px'
             }}
         >
-            <div className="flex justify-around items-end h-14 px-2 pb-2">
+            {/* Theme-aware gradient: blue-gray for light, black for dark */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-100/80 to-blue-50 dark:via-black/70 dark:to-black" />
+
+            <div className="relative flex justify-around items-end h-10 px-2 pb-0.5">
                 {tabs.map((tab) => {
                     const isActive = location.pathname === tab.path;
                     const Icon = tab.icon;
-                    // Map paths to labels
                     const getLabel = (path: string) => {
                         if (path === "/") return "Search";
                         if (path === "/list") return "My List";
@@ -51,18 +52,18 @@ export function MobileNav({ isLoggedIn, onAuthClick }: MobileNavProps) {
                         <button
                             key={tab.path}
                             onClick={() => handleTabClick(tab)}
-                            className="flex flex-col items-center justify-end w-16 gap-1"
+                            className="flex flex-col items-center justify-end w-16 gap-0.5"
                             style={{ WebkitTapHighlightColor: 'transparent' }}
                         >
                             <Icon
                                 size={22}
                                 className={`${isActive
-                                    ? "text-blue-400 drop-shadow-[0_0_12px_rgba(96,165,250,0.6)]"
-                                    : "text-stone-400"
+                                    ? "text-blue-700 dark:text-blue-400 drop-shadow-[0_0_12px_rgba(96,165,250,0.6)]"
+                                    : "text-gray-600 dark:text-stone-300"
                                     } transition-all duration-300`}
                                 strokeWidth={isActive ? 2.5 : 2}
                             />
-                            <span className={`text-[10px] font-medium tracking-wide transition-all duration-300 ${isActive ? "text-blue-400 opacity-100 transform scale-100" : "text-stone-500 opacity-80 transform scale-95"
+                            <span className={`text-[10px] font-medium tracking-wide transition-all duration-300 ${isActive ? "text-gray-900 dark:!text-white opacity-100" : "text-gray-600 dark:text-stone-400 opacity-90"
                                 }`}>
                                 {getLabel(tab.path)}
                             </span>

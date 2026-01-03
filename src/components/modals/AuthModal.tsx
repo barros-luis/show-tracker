@@ -93,19 +93,19 @@ export function AuthModal({ supabase, isOpen, onClose }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-2xl p-8 relative shadow-2xl">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={24} /></button>
+      <div className="w-full max-w-[85%] sm:max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 sm:p-8 relative shadow-2xl">
+        <button onClick={onClose} className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white"><X size={20} className="sm:w-6 sm:h-6" /></button>
 
-        <h2 className="text-2xl font-bold text-white mb-2">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
-        <p className="text-gray-400 mb-6">{isSignUp ? "Join the club." : "Login to sync your list."}</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
+        <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">{isSignUp ? "Join the club." : "Login to sync your list."}</p>
 
         {/* GOOGLE BUTTON */}
         <button
           onClick={handleGoogleLogin}
-          className="btn-animated w-full bg-white text-gray-900 font-bold py-3 rounded-lg transition-all hover:bg-gray-100 flex items-center justify-center gap-3 mb-6 group"
+          className="btn-animated w-full bg-gray-100 dark:bg-white text-gray-900 font-bold py-2 sm:py-3 rounded-lg transition-all hover:bg-gray-200 dark:hover:bg-gray-100 flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6 group border border-gray-200 dark:border-transparent text-sm sm:text-base"
         >
           {/* Google Icon SVG */}
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
@@ -114,48 +114,48 @@ export function AuthModal({ supabase, isOpen, onClose }: AuthModalProps) {
           Sign in with Google
         </button>
 
-        <div className="flex items-center gap-4 mb-6">
-          <div className="h-px bg-gray-800 flex-1" />
-          <span className="text-xs text-gray-500 font-bold uppercase">Or continue with</span>
-          <div className="h-px bg-gray-800 flex-1" />
+        <div className="flex items-center gap-4 mb-4 sm:mb-6">
+          <div className="h-px bg-gray-200 dark:bg-gray-800 flex-1" />
+          <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-bold uppercase">Or continue with</span>
+          <div className="h-px bg-gray-200 dark:bg-gray-800 flex-1" />
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-4">
+        <form onSubmit={handleAuth} className="space-y-3 sm:space-y-4">
           {error && <div className="p-3 bg-red-500/10 border border-red-500/50 text-red-500 text-sm rounded-lg flex items-center gap-2"><AlertCircle size={16} />{error}</div>}
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
+          <div className="space-y-1 sm:space-y-2">
+            <label className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase">Email</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 text-gray-500" size={18} />
-              <input type="email" required className="w-full bg-gray-950 border border-gray-800 rounded-lg py-2.5 pl-10 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+              <Mail className="absolute left-3 top-2.5 sm:top-3 text-gray-400 sm:w-[18px]" size={16} />
+              <input type="email" required className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg py-2 sm:py-2.5 pl-9 sm:pl-10 text-sm sm:text-base text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors" placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase">Password</label>
+          <div className="space-y-1 sm:space-y-2">
+            <label className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase">Password</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 text-gray-500" size={18} />
-              <input type="password" required className="w-full bg-gray-950 border border-gray-800 rounded-lg py-2.5 pl-10 text-white focus:ring-2 focus:ring-blue-500 outline-none" value={password} onChange={e => setPassword(e.target.value)} />
+              <Lock className="absolute left-3 top-2.5 sm:top-3 text-gray-400 sm:w-[18px]" size={16} />
+              <input type="password" required className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg py-2 sm:py-2.5 pl-9 sm:pl-10 text-sm sm:text-base text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors" value={password} onChange={e => setPassword(e.target.value)} />
             </div>
           </div>
 
           {isSignUp && (
-            <div className="space-y-2 animate-in slide-in-from-top-2 fade-in">
-              <label className="text-xs font-bold text-gray-500 uppercase">Confirm Password</label>
+            <div className="space-y-1 sm:space-y-2 animate-in slide-in-from-top-2 fade-in">
+              <label className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase">Confirm Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 text-gray-500" size={18} />
-                <input type="password" required className="w-full bg-gray-950 border border-gray-800 rounded-lg py-2.5 pl-10 text-white focus:ring-2 focus:ring-blue-500 outline-none" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                <Lock className="absolute left-3 top-2.5 sm:top-3 text-gray-400 sm:w-[18px]" size={16} />
+                <input type="password" required className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg py-2 sm:py-2.5 pl-9 sm:pl-10 text-sm sm:text-base text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
               </div>
             </div>
           )}
 
-          <button disabled={loading} className="btn-animated w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-all mt-4 flex justify-center items-center">
+          <button disabled={loading} className="btn-animated w-full bg-blue-500 hover:bg-blue-600 !text-white font-bold py-2.5 sm:py-3 rounded-lg transition-all mt-3 sm:mt-4 flex justify-center items-center shadow-lg shadow-blue-500/20 text-sm sm:text-base">
             {loading ? <Loader2 className="animate-spin" /> : (isSignUp ? "Sign Up" : "Sign In")}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-400">
-          <button onClick={() => { setIsSignUp(!isSignUp); setError(""); setSuccessMode(false); }} className="text-blue-400 hover:underline font-medium">
+        <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-gray-400">
+          <button onClick={() => { setIsSignUp(!isSignUp); setError(""); setSuccessMode(false); }} className="text-blue-500 hover:text-blue-600 hover:underline font-medium transition-colors">
             {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
           </button>
         </div>

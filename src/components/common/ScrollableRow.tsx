@@ -93,7 +93,12 @@ export const ScrollableRow: React.FC<ScrollableRowProps> = ({
 
     return (
         <div className="relative group">
-            {/* Left Arrow */}
+            {/* Left Edge Gradient - Always visible when can scroll */}
+            {hasScroll && canScrollLeft && (
+                <div className="absolute left-0 top-0 bottom-0 z-10 w-12 sm:w-16 bg-gradient-to-r from-blue-50/77 via-blue-50/37 to-transparent dark:from-gray-950/77 dark:via-gray-950/37 pointer-events-none" />
+            )}
+
+            {/* Left Arrow - Desktop Only */}
             <AnimatePresence>
                 {hasScroll && canScrollLeft && (
                     <motion.button
@@ -101,9 +106,9 @@ export const ScrollableRow: React.FC<ScrollableRowProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => scroll('left')}
-                        className="absolute left-0 top-0 bottom-0 z-[60] w-20 bg-gradient-to-r from-blue-50/90 via-blue-50/40 to-transparent dark:from-gray-950/90 dark:via-gray-950/40 flex items-center justify-start pl-2 text-black dark:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
+                        className="hidden sm:flex absolute left-0 top-0 bottom-0 z-20 w-16 items-center justify-start pl-2 text-black dark:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
                     >
-                        <ChevronLeft size={32} className="drop-shadow-lg pointer-events-none" />
+                        <ChevronLeft size={28} className="drop-shadow-lg pointer-events-none" />
                     </motion.button>
                 )}
             </AnimatePresence>
@@ -119,6 +124,7 @@ export const ScrollableRow: React.FC<ScrollableRowProps> = ({
                 style={{
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none',
+                    WebkitOverflowScrolling: 'touch',
                     // Disable smooth scrolling during drag to prevent jitter
                     scrollBehavior: isDragging ? 'auto' : 'smooth'
                 }}
@@ -152,7 +158,12 @@ export const ScrollableRow: React.FC<ScrollableRowProps> = ({
                 ))}
             </div>
 
-            {/* Right Arrow */}
+            {/* Right Edge Gradient - Always visible when can scroll */}
+            {hasScroll && canScrollRight && (
+                <div className="absolute right-0 top-0 bottom-0 z-10 w-12 sm:w-16 bg-gradient-to-l from-blue-50/75 via-blue-50/35 to-transparent dark:from-gray-950/75 dark:via-gray-950/35 pointer-events-none" />
+            )}
+
+            {/* Right Arrow - Desktop Only */}
             <AnimatePresence>
                 {hasScroll && canScrollRight && (
                     <motion.button
@@ -160,9 +171,9 @@ export const ScrollableRow: React.FC<ScrollableRowProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => scroll('right')}
-                        className="absolute right-0 top-0 bottom-0 z-[60] w-20 bg-gradient-to-l from-blue-50/90 via-blue-50/40 to-transparent dark:from-gray-950/90 dark:via-gray-950/40 flex items-center justify-end pr-2 text-black dark:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
+                        className="hidden sm:flex absolute right-0 top-0 bottom-0 z-20 w-16 items-center justify-end pr-2 text-black dark:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
                     >
-                        <ChevronRight size={32} className="drop-shadow-lg pointer-events-none" />
+                        <ChevronRight size={28} className="drop-shadow-lg pointer-events-none" />
                     </motion.button>
                 )}
             </AnimatePresence>

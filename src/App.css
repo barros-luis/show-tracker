@@ -333,6 +333,30 @@ body {
    MOBILE STYLES  
    ============= */
 
+/* Hide all scrollbars on mobile */
+@media (max-width: 768px) {
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+}
+
+/* Scrollbar hide utility class */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* Mobile Layout Container */
 .mobile-layout {
   padding-top: env(safe-area-inset-top);
