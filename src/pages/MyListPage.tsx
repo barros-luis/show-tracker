@@ -59,6 +59,16 @@ export function MyListPage() {
         setSearchParams({ view: 'modal' });
     };
 
+    // Keep selectedItem in sync with myList updates (Realtime)
+    useEffect(() => {
+        if (selectedItem) {
+            const updatedItem = myList.find((item: any) => item.id === selectedItem.id);
+            if (updatedItem) {
+                setSelectedItem(updatedItem);
+            }
+        }
+    }, [myList, selectedItem?.id]); // Only re-run if myList changes or we switch items
+
     const closeModal = () => {
         setSelectedItem(null);
         setSearchParams({});

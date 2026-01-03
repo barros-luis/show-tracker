@@ -18,7 +18,7 @@
 ## 🚀 About
 **AShow Tracker** is a premium desktop application built for enthusiasts who want a beautiful, seamless way to track their binge-watching habits. Breaking away from clunky web interfaces, it offers a native, glassmorphism-inspired UI with deep system integration.
 
-## ✨ Features (v1.5.1)
+## ✨ Features (v1.6.0)
 
 ### 🎨 Stunning UI/UX
 - **Glassmorphism Design:** Modern, translucent aesthetics with dynamic gradient backgrounds.
@@ -52,6 +52,11 @@
 - **Smart Updates:** "Zombie" notification prevention with database-level deduplication.
 - **Mobile Optimized:** Responsive notification modal with premium "Ring Light" aesthetic.
 - **In-App & OS Notifications:** Choose between in-app bell or native OS notifications.
+
+### ⚡ Realtime Synchronization (New!)
+- **Seamless Device Sync:** Changes made on Desktop reflect on Mobile instantly, and vice-versa.
+- **Dynamic Updates:** Watchlist status, episode progress, and profile changes update in real-time without refreshing.
+- **Live Collaboration:** Perfect for switching devices mid-session or managing your list from anywhere.
 
 ### 🔄 Auto-Updates
 - **Seamless Updates:** In-app update mechanism with signed releases.

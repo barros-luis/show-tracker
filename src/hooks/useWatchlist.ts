@@ -31,6 +31,46 @@ export function useWatchlist(userId: string | undefined) {
         fetchItems();
     }, [fetchItems]);
 
+    // Realtime Subscription
+    useEffect(() => {
+        if (!userId) return;
+
+        const channel = supabase
+            .channel(`watchlist_changes_${userId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'watchlist',
+                    filter: `user_id=eq.${userId}`,
+                },
+                (payload) => {
+                    if (payload.eventType === 'INSERT') {
+                        setItems((prev) => {
+                            // Prevent duplicates if we already added it via optimistic update elsewhere (though complex to track, simple check helps)
+                            if (prev.find(i => i.id === payload.new.id)) return prev;
+                            const newItem = payload.new as WatchlistItem;
+                            return [newItem, ...prev].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+                        });
+                    } else if (payload.eventType === 'UPDATE') {
+                        setItems((prev) =>
+                            prev.map((item) =>
+                                item.id === payload.new.id ? { ...item, ...payload.new } as WatchlistItem : item
+                            )
+                        );
+                    } else if (payload.eventType === 'DELETE') {
+                        setItems((prev) => prev.filter((item) => item.id !== payload.old.id));
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [userId]);
+
     const removeItem = useCallback(async (itemId: number) => {
         // Also delete watched episodes
         await supabase.from("watched_episodes").delete().eq("watchlist_id", itemId);

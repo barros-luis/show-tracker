@@ -40,6 +40,8 @@ export function MyListDetailModal(props: MyListDetailModalProps) {
                     onEpisodeUpdate={props.onEpisodeUpdate}
                     onTotalEpisodesUpdate={props.onTotalEpisodesUpdate}
                     onStatusUpdate={props.onStatusUpdate}
+                    onListChange={props.onListChange}
+                    userLists={props.userLists}
                     supabase={props.supabase}
                     userId={props.userId}
                     showToast={props.showToast}

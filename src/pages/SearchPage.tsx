@@ -176,7 +176,7 @@ export function SearchPage() {
     }, []);
 
     // Add to watchlist
-    async function addToWatchlist(media: MediaItem, listId: number | null = null) {
+    async function addToWatchlist(media: MediaItem, listId: number | null = null, status: string = 'PLANNED') {
         if (!session?.user) return;
 
         // Check for duplicates
@@ -212,6 +212,7 @@ export function SearchPage() {
             total_episodes: media.episodes || (media.type === 'movie' ? 1 : 0),
             media_type: media.type,
             list_id: listId,
+            status: status
         };
 
         if (media.type === 'anime') {
@@ -259,14 +260,14 @@ export function SearchPage() {
             setPendingMedia(media);
             setListPickerOpen(true);
         } else {
-            addToWatchlist(media, null);
+            addToWatchlist(media, null, 'PLANNED');
         }
         setSelectedMedia(null);
     };
 
-    const handleListSelected = (list: UserList | null) => {
+    const handleListSelected = (list: UserList | null, status: string) => {
         if (pendingMedia) {
-            addToWatchlist(pendingMedia, list?.id || null);
+            addToWatchlist(pendingMedia, list?.id || null, status);
             setPendingMedia(null);
         }
         setListPickerOpen(false);

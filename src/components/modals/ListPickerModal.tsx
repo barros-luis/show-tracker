@@ -1,12 +1,13 @@
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Folder, Film, Tv, Sparkles, Gamepad2, Book, Music, Star, Heart, Flame, Zap, Moon } from "lucide-react";
+import { X, Plus, Folder, Film, Tv, Sparkles, Gamepad2, Book, Music, Star, Heart, Flame, Zap, Moon, ChevronDown, Check } from "lucide-react";
 import type { UserList } from "./ListManageModal";
 
 interface ListPickerModalProps {
     isOpen: boolean;
     onClose: () => void;
     lists: UserList[];
-    onSelectList: (list: UserList | null) => void;
+    onSelectList: (list: UserList | null, status: string) => void;
     mediaTitle: string;
 }
 
@@ -34,6 +35,14 @@ const COLOR_TEXT_MAP: Record<string, string> = {
     pink: "text-pink-400",
 };
 
+const QUERY_STATUS_OPTIONS = [
+    { value: "PLANNED", label: "Planned", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+    { value: "WATCHING", label: "Watching", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+    { value: "ON_HOLD", label: "On Hold", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+    { value: "FINISHED", label: "Finished", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+    { value: "REWATCHING", label: "Re-watching", color: "bg-pink-500/20 text-pink-400 border-pink-500/30" },
+] as const;
+
 export function ListPickerModal({
     isOpen,
     onClose,
@@ -41,6 +50,17 @@ export function ListPickerModal({
     onSelectList,
     mediaTitle
 }: ListPickerModalProps) {
+    const [selectedStatus, setSelectedStatus] = useState<string>("PLANNED");
+    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+
+    // Reset on open
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedStatus("PLANNED");
+            setShowStatusDropdown(false);
+        }
+    }, [isOpen]);
+
     const getColorClasses = (colorName: string) => {
         return COLOR_BG_MAP[colorName] || COLOR_BG_MAP.gray;
     };
@@ -100,20 +120,62 @@ export function ListPickerModal({
                                 </p>
                             </div>
 
+                            {/* Status Selector */}
+                            <div className="p-4 bg-gray-900 border-b border-gray-800">
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Initial Status</label>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${QUERY_STATUS_OPTIONS.find(s => s.value === selectedStatus)?.color || "border-gray-700 bg-gray-800 text-gray-300"}`}
+                                    >
+                                        <span className="font-medium">
+                                            {QUERY_STATUS_OPTIONS.find(s => s.value === selectedStatus)?.label}
+                                        </span>
+                                        <ChevronDown size={16} className={`transition-transform ${showStatusDropdown ? "rotate-180" : ""}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {showStatusDropdown && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-20 overflow-hidden"
+                                            >
+                                                {QUERY_STATUS_OPTIONS.map((status) => (
+                                                    <button
+                                                        key={status.value}
+                                                        onClick={() => {
+                                                            setSelectedStatus(status.value);
+                                                            setShowStatusDropdown(false);
+                                                        }}
+                                                        className={`w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer ${status.value === selectedStatus ? "text-blue-400 bg-blue-500/10" : "text-gray-300"}`}
+                                                    >
+                                                        {status.label}
+                                                        {status.value === selectedStatus && <Check size={16} />}
+                                                    </button>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+
                             {/* List Options */}
-                            <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
+                            <div className="p-3 space-y-1.5 max-h-[40vh] overflow-y-auto">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 block">Select List</label>
                                 {lists
                                     .sort((a, b) => a.position - b.position)
                                     .map((list) => (
                                         <button
                                             key={list.id}
-                                            onClick={() => onSelectList(list)}
-                                            className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${getColorClasses(list.color)}`}
+                                            onClick={() => onSelectList(list, selectedStatus)}
+                                            className={`w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${getColorClasses(list.color)}`}
                                         >
                                             <span className={COLOR_TEXT_MAP[list.color] || 'text-gray-400'}>
-                                                {getIconComponent(list.icon, 18)}
+                                                {getIconComponent(list.icon, 16)}
                                             </span>
-                                            <span className="text-white font-medium">
+                                            <span className="text-white font-medium text-sm">
                                                 {list.name}
                                             </span>
                                         </button>
@@ -128,12 +190,12 @@ export function ListPickerModal({
                             </div>
 
                             {/* Quick Add without list */}
-                            <div className="p-4 border-t border-gray-800">
+                            <div className="p-3 border-t border-gray-800">
                                 <button
-                                    onClick={() => onSelectList(null)}
-                                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white transition-all cursor-pointer"
+                                    onClick={() => onSelectList(null, selectedStatus)}
+                                    className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white transition-all cursor-pointer text-sm"
                                 >
-                                    <Plus size={18} />
+                                    <Plus size={16} />
                                     Add without list (Uncategorized)
                                 </button>
                             </div>

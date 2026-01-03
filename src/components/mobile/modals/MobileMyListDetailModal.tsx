@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Tv, Trash2, ChevronDown, Check, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { getAllTVEpisodes, searchTVShows, getTVDetails, getTVSeasonEpisodes } from "../../../api/tmdb";
 import { getAllAnimeEpisodes, getEpisodeDetails } from "../../../api/jikan";
+import { getListIcon } from "../../../utils/constants";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 // Status options
@@ -52,6 +53,8 @@ interface MobileMyListDetailModalProps {
     onEpisodeUpdate: (itemId: number, watchedCount: number) => void;
     onTotalEpisodesUpdate: (itemId: number, totalEpisodes: number) => void;
     onStatusUpdate: (itemId: number, status: string) => void;
+    onListChange: (itemId: number, listId: number | null) => void;
+    userLists: any[];
     supabase: SupabaseClient;
     userId: string | null;
     showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
@@ -65,6 +68,8 @@ export function MobileMyListDetailModal({
     onEpisodeUpdate,
     onTotalEpisodesUpdate,
     onStatusUpdate,
+    onListChange,
+    userLists,
     supabase,
     userId,
     showToast
@@ -77,7 +82,9 @@ export function MobileMyListDetailModal({
 
     // UI States
     const [currentStatus, setCurrentStatus] = useState<string>("PLANNED");
+    const [currentListId, setCurrentListId] = useState<number | null>(null);
     const [showStatusPicker, setShowStatusPicker] = useState(false);
+    const [showListPicker, setShowListPicker] = useState(false);
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
     const [activeTab, setActiveTab] = useState<'info' | 'episodes'>('episodes');
 
@@ -85,6 +92,7 @@ export function MobileMyListDetailModal({
     useEffect(() => {
         if (item) {
             setCurrentStatus(item.status || "PLANNED");
+            setCurrentListId(item.list_id);
             setShowRemoveConfirm(false);
             setShowStatusPicker(false);
             setActiveTab('episodes');
@@ -105,6 +113,51 @@ export function MobileMyListDetailModal({
         }
         return () => { document.body.style.overflow = ""; };
     }, [isOpen]);
+
+    // Realtime subscription for watched episodes
+    useEffect(() => {
+        if (!item?.id) return;
+
+        const channel = supabase
+            .channel(`watched_episodes_${item.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'watched_episodes',
+                    filter: `watchlist_id=eq.${item.id}`,
+                },
+                (payload) => {
+                    if (payload.eventType === 'INSERT') {
+                        setWatchedEpisodes(prev => {
+                            const next = new Set(prev);
+                            next.add(payload.new.episode_number);
+                            return next;
+                        });
+                    } else if (payload.eventType === 'DELETE') {
+                        setWatchedEpisodes(prev => {
+                            const next = new Set(prev);
+                            // payload.old might only contain id if replica identity is default, but we need episode_number.
+                            // If we can't get episode_number from DELETE payload easily without full replica identity, 
+                            // we might have to rely on the fact that we usually delete by episode_number. 
+                            // However, standard delete payload only has PK. 
+                            // Actually, let's check payload structure. Usually requires Replica Identity FULL to get all columns on delete.
+                            // For now, let's assume we can re-fetch or use logic. 
+                            // Safest bet without changing DB config is to just re-fetch watched status on ANY change event for this item.
+                            return next;
+                        });
+                        // Triggers refetch to be safe/lazy
+                        fetchWatchedData();
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [item?.id]);
 
     const fetchWatchedData = async () => {
         if (!item || !userId) return;
@@ -307,6 +360,14 @@ export function MobileMyListDetailModal({
         onStatusUpdate(item.id, newStatus);
     };
 
+    const handleListChange = async (listId: number | null) => {
+        if (!item) return;
+        setCurrentListId(listId);
+        setShowListPicker(false);
+        await supabase.from('watchlist').update({ list_id: listId }).eq('id', item.id);
+        onListChange(item.id, listId);
+    };
+
     const handleRemove = () => {
         if (item) {
             onRemove(item);
@@ -402,11 +463,28 @@ export function MobileMyListDetailModal({
                                 <div className="flex flex-wrap gap-2 mb-3">
                                     {/* Status Pill */}
                                     <button
-                                        onClick={() => setShowStatusPicker(!showStatusPicker)}
+                                        onClick={() => { setShowStatusPicker(!showStatusPicker); setShowListPicker(false); }}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 uppercase tracking-wide border ${STATUS_OPTIONS.find(s => s.value === currentStatus)?.color
                                             } bg-opacity-10 border-opacity-20`}
                                     >
                                         {STATUS_OPTIONS.find(s => s.value === currentStatus)?.label}
+                                        <ChevronDown size={12} />
+                                    </button>
+
+                                    {/* List Pill */}
+                                    <button
+                                        onClick={() => { setShowListPicker(!showListPicker); setShowStatusPicker(false); }}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 uppercase tracking-wide border border-gray-700 bg-gray-800 text-gray-300"
+                                    >
+                                        {(() => {
+                                            const currentList = userLists.find(l => l.id === currentListId);
+                                            return (
+                                                <>
+                                                    {getListIcon(currentList?.icon || 'folder', 12)}
+                                                    <span className="truncate max-w-[80px]">{currentList?.name || 'Uncategorized'}</span>
+                                                </>
+                                            )
+                                        })()}
                                         <ChevronDown size={12} />
                                     </button>
                                 </div>
@@ -421,14 +499,13 @@ export function MobileMyListDetailModal({
                                 </div>
                             </div>
 
-                            {/* Status Picker Dropdown */}
                             <AnimatePresence>
                                 {showStatusPicker && (
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.95, y: -10 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                        className="absolute top-14 left-28 right-4 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-30 overflow-hidden"
+                                        className="absolute top-14 left-0 right-0 mx-5 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-30 overflow-hidden"
                                     >
                                         {STATUS_OPTIONS.map(opt => (
                                             <button
@@ -439,6 +516,39 @@ export function MobileMyListDetailModal({
                                             >
                                                 {currentStatus === opt.value && <Check size={14} />}
                                                 <span className={currentStatus !== opt.value ? "ml-6" : ""}>{opt.label}</span>
+                                            </button>
+                                        ))}
+                                    </motion.div>
+                                )}
+
+                                {showListPicker && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        className="absolute top-14 left-0 right-0 mx-5 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-30 overflow-hidden max-h-60 overflow-y-auto"
+                                    >
+                                        {/* Uncategorized Option */}
+                                        <button
+                                            onClick={() => handleListChange(null)}
+                                            className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 border-b border-gray-700/50 ${currentListId === null ? "bg-blue-500/10 text-blue-400" : "text-gray-300 active:bg-gray-700"}`}
+                                        >
+                                            {currentListId === null && <Check size={14} />}
+                                            <span className={currentListId !== null ? "ml-6 flex items-center gap-2" : "flex items-center gap-2"}>
+                                                {getListIcon('folder', 14)} Uncategorized
+                                            </span>
+                                        </button>
+
+                                        {userLists.map(list => (
+                                            <button
+                                                key={list.id}
+                                                onClick={() => handleListChange(list.id)}
+                                                className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 border-b border-gray-700/50 last:border-0 ${currentListId === list.id ? "bg-blue-500/10 text-blue-400" : "text-gray-300 active:bg-gray-700"}`}
+                                            >
+                                                {currentListId === list.id && <Check size={14} />}
+                                                <span className={currentListId !== list.id ? "ml-6 flex items-center gap-2" : "flex items-center gap-2"}>
+                                                    {getListIcon(list.icon, 14)} {list.name}
+                                                </span>
                                             </button>
                                         ))}
                                     </motion.div>

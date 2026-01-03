@@ -121,5 +121,33 @@ export function useAuth(): UseAuthReturn {
         };
     }, [fetchProfile]);
 
+    // Realtime Profile Sync
+    useEffect(() => {
+        if (!session?.user?.id) return;
+
+        const userId = session.user.id;
+        const channel = supabase
+            .channel(`profile_changes_${userId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'profiles',
+                    filter: `id=eq.${userId}`,
+                },
+                (payload) => {
+                    if (payload.eventType === 'UPDATE') {
+                        setProfile((prev) => ({ ...prev, ...(payload.new as Profile) }));
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [session?.user?.id]);
+
     return { session, profile, loading, error, refreshProfile };
 }

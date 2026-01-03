@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Mail, Lock, Trash2, AlertTriangle, Check, Loader2, AlertCircle } from "lucide-react";
+import { Mail, Lock, Trash2, AlertTriangle, Loader2, AlertCircle } from "lucide-react";
 import { useAuthContext } from "../../context/AuthContext";
 
 export function AccountSettings() {
     const { supabase, session, showToast } = useAuthContext();
-    const [loading, setLoading] = useState(false);
+
     const [emailLoading, setEmailLoading] = useState(false);
     const [passLoading, setPassLoading] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);

@@ -380,6 +380,47 @@ export function DesktopMyListDetailModal({
         };
     }, [isOpen]);
 
+    // Realtime subscription for watched episodes
+    useEffect(() => {
+        if (!item?.id) return;
+
+        const channel = supabase
+            .channel(`watched_episodes_desktop_${item.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'watched_episodes',
+                    filter: `watchlist_id=eq.${item.id}`,
+                },
+                (payload) => {
+                    if (payload.eventType === 'INSERT') {
+                        setWatchedEpisodes(prev => {
+                            const next = new Set(prev);
+                            next.add(payload.new.episode_number);
+                            return next;
+                        });
+                    } else if (payload.eventType === 'DELETE') {
+                        setWatchedEpisodes(prev => {
+                            const next = new Set(prev);
+                            // As with mobile, we blindly rely on a re-fetch or manual management.
+                            // But since the payload.old usually just has ID, and we don't store ID in our Set (we store episode number),
+                            // we can't delete easily without a fetch.
+                            // HOWEVER, we can just trigger a fetch.
+                            return next;
+                        });
+                        fetchWatchedEpisodes();
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [item?.id]);
+
     const toggleEpisodeWatched = async (episodeNumber: number) => {
         if (!item || !userId) return;
 

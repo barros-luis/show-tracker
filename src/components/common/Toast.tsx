@@ -20,11 +20,7 @@ export function Toast({ message, type = "success", onClose, duration = 4000, isM
         }
     }, [message, onClose, duration]);
 
-    const bgColors = {
-        success: "bg-gray-900/95 border-green-500/50 text-green-400",
-        error: "bg-gray-900/95 border-red-500/50 text-red-400",
-        info: "bg-gray-900/95 border-blue-500/50 text-blue-400",
-    };
+
 
     const Icon = {
         success: CheckCircle,

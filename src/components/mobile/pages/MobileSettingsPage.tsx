@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
 import { AccountSettings } from '../../../components/forms/AccountSettings';
-import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
+
 
 interface MobileSettingsPageProps {
     session: any;

@@ -3,7 +3,7 @@ import { User, Sun, Moon, Settings as SettingsIcon, Shield, Info, ExternalLink }
 import { useSettings } from '../context/SettingsContext';
 import { EditProfileForm } from '../components/forms/EditProfileForm';
 import { AccountSettings } from '../components/forms/AccountSettings';
-import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
+
 import { MobileSettingsPage } from '../components/mobile';
 
 type SettingsTab = 'profile' | 'appearance' | 'general' | 'account' | 'about';
