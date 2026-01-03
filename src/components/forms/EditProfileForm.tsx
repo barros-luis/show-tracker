@@ -318,7 +318,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                 <button
                     onClick={handleSave}
                     disabled={loading}
-                    className="cursor-pointer bg-blue-500 hover:bg-blue-600 !text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="cursor-pointer bg-blue-500 hover:bg-blue-600 !text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all btn-animated"
                 >
                     {loading ? "Saving..." : <><Save size={20} /> Save Changes</>}
                 </button>

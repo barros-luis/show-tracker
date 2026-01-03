@@ -141,6 +141,7 @@ function MainLayout() {
           <Toast
             message={toast?.message || null}
             type={toast?.type}
+            duration={toast?.duration}
             onClose={hideToast}
             isMobile={isMobile}
           />

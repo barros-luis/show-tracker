@@ -293,8 +293,8 @@ body {
 
 .btn-animated:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .btn-animated:active {
@@ -326,7 +326,7 @@ body {
 }
 
 .btn-glow:hover {
-  box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
 }
 
 /* =============
@@ -339,6 +339,7 @@ body {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
   }
+
   *::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
@@ -351,6 +352,7 @@ body {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
   width: 0;

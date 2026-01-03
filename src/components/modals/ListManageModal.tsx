@@ -49,6 +49,7 @@ interface ListManageModalProps {
     onListsChange: (lists: UserList[]) => void;
     supabase: SupabaseClient;
     userId: string;
+    showToast: (message: string, type?: 'success' | 'error' | 'info', duration?: number) => void;
 }
 
 export function ListManageModal({
@@ -57,7 +58,8 @@ export function ListManageModal({
     lists,
     onListsChange,
     supabase,
-    userId
+    userId,
+    showToast
 }: ListManageModalProps) {
     const [editingList, setEditingList] = useState<UserList | null>(null);
     const [newListName, setNewListName] = useState("");
@@ -108,6 +110,7 @@ export function ListManageModal({
             setNewListIcon(null);
             setNewListColor("blue");
             setShowNewForm(false);
+            showToast("New list created successfully! It will show up once you add shows to it.", "success", 7000);
         }
     };
 
@@ -321,82 +324,93 @@ export function ListManageModal({
 
                                 {/* New List Form */}
                                 {showNewForm ? (
-                                    <div className="relative flex items-center gap-3 p-3 rounded-xl border border-blue-500/30 bg-blue-500/10">
-                                        {/* Icon selector */}
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setShowEmojiPicker(showEmojiPicker === "new" ? null : "new")}
-                                                className={`w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer ${getColorClasses(newListColor).bg}/20 ${getColorClasses(newListColor).text}`}
-                                            >
-                                                {getIconComponent(newListIcon, 18)}
-                                            </button>
+                                    <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 space-y-3">
+                                        {/* Row 1: Icon + Input */}
+                                        <div className="flex items-center gap-2">
+                                            {/* Icon Selector */}
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setShowEmojiPicker(showEmojiPicker === "new" ? null : "new")}
+                                                    className={`w-10 h-10 flex-shrink-0 rounded-lg flex items-center justify-center cursor-pointer ${getColorClasses(newListColor).bg}/20 ${getColorClasses(newListColor).text}`}
+                                                >
+                                                    {getIconComponent(newListIcon, 18)}
+                                                </button>
 
-                                            {showEmojiPicker === "new" && (
-                                                <div className="absolute top-12 left-0 z-[70] bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-4 gap-1 min-w-[160px]">
-                                                    {ICON_OPTIONS.map(iconOpt => (
-                                                        <button
-                                                            key={iconOpt.value}
-                                                            onClick={() => { setNewListIcon(iconOpt.value); setShowEmojiPicker(null); }}
-                                                            className={`p-2 hover:bg-gray-700 rounded-lg cursor-pointer flex items-center justify-center transition-colors ${newListIcon === iconOpt.value ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400'}`}
-                                                            title={iconOpt.label}
-                                                        >
-                                                            <iconOpt.Icon size={16} />
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
+                                                {showEmojiPicker === "new" && (
+                                                    <div className="absolute top-12 left-0 z-[70] bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-4 gap-1 min-w-[160px]">
+                                                        {ICON_OPTIONS.map(iconOpt => (
+                                                            <button
+                                                                key={iconOpt.value}
+                                                                onClick={() => { setNewListIcon(iconOpt.value); setShowEmojiPicker(null); }}
+                                                                className={`p-2 hover:bg-gray-700 rounded-lg cursor-pointer flex items-center justify-center transition-colors ${newListIcon === iconOpt.value ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400'}`}
+                                                                title={iconOpt.label}
+                                                            >
+                                                                <iconOpt.Icon size={16} />
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                        <input
-                                            type="text"
-                                            value={newListName}
-                                            onChange={(e) => setNewListName(e.target.value)}
-                                            onKeyDown={(e) => e.key === "Enter" && createList()}
-                                            placeholder="List name..."
-                                            autoFocus
-                                            className="flex-1 bg-gray-700 rounded-lg px-3 py-1.5 text-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-
-                                        {/* Color picker for new */}
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setShowColorPicker(showColorPicker === "new" ? null : "new")}
-                                                className={`w-6 h-6 rounded-full ${getColorClasses(newListColor).bg} cursor-pointer hover:scale-110 transition-transform`}
+                                            {/* Input */}
+                                            <input
+                                                type="text"
+                                                value={newListName}
+                                                onChange={(e) => setNewListName(e.target.value)}
+                                                onKeyDown={(e) => e.key === "Enter" && createList()}
+                                                placeholder="List name..."
+                                                autoFocus
+                                                className="flex-1 min-w-0 bg-gray-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
                                             />
-
-                                            {showColorPicker === "new" && (
-                                                <div className="absolute top-8 right-0 z-[70] bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-5 gap-2 w-[180px]">
-                                                    {COLOR_OPTIONS.map(color => (
-                                                        <button
-                                                            key={color.value}
-                                                            onClick={() => { setNewListColor(color.value); setShowColorPicker(null); }}
-                                                            className={`w-7 h-7 rounded-full ${color.bg} cursor-pointer hover:scale-110 transition-transform ${newListColor === color.value ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800" : ""
-                                                                }`}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
                                         </div>
 
-                                        <button
-                                            onClick={createList}
-                                            disabled={!newListName.trim()}
-                                            className="p-2 bg-blue-500 hover:bg-blue-400 disabled:bg-gray-600 rounded-lg text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                                        >
-                                            <Check size={16} />
-                                        </button>
+                                        {/* Row 2: Color + Actions */}
+                                        <div className="flex items-center justify-between gap-2">
+                                            {/* Color picker */}
+                                            <div className="relative flex items-center gap-2">
+                                                <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">Color:</span>
+                                                <button
+                                                    onClick={() => setShowColorPicker(showColorPicker === "new" ? null : "new")}
+                                                    className={`w-6 h-6 rounded-full ${getColorClasses(newListColor).bg} cursor-pointer hover:scale-110 transition-transform ring-2 ring-gray-800`}
+                                                />
 
-                                        <button
-                                            onClick={() => { setShowNewForm(false); setNewListName(""); }}
-                                            className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 transition-colors cursor-pointer"
-                                        >
-                                            <X size={16} />
-                                        </button>
+                                                {showColorPicker === "new" && (
+                                                    <div className="absolute bottom-8 left-0 z-[70] bg-gray-800 rounded-lg p-2 border border-gray-700 shadow-xl grid grid-cols-5 gap-2 w-[180px]">
+                                                        {COLOR_OPTIONS.map(color => (
+                                                            <button
+                                                                key={color.value}
+                                                                onClick={() => { setNewListColor(color.value); setShowColorPicker(null); }}
+                                                                className={`w-7 h-7 rounded-full ${color.bg} cursor-pointer hover:scale-110 transition-transform ${newListColor === color.value ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800" : ""
+                                                                    }`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Action Buttons */}
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => { setShowNewForm(false); setNewListName(""); }}
+                                                    className="p-2 hover:bg-gray-700/50 rounded-lg text-gray-400 transition-colors cursor-pointer"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={createList}
+                                                    disabled={!newListName.trim()}
+                                                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg !text-white font-medium transition-colors cursor-pointer flex items-center gap-2 btn-animated"
+                                                >
+                                                    <Check size={16} />
+                                                    Create
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
                                     <button
                                         onClick={() => setShowNewForm(true)}
-                                        className="flex items-center gap-2 w-full p-3 rounded-xl border border-dashed border-gray-700 hover:border-blue-500 hover:bg-blue-500/5 text-gray-500 hover:text-blue-400 transition-all cursor-pointer"
+                                        className="flex items-center gap-2 w-full p-3 rounded-xl border border-dashed border-gray-700 hover:border-blue-500 hover:bg-blue-500/5 text-gray-500 hover:text-blue-400 transition-all cursor-pointer justify-center"
                                     >
                                         <Plus size={18} />
                                         Create new list

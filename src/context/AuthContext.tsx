@@ -22,8 +22,8 @@ interface AuthContextType {
     refreshProfile: () => Promise<void>;
 
     // Toast
-    toast: { message: string; type: ToastType } | null;
-    showToast: (message: string, type?: ToastType) => void;
+    toast: { message: string; type: ToastType; duration?: number } | null;
+    showToast: (message: string, type?: ToastType, duration?: number) => void;
     hideToast: () => void;
 
     // Watchlist

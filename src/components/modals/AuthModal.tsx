@@ -81,7 +81,7 @@ export function AuthModal({ supabase, isOpen, onClose }: AuthModalProps) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
         <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-2xl p-8 relative shadow-2xl text-center">
-          <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={24} /></button>
+          <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer"><X size={24} /></button>
           <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-6 text-green-500"><CheckCircle2 size={32} /></div>
           <h2 className="text-2xl font-bold text-white mb-2">Check your inbox!</h2>
           <p className="text-gray-400 mb-8">We sent a confirmation link to <span className="text-white font-medium">{email}</span>.</p>
@@ -93,11 +93,11 @@ export function AuthModal({ supabase, isOpen, onClose }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="w-full max-w-[85%] sm:max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 sm:p-8 relative shadow-2xl">
-        <button onClick={onClose} className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white"><X size={20} className="sm:w-6 sm:h-6" /></button>
+      <div className="w-full max-w-[85%] sm:max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl px-4 sm:px-8 pb-4 sm:pb-8 pt-3 sm:pt-4 relative shadow-2xl">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer"><X size={20} className="sm:w-6 sm:h-6" /></button>
 
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
-        <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">{isSignUp ? "Join the club." : "Login to sync your list."}</p>
+        <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-10">{isSignUp ? "Join the club." : "Login to sync your list."}</p>
 
         {/* GOOGLE BUTTON */}
         <button

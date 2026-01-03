@@ -118,6 +118,7 @@ export function MyListPage() {
                 onListsChange={updateUserLists}
                 supabase={supabase}
                 userId={session?.user?.id || ""}
+                showToast={showToast}
             />
 
             <motion.div
@@ -286,7 +287,7 @@ export function MyListPage() {
                 <div className="flex items-center">
                     <button
                         onClick={() => setListManageModalOpen(true)}
-                        className="h-7 sm:h-9 px-3 sm:px-4 rounded-full text-[11px] sm:text-sm font-medium bg-blue-500 hover:bg-blue-600 !text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 whitespace-nowrap"
+                        className="h-7 sm:h-9 px-3 sm:px-4 rounded-full text-[11px] sm:text-sm font-medium bg-blue-500 hover:bg-blue-600 !text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 whitespace-nowrap btn-animated"
                     >
                         <Edit2 size={12} /> Edit Lists
                     </button>
