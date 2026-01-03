@@ -10,9 +10,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Sun, Settings as SettingsIcon,
-    ChevronRight, Bell, Camera, Save, Shuffle, LogOut
+    ChevronRight, Bell, Camera, Save, Shuffle, LogOut, Shield
 } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
+import { AccountSettings } from '../../../components/forms/AccountSettings';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 
 interface MobileSettingsPageProps {
@@ -23,7 +24,7 @@ interface MobileSettingsPageProps {
     showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-type SectionId = 'profile' | 'appearance' | 'notifications' | 'content' | 'about';
+type SectionId = 'profile' | 'appearance' | 'notifications' | 'content' | 'account' | 'about';
 
 // Toggle Switch Component
 function Toggle({ enabled, onToggle, color = 'blue' }: {
@@ -225,29 +226,6 @@ export function MobileSettingsPage({
         setBannerGradient(random);
     };
 
-    const handleTestNotification = async () => {
-        showToast("Checking permissions...", "info");
-        try {
-            let permissionGranted = await isPermissionGranted();
-            if (!permissionGranted) {
-                const permission = await requestPermission();
-                permissionGranted = permission === 'granted';
-            }
-
-            if (permissionGranted) {
-                await sendNotification({
-                    title: 'Test Notification',
-                    body: 'Notifications are working! 🎉',
-                });
-                showToast("Notification sent!", "success");
-            } else {
-                showToast("Permission denied", "error");
-            }
-        } catch (error) {
-            showToast("Error: " + String(error), "error");
-        }
-    };
-
     return (
         <div className="min-h-screen px-4 py-6 pb-24">
             {/* Header */}
@@ -366,13 +344,6 @@ export function MobileSettingsPage({
                         onToggle={() => updateSetting('notifyOS', !settings.notifyOS)}
                     />
                 </SettingRow>
-
-                <button
-                    onClick={handleTestNotification}
-                    className="w-full mt-3 py-3 bg-blue-600 text-white rounded-xl font-medium"
-                >
-                    Test Notification
-                </button>
             </Section>
 
             {/* Content Section */}
@@ -395,6 +366,20 @@ export function MobileSettingsPage({
                     </p>
                 )}
             </Section>
+
+            {/* Account Management Section */}
+            {session && (
+                <Section
+                    title="Account Security"
+                    icon={Shield}
+                    isOpen={openSection === 'account'}
+                    onToggle={() => toggleSection('account')}
+                >
+                    <div className="pt-2">
+                        <AccountSettings />
+                    </div>
+                </Section>
+            )}
 
             {/* About Section */}
             <Section
