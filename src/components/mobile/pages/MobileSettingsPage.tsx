@@ -480,6 +480,19 @@ export function MobileSettingsPage({
                         </a>
                     </div>
 
+                    {/* Terms and Conditions */}
+                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3">
+                        <p className="text-gray-500 dark:text-gray-500 text-xs mb-1">{t('settings.about.terms_and_conditions')}</p>
+                        <a
+                            href="https://ashow-tracker.pages.dev/terms.html"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-sm font-medium"
+                        >
+                            {t('settings.about.terms_and_conditions_desc')}
+                        </a>
+                    </div>
+
                     <p className="text-center text-gray-500 dark:text-gray-600 text-xs pt-2">
                         AShow Tracker v1.2.1 • {t('settings.about.made_with')}
                     </p>

@@ -136,7 +136,9 @@
             "visit_jikan": "Visit Jikan",
             "privacy_policy": "Privacy Policy",
             "privacy_policy_desc": "Read our privacy policy to learn how we handle your data.",
-            "made_with": "Made with ❤️"
+            "made_with": "Made with ❤️",
+            "terms_and_conditions": "Terms and Conditions",
+            "terms_and_conditions_desc": "Read our terms and conditions to understand your rights and responsibilities."
         }
     },
     "profile_form": {
