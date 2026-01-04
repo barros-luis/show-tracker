@@ -391,7 +391,9 @@
                 const fallbackUrl = `https://github.com/${REPO}/releases/latest`;
                 downloadLinks.windows = fallbackUrl;
                 downloadLinks.macos = fallbackUrl;
+                downloadLinks.android = fallbackUrl;
                 setupDownloadHandlers();
+                updateHeroButton();
             }
         }
 
