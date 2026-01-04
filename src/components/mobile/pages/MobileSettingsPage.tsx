@@ -363,8 +363,8 @@ export function MobileSettingsPage({
                                                     setLangDropdownOpen(false);
                                                 }}
                                                 className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${currentLang.code === lang.code
-                                                        ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'
-                                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                    ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                     }`}
                                             >
                                                 <span className="text-xl">{lang.flag}</span>
@@ -465,6 +465,19 @@ export function MobileSettingsPage({
                             <span className="text-gray-400 dark:text-gray-600">•</span>
                             <span className="text-gray-900 dark:text-white font-medium">Jikan/MAL</span>
                         </div>
+                    </div>
+
+                    {/* Privacy Policy */}
+                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3">
+                        <p className="text-gray-500 dark:text-gray-500 text-xs mb-1">{t('settings.about.privacy_policy')}</p>
+                        <a
+                            href="https://ashow-tracker.pages.dev/privacy.html"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-sm font-medium"
+                        >
+                            {t('settings.about.privacy_policy_desc')}
+                        </a>
                     </div>
 
                     <p className="text-center text-gray-500 dark:text-gray-600 text-xs pt-2">

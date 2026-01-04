@@ -299,7 +299,7 @@ export function DesktopMyListDetailModal({
                 setCurrentStatus(item.status || "PLANNED");
             }
         }
-    }, [isOpen, item]);
+    }, [isOpen, item?.id]);
 
     const handleStatusChange = async (status: string) => {
         if (!item) return;
@@ -788,6 +788,29 @@ export function DesktopMyListDetailModal({
                                                     >
                                                         <Check size={14} />
                                                         {t('episode_list.check_all')}
+                                                    </button>
+
+                                                    {/* Uncheck All Button */}
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!item || !userId) return;
+                                                            if (watchedEpisodes.size === 0) return;
+
+                                                            // Clear local state
+                                                            setWatchedEpisodes(new Set());
+
+                                                            // Delete all from database
+                                                            await supabase.from('watched_episodes').delete().eq('watchlist_id', item.id);
+
+                                                            // Update count
+                                                            await supabase.from('watchlist').update({ watched_episodes: 0 }).eq('id', item.id);
+                                                            onEpisodeUpdate(item.id, 0);
+                                                        }}
+                                                        disabled={watchedEpisodes.size === 0}
+                                                        className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-red-500/20 hover:bg-red-500/30 text-red-600 dark:text-red-300 border border-red-500/30 hover:border-red-500/50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >
+                                                        <X size={14} />
+                                                        {t('episode_list.mark_all_unwatched')}
                                                     </button>
                                                 </div>
                                             )}

@@ -480,6 +480,24 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                         </div>
                                     </section>
 
+                                    {/* Privacy Policy */}
+                                    <section>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.privacy_policy')}</h3>
+                                        <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
+                                            <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
+                                                {t('settings.about.privacy_policy_desc')}
+                                            </p>
+                                            <a
+                                                href="https://ashow-tracker.pages.dev/privacy.html"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs mt-2 transition-colors"
+                                            >
+                                                {t('settings.about.privacy_policy')} <ExternalLink size={12} />
+                                            </a>
+                                        </div>
+                                    </section>
+
                                     {/* Version */}
                                     <section className="pt-4 border-t border-gray-100 dark:border-white/5">
                                         <p className="text-gray-500 text-xs text-center">

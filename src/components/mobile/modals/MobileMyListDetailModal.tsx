@@ -104,7 +104,7 @@ export function MobileMyListDetailModal({
             setEpisodes([]);
             setWatchedEpisodes(new Set());
         }
-    }, [item, isOpen]);
+    }, [item?.id, isOpen]);
 
     // Prevent body scroll
     useEffect(() => {

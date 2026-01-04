@@ -134,6 +134,8 @@
             "jikan_sub": "(MyAnimeList)",
             "jikan_disclaimer": "Dados de anime são fornecidos pela API Jikan, uma API não oficial do MyAnimeList. Isto inclui informações de anime, listas de episódios e metadados relacionados.",
             "visit_jikan": "Visitar Jikan",
+            "privacy_policy": "Política de Privacidade",
+            "privacy_policy_desc": "Lê a nossa política de privacidade para saber como tratamos os teus dados.",
             "made_with": "Feito com ❤️"
         }
     },
@@ -275,5 +277,11 @@
         "Work Life": "Vida no Trabalho",
         "Erotica": "Erótico",
         "Hentai": "Hentai"
+    },
+    "image_cropper": {
+        "title": "Ajustar Foto de Perfil",
+        "zoom": "Zoom",
+        "processing": "A processar...",
+        "save": "Guardar Foto"
     }
 }
