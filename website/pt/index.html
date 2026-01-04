@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AShow Tracker - Uma Experiência de Rastreamento de Animes e Séries de Próxima Geração</title>
+    <meta name="description"
+        content="Rastreia os teus animes, filmes e séries com uma interface glassmorphism bonita. Gratuito, open-source e disponível para Windows, macOS e Android.">
+    <meta name="keywords" content="anime tracker, show tracker, watchlist, MyAnimeList, TMDB, desktop app, Tauri">
+    <link rel="icon" type="image/png" href="../logo.png">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="../logo.png" alt="AShow Tracker" class="nav-logo">
+                <span class="nav-title">AShow Tracker</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features">Funcionalidades</a>
+                <a href="#download">Download</a>
+                <a href="about.html">Sobre</a>
+                <a href="https://github.com/barros-luis/show-tracker" target="_blank" rel="noopener"
+                    class="github-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                    </svg>
+                    GitHub
+                </a>
+                <a href="../index.html" class="lang-switch">🇺🇸 EN</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content" style="display: flex; flex-direction: column; align-items: center;">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                Open Source & Gratuito
+            </div>
+            <img src="../logo.png" alt="AShow Tracker Logo" class="hero-logo">
+            <h1 class="hero-title">
+                Rastreia as tuas Séries.<br>
+                <span class="gradient-text">Com Estilo.</span>
+            </h1>
+            <p class="hero-subtitle">
+                Uma experiência de rastreamento de animes e séries de próxima geração com uma interface glassmorphism
+                deslumbrante,
+                rastreamento multi-fonte e notificações inteligentes.
+            </p>
+            <div class="hero-buttons">
+                <a href="#" id="hero-download-btn" class="btn btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    <span id="hero-download-text">Transferir Agora</span>
+                </a>
+                <a href="#features" class="btn btn-secondary">
+                    Saber Mais
+                </a>
+            </div>
+            <div class="hero-platforms">
+                <span class="platform-label">Disponível para:</span>
+                <div class="platform-icons">
+                    <div class="platform" title="Windows">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
+                        </svg>
+                        <span>Windows</span>
+                    </div>
+                    <div class="platform" title="macOS">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                        </svg>
+                        <span>macOS</span>
+                    </div>
+                    <div class="platform" title="Android">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M17.523 15.341c-.5 0-.908-.406-.908-.91s.408-.909.908-.909c.502 0 .908.406.908.91s-.406.909-.908.909m-11.046 0c-.502 0-.908-.406-.908-.91s.406-.909.908-.909c.5 0 .908.406.908.91s-.408.909-.908.909m11.4-6.744l1.996-3.458a.417.417 0 00-.152-.567.416.416 0 00-.568.152l-2.023 3.503a12.239 12.239 0 00-5.13-1.107c-1.85 0-3.584.39-5.13 1.107L4.846 4.724a.416.416 0 00-.568-.152.417.417 0 00-.152.567L6.12 8.597C2.484 10.654 0 14.437 0 18.774h24c0-4.337-2.484-8.12-6.123-10.177" />
+                        </svg>
+                        <span>Android</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Tudo o que Precisas</h2>
+                <p class="section-subtitle">Um rastreador repleto de funcionalidades desenhado para entusiastas</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
+                    </div>
+                    <h3>Interface Glassmorphism</h3>
+                    <p>Design moderno e translúcido com gradientes dinâmicos e animações premium.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                            <line x1="8" y1="21" x2="16" y2="21" />
+                            <line x1="12" y1="17" x2="12" y2="21" />
+                        </svg>
+                    </div>
+                    <h3>Rastreamento Multi-Fonte</h3>
+                    <p>Rastreia animes via Jikan (MAL), além de filmes e séries via TMDB—tudo numa só app.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 01-3.46 0" />
+                        </svg>
+                    </div>
+                    <h3>Notificações Inteligentes</h3>
+                    <p>Recebe alertas para novos episódios, temporadas, sequelas e estreias de filmes.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #10b981, #3b82f6);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </div>
+                    <h3>Perfis Ricos</h3>
+                    <p>Avatar personalizado, bio, links sociais e gradientes aleatórios.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6" />
+                            <line x1="8" y1="12" x2="21" y2="12" />
+                            <line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                            <line x1="3" y1="18" x2="3.01" y2="18" />
+                        </svg>
+                    </div>
+                    <h3>Listas Personalizadas</h3>
+                    <p>Listas ilimitadas com ícones e cores personalizadas. Organiza à tua maneira.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #06b6d4, #10b981);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="23 4 23 10 17 10" />
+                            <polyline points="1 20 1 14 7 14" />
+                            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                        </svg>
+                    </div>
+                    <h3>Atualizações Automáticas</h3>
+                    <p>Atualizações in-app sem interrupções. Tem sempre as funcionalidades mais recentes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Transferir AShow Tracker</h2>
+                <p class="section-subtitle">Escolhe a tua plataforma e começa a rastrear hoje</p>
+            </div>
+            <div class="download-grid">
+                <a href="#" id="windows-download" class="download-card">
+                    <div class="download-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
+                        </svg>
+                    </div>
+                    <h3>Windows</h3>
+                    <p class="download-format">.exe</p>
+                    <span class="download-btn">Transferir</span>
+                </a>
+                <a href="#" id="macos-download" class="download-card">
+                    <div class="download-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                        </svg>
+                    </div>
+                    <h3>macOS</h3>
+                    <p class="download-format">.dmg</p>
+                    <span class="download-btn">Transferir</span>
+                </a>
+                <a href="https://github.com/barros-luis/show-tracker/releases/latest" id="android-download"
+                    target="_blank" rel="noopener noreferrer" class="download-card">
+                    <div class="download-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M17.523 15.341c-.5 0-.908-.406-.908-.91s.408-.909.908-.909c.502 0 .908.406.908.91s-.406.909-.908.909m-11.046 0c-.502 0-.908-.406-.908-.91s.406-.909.908-.909c.5 0 .908.406.908.91s-.408.909-.908.909m11.4-6.744l1.996-3.458a.417.417 0 00-.152-.567.416.416 0 00-.568.152l-2.023 3.503a12.239 12.239 0 00-5.13-1.107c-1.85 0-3.584.39-5.13 1.107L4.846 4.724a.416.416 0 00-.568-.152.417.417 0 00-.152.567L6.12 8.597C2.484 10.654 0 14.437 0 18.774h24c0-4.337-2.484-8.12-6.123-10.177" />
+                        </svg>
+                    </div>
+                    <h3>Android</h3>
+                    <p class="download-format">.apk</p>
+                    <span class="download-btn">Transferir</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Notes -->
+    <section class="install-notes">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Notas de Instalação</h2>
+                <p class="section-subtitle">Configuração inicial para cada plataforma</p>
+            </div>
+            <div class="notes-grid">
+                <div class="note-card">
+                    <div class="note-header">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
+                        </svg>
+                        <h4>Windows</h4>
+                    </div>
+                    <p>O Windows SmartScreen pode mostrar um aviso. Clica em <strong>"Mais informações"</strong> e
+                        depois em <strong>"Executar de qualquer forma"</strong>.</p>
+                    <span class="note-reason">Isto é normal para apps não assinadas. A app é 100% segura e
+                        open-source!</span>
+                </div>
+                <div class="note-card">
+                    <div class="note-header">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                        </svg>
+                        <h4>macOS</h4>
+                    </div>
+                    <p>Corre este comando uma vez no Terminal para contornar o Gatekeeper:</p>
+                    <code>xattr -cr /Applications/AShowTracker.app</code>
+                    <span class="note-reason">Remove a flag de quarentena de apps transferidas.</span>
+                </div>
+                <div class="note-card">
+                    <div class="note-header">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M17.523 15.341c-.5 0-.908-.406-.908-.91s.408-.909.908-.909c.502 0 .908.406.908.91s-.406.909-.908.909m-11.046 0c-.502 0-.908-.406-.908-.91s.406-.909.908-.909c.5 0 .908.406.908.91s-.408.909-.908.909m11.4-6.744l1.996-3.458a.417.417 0 00-.152-.567.416.416 0 00-.568.152l-2.023 3.503a12.239 12.239 0 00-5.13-1.107c-1.85 0-3.584.39-5.13 1.107L4.846 4.724a.416.416 0 00-.568-.152.417.417 0 00-.152.567L6.12 8.597C2.484 10.654 0 14.437 0 18.774h24c0-4.337-2.484-8.12-6.123-10.177" />
+                        </svg>
+                        <h4>Android</h4>
+                    </div>
+                    <p>Ativa <strong>"Instalar de fontes desconhecidas"</strong> nas definições do teu dispositivo antes
+                        de instalar o APK.
+                    </p>
+                    <span class="note-reason">Necessário para apps que não vêm da Play Store.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section class="tech-stack">
+        <div class="section-container">
+            <h3>Construído com Tecnologia Moderna</h3>
+            <div class="tech-badges">
+                <a href="https://react.dev/" target="_blank" rel="noopener" class="tech-badge">
+                    <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"
+                        alt="React">
+                </a>
+                <a href="https://tauri.app/" target="_blank" rel="noopener" class="tech-badge">
+                    <img src="https://img.shields.io/badge/Tauri-FFC131?style=for-the-badge&logo=tauri&logoColor=black"
+                        alt="Tauri">
+                </a>
+                <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener" class="tech-badge">
+                    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"
+                        alt="TypeScript">
+                </a>
+                <a href="https://supabase.com/" target="_blank" rel="noopener" class="tech-badge">
+                    <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white"
+                        alt="Supabase">
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="section-container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <img src="../logo.png" alt="AShow Tracker" class="footer-logo">
+                    <span>AShow Tracker</span>
+                </div>
+                <p class="footer-tagline">Rastreia as tuas séries. Com Estilo.</p>
+                <div class="footer-links">
+                    <a href="https://github.com/barros-luis/show-tracker" target="_blank" rel="noopener">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                        </svg>
+                        GitHub
+                    </a>
+                    <a href="https://github.com/barros-luis/show-tracker/releases" target="_blank" rel="noopener">
+                        Versões
+                    </a>
+                    <a href="https://github.com/barros-luis/show-tracker/issues" target="_blank" rel="noopener">
+                        Reportar Problema
+                    </a>
+                    <a href="privacy.html">
+                        Política de Privacidade
+                    </a>
+                    <a href="terms.html">
+                        Termos
+                    </a>
+                </div>
+                <p class="footer-copyright">
+                    © 2024 AShow Tracker. Open source sob Licença MIT.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Download links handler - fetches latest release and provides direct download
+        const REPO = 'barros-luis/show-tracker';
+        const API_URL = `https://api.github.com/repos/${REPO}/releases/latest`;
+
+        let downloadLinks = {
+            windows: null,
+            macos: null,
+            android: null // Will be populated from GitHub Releases
+        };
+
+        // Detect user's OS
+        function detectOS() {
+            const ua = navigator.userAgent.toLowerCase();
+            if (ua.includes('win')) return 'windows';
+            if (ua.includes('mac')) return 'macos';
+            if (ua.includes('android')) return 'android';
+            if (ua.includes('linux')) return 'linux';
+            return 'unknown';
+        }
+
+        // Fetch latest release and set download links
+        async function initDownloads() {
+            try {
+                const response = await fetch(API_URL);
+                const release = await response.json();
+
+                release.assets.forEach(asset => {
+                    const name = asset.name.toLowerCase();
+                    if (name.endsWith('.exe') && !name.endsWith('.sig')) {
+                        downloadLinks.windows = asset.browser_download_url;
+                    } else if (name.endsWith('.dmg')) {
+                        downloadLinks.macos = asset.browser_download_url;
+                    } else if (name.endsWith('.apk')) {
+                        downloadLinks.android = asset.browser_download_url;
+                    }
+                });
+
+                // Set up click handlers
+                setupDownloadHandlers();
+
+                // Update hero button based on user's OS
+                updateHeroButton();
+            } catch (error) {
+                console.error('Failed to fetch release info:', error);
+                // Fallback to releases page
+                const fallbackUrl = `https://github.com/${REPO}/releases/latest`;
+                downloadLinks.windows = fallbackUrl;
+                downloadLinks.macos = fallbackUrl;
+                setupDownloadHandlers();
+            }
+        }
+
+        // Force open in external browser (escapes WebViews/in-app browsers)
+        function forceExternalBrowser(url) {
+            const intentUrl = 'intent://' + url.replace(/^https?:\/\//, '') +
+                '#Intent;scheme=https;package=com.android.chrome;end';
+
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = intentUrl;
+            document.body.appendChild(iframe);
+
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+                window.open(url, '_system');
+            }, 500);
+        }
+
+        function setupDownloadHandlers() {
+            const windowsBtn = document.getElementById('windows-download');
+            const macosBtn = document.getElementById('macos-download');
+            const androidBtn = document.getElementById('android-download');
+
+            if (windowsBtn && downloadLinks.windows) {
+                windowsBtn.href = downloadLinks.windows;
+            }
+            if (macosBtn && downloadLinks.macos) {
+                macosBtn.href = downloadLinks.macos;
+            }
+            if (androidBtn && downloadLinks.android) {
+                androidBtn.href = downloadLinks.android;
+                androidBtn.setAttribute('target', '_blank');
+                androidBtn.setAttribute('rel', 'noopener noreferrer');
+                androidBtn.classList.remove('disabled');
+                androidBtn.querySelector('.download-btn').textContent = 'Transferir';
+                androidBtn.querySelector('.download-btn').classList.remove('coming-soon');
+
+                // Force external browser on click for Android
+                androidBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    forceExternalBrowser(downloadLinks.android);
+                });
+            }
+        }
+
+        function updateHeroButton() {
+            const os = detectOS();
+            const heroBtn = document.getElementById('hero-download-btn');
+            const heroText = document.getElementById('hero-download-text');
+
+            if (!heroBtn) return;
+
+            const osNames = {
+                windows: 'Windows',
+                macos: 'macOS',
+                android: 'Android'
+            };
+
+            if (downloadLinks[os]) {
+                heroBtn.href = downloadLinks[os];
+                heroBtn.target = '_blank';
+                heroText.textContent = `Transferir para ${osNames[os]}`;
+
+                if (os === 'android') {
+                    heroBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        forceExternalBrowser(downloadLinks.android);
+                    });
+                }
+            } else if (downloadLinks.windows) {
+                heroBtn.href = downloadLinks.windows;
+                heroBtn.target = '_blank';
+                heroText.textContent = 'Transferir Agora';
+            } else {
+                heroBtn.href = `https://github.com/${REPO}/releases/latest`;
+                heroBtn.target = '_blank';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initDownloads);
+    </script>
+</body>
+
+</html>
