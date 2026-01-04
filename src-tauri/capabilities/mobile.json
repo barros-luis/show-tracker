@@ -13,6 +13,15 @@
         "core:default",
         "opener:default",
         "deep-link:default",
-        "notification:default"
+        "notification:default",
+        {
+            "identifier": "http:default",
+            "allow": [
+                {
+                    "url": "https://api.cognitive.microsofttranslator.com/*"
+                }
+            ],
+            "deny": []
+        }
     ]
 }

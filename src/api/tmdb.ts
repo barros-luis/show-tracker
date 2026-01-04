@@ -114,11 +114,11 @@ export interface TMDBSeason {
 }
 
 // Search Movies
-export async function searchMovies(query: string, includeAdult = false): Promise<TMDBMovie[]> {
+export async function searchMovies(query: string, includeAdult = false, lang = "en-US"): Promise<TMDBMovie[]> {
     if (query.length < 2) return [];
 
     try {
-        const response = await fetch(buildUrl("/search/movie", { query, language: "en-US", include_adult: String(includeAdult) }));
+        const response = await fetch(buildUrl("/search/movie", { query, language: lang, include_adult: String(includeAdult) }));
         const data = await response.json();
         return data.results || [];
     } catch (error) {
@@ -128,11 +128,11 @@ export async function searchMovies(query: string, includeAdult = false): Promise
 }
 
 // Search TV Shows
-export async function searchTVShows(query: string, includeAdult = false): Promise<TMDBTVShow[]> {
+export async function searchTVShows(query: string, includeAdult = false, lang = "en-US"): Promise<TMDBTVShow[]> {
     if (query.length < 2) return [];
 
     try {
-        const response = await fetch(buildUrl("/search/tv", { query, language: "en-US", include_adult: String(includeAdult) }));
+        const response = await fetch(buildUrl("/search/tv", { query, language: lang, include_adult: String(includeAdult) }));
         const data = await response.json();
         return data.results || [];
     } catch (error) {
@@ -142,9 +142,9 @@ export async function searchTVShows(query: string, includeAdult = false): Promis
 }
 
 // Get Movie Details (with videos)
-export async function getMovieDetails(id: number): Promise<TMDBMovie | null> {
+export async function getMovieDetails(id: number, lang = "en-US"): Promise<TMDBMovie | null> {
     try {
-        const response = await fetch(buildUrl(`/movie/${id}`, { append_to_response: "videos", language: "en-US" }));
+        const response = await fetch(buildUrl(`/movie/${id}`, { append_to_response: "videos", language: lang }));
         const data = await response.json();
         return data;
     } catch (error) {
@@ -154,9 +154,9 @@ export async function getMovieDetails(id: number): Promise<TMDBMovie | null> {
 }
 
 // Get TV Show Details (with videos)
-export async function getTVDetails(id: number): Promise<TMDBTVShow | null> {
+export async function getTVDetails(id: number, lang = "en-US"): Promise<TMDBTVShow | null> {
     try {
-        const response = await fetch(buildUrl(`/tv/${id}`, { append_to_response: "videos", language: "en-US" }));
+        const response = await fetch(buildUrl(`/tv/${id}`, { append_to_response: "videos", language: lang }));
         const data = await response.json();
         return data;
     } catch (error) {
@@ -166,9 +166,9 @@ export async function getTVDetails(id: number): Promise<TMDBTVShow | null> {
 }
 
 // Get TV Season with Episodes
-export async function getTVSeasonEpisodes(tvId: number, seasonNumber: number): Promise<TMDBSeason | null> {
+export async function getTVSeasonEpisodes(tvId: number, seasonNumber: number, lang = "en-US"): Promise<TMDBSeason | null> {
     try {
-        const response = await fetch(buildUrl(`/tv/${tvId}/season/${seasonNumber}`, { language: "en-US" }));
+        const response = await fetch(buildUrl(`/tv/${tvId}/season/${seasonNumber}`, { language: lang }));
         const data = await response.json();
         return data;
     } catch (error) {

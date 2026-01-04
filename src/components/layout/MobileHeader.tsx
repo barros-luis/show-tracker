@@ -5,6 +5,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { NotificationBell } from "../common/NotificationBell";
 import type { AppNotification } from "../../api/NotificationService";
 import { useSettings } from "../../context/SettingsContext";
+import { useTranslation } from "react-i18next";
 
 interface MobileHeaderProps {
     isLoggedIn: boolean;
@@ -34,18 +35,19 @@ export function MobileHeader({
     const navigate = useNavigate();
     const location = useLocation();
     const { settings } = useSettings();
+    const { t } = useTranslation();
 
     // Get current page info
     const getPageInfo = () => {
         switch (location.pathname) {
             case "/":
-                return { icon: Search, title: "Search" };
+                return { icon: Search, title: t('common.search') };
             case "/list":
-                return { icon: List, title: "My List" };
+                return { icon: List, title: t('common.my_list') };
             case "/profile":
-                return { icon: User, title: "Profile" };
+                return { icon: User, title: t('common.profile') };
             case "/settings":
-                return { icon: Settings, title: "Settings" };
+                return { icon: Settings, title: t('common.settings') };
             default:
                 return { icon: Search, title: "AShowTracker" };
         }
@@ -144,7 +146,7 @@ export function MobileHeader({
                         whileTap={{ scale: 0.95 }}
                     >
                         <LogIn size={18} />
-                        <span>Sign In</span>
+                        <span>{t('common.sign_in')}</span>
                     </motion.button>
                 )}
             </div>

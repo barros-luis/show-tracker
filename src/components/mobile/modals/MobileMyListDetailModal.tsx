@@ -9,7 +9,8 @@
 */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tv, Trash2, ChevronDown, Check, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Trash2, AlertTriangle, ChevronDown, Check, LayoutGrid, Eye, EyeOff, Tv, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { getAllTVEpisodes, searchTVShows, getTVDetails, getTVSeasonEpisodes } from "../../../api/tmdb";
 import { getAllAnimeEpisodes, getEpisodeDetails } from "../../../api/jikan";
 import { getListIcon } from "../../../utils/constants";
@@ -74,6 +75,7 @@ export function MobileMyListDetailModal({
     userId,
     showToast
 }: MobileMyListDetailModalProps) {
+    const { t } = useTranslation();
     const [episodes, setEpisodes] = useState<UnifiedEpisode[]>([]);
     const [watchedEpisodes, setWatchedEpisodes] = useState<Set<number>>(new Set());
     const [loadingEpisodes, setLoadingEpisodes] = useState(false);
@@ -467,7 +469,7 @@ export function MobileMyListDetailModal({
                                         className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 uppercase tracking-wide border ${STATUS_OPTIONS.find(s => s.value === currentStatus)?.color
                                             } bg-opacity-10 border-opacity-20`}
                                     >
-                                        {STATUS_OPTIONS.find(s => s.value === currentStatus)?.label}
+                                        {t(`status.${currentStatus.toLowerCase()}`)}
                                         <ChevronDown size={12} />
                                     </button>
 
@@ -481,7 +483,7 @@ export function MobileMyListDetailModal({
                                             return (
                                                 <>
                                                     {getListIcon(currentList?.icon || 'folder', 12)}
-                                                    <span className="truncate max-w-[80px]">{currentList?.name || 'Uncategorized'}</span>
+                                                    <span className="truncate max-w-[80px]">{currentList?.name || t('list.uncategorized')}</span>
                                                 </>
                                             )
                                         })()}
@@ -495,7 +497,7 @@ export function MobileMyListDetailModal({
                                     <span className="text-white font-bold">{watchedCount}</span>
                                     <span>/</span>
                                     <span>{totalCount || '?'}</span>
-                                    <span>episodes</span>
+                                    <span>{t('episode_list.episodes')}</span>
                                 </div>
                             </div>
 
@@ -515,7 +517,7 @@ export function MobileMyListDetailModal({
                                                     }`}
                                             >
                                                 {currentStatus === opt.value && <Check size={14} />}
-                                                <span className={currentStatus !== opt.value ? "ml-6" : ""}>{opt.label}</span>
+                                                <span className={currentStatus !== opt.value ? "ml-6" : ""}>{t(`status.${opt.value.toLowerCase()}`)}</span>
                                             </button>
                                         ))}
                                     </motion.div>
@@ -535,7 +537,7 @@ export function MobileMyListDetailModal({
                                         >
                                             {currentListId === null && <Check size={14} />}
                                             <span className={currentListId !== null ? "ml-6 flex items-center gap-2" : "flex items-center gap-2"}>
-                                                {getListIcon('folder', 14)} Uncategorized
+                                                {getListIcon('folder', 14)} {t('list.uncategorized')}
                                             </span>
                                         </button>
 
@@ -573,14 +575,14 @@ export function MobileMyListDetailModal({
                                 className={`pb-3 border-b-2 transition-colors ${activeTab === 'episodes' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400'
                                     }`}
                             >
-                                Episodes
+                                {t('episode_list.title')}
                             </button>
                             <button
                                 onClick={() => setActiveTab('info')}
                                 className={`pb-3 border-b-2 transition-colors ${activeTab === 'info' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400'
                                     }`}
                             >
-                                Info & Actions
+                                {t('episode_list.info_actions')}
                             </button>
                         </div>
 
@@ -589,9 +591,14 @@ export function MobileMyListDetailModal({
                             {activeTab === 'episodes' ? (
                                 <div className="p-4 space-y-2">
                                     {loadingEpisodes ? (
-                                        <div className="text-center py-12 text-gray-500">Loading episodes...</div>
+                                        <div className="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400">
+                                            <Loader2 className="w-8 h-8 mb-2 animate-spin" />
+                                            <p>{t('episode_list.loading')}</p>
+                                        </div>
                                     ) : episodes.length === 0 ? (
-                                        <div className="text-center py-12 text-gray-500">No episodes found</div>
+                                        <div className="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400">
+                                            <p>{t('episode_list.no_episodes')}</p>
+                                        </div>
                                     ) : (
                                         episodes.map(ep => {
                                             const isWatched = watchedEpisodes.has(ep.number);
@@ -632,7 +639,7 @@ export function MobileMyListDetailModal({
                                                                 </p>
                                                             </div>
                                                             {ep.season && (
-                                                                <p className="text-xs text-gray-500">Season {ep.season}</p>
+                                                                <p className="text-xs text-gray-500">{t('episode_list.season', { season: ep.season })}</p>
                                                             )}
                                                         </div>
 
@@ -655,7 +662,7 @@ export function MobileMyListDetailModal({
                                                                 className="overflow-hidden"
                                                             >
                                                                 <div className="p-3 pt-0 text-xs text-gray-400 border-t border-gray-700/50 mx-3 mt-1 pb-3 leading-relaxed">
-                                                                    {episodeSynopsis[ep.number] || ep.synopsis || "No synopsis available."}
+                                                                    {episodeSynopsis[ep.number] || ep.synopsis || t('episode_list.no_synopsis')}
                                                                 </div>
                                                             </motion.div>
                                                         )}
@@ -667,9 +674,12 @@ export function MobileMyListDetailModal({
                                 </div>
                             ) : (
                                 <div className="p-4 space-y-4">
-                                    {/* Batch Actions */}
+                                    {/* Bulk Actions */}
                                     <div className="bg-gray-800/50 rounded-xl p-4">
-                                        <h3 className="text-sm font-bold text-white mb-3">Bulk Actions</h3>
+                                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                            <LayoutGrid size={16} className="text-blue-500" />
+                                            {t('episode_list.bulk_actions')}
+                                        </h3>
 
                                         {/* Fill Gaps Button */}
                                         <button
@@ -704,13 +714,13 @@ export function MobileMyListDetailModal({
                                                 await supabase.from('watchlist').update({ watched_episodes: newWatched.size }).eq('id', item.id);
                                                 onEpisodeUpdate(item.id, newWatched.size);
 
-                                                showToast(`Filled ${episodesToAdd.length} missing episode${episodesToAdd.length > 1 ? 's' : ''}!`, 'success');
+                                                showToast(t('episode_list.filled_success', { count: episodesToAdd.length }), 'success');
                                             }}
                                             disabled={watchedEpisodes.size === 0}
                                             className="w-full mb-3 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                         >
                                             <ChevronDown size={18} className="rotate-90" />
-                                            Fill Gaps Up To Latest
+                                            {t('episode_list.fill_gaps_latest')}
                                         </button>
 
                                         <div className="grid grid-cols-2 gap-3">
@@ -718,12 +728,10 @@ export function MobileMyListDetailModal({
                                                 onClick={async () => {
                                                     // Check All
                                                     const allIds = episodes.map(e => e.number);
-                                                    setWatchedEpisodes(new Set(allIds));
-                                                    await supabase.from('watched_episodes').delete().eq('watchlist_id', item.id); // clean slate? no expensive.
-                                                    // Actually checking all is better done by logic, but for now simple loop is okay or bulk insert
-                                                    // Just insert missing
                                                     const missing = allIds.filter(id => !watchedEpisodes.has(id));
                                                     if (missing.length === 0) return;
+
+                                                    setWatchedEpisodes(new Set(allIds));
 
                                                     const inserts = missing.map(n => ({
                                                         user_id: userId,
@@ -739,7 +747,7 @@ export function MobileMyListDetailModal({
                                                 className="flex flex-col items-center justify-center p-3 bg-gray-700 rounded-lg text-white"
                                             >
                                                 <Eye size={20} className="mb-1 text-blue-400" />
-                                                <span className="text-xs">Mark All Watched</span>
+                                                <span className="text-xs">{t('episode_list.mark_all_watched')}</span>
                                             </button>
                                             <button
                                                 onClick={async () => {
@@ -752,40 +760,43 @@ export function MobileMyListDetailModal({
                                                 className="flex flex-col items-center justify-center p-3 bg-gray-700 rounded-lg text-white"
                                             >
                                                 <EyeOff size={20} className="mb-1 text-gray-400" />
-                                                <span className="text-xs">Mark All Unwatched</span>
+                                                <span className="text-xs">{t('episode_list.mark_all_unwatched')}</span>
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Danger Zone */}
                                     <div className="bg-red-900/10 rounded-xl p-4 border border-red-500/20">
-                                        <h3 className="text-sm font-bold text-red-200 mb-3">Danger Zone</h3>
+                                        <h3 className="text-sm font-bold text-red-200 mb-3 flex items-center gap-2">
+                                            <AlertTriangle size={16} />
+                                            {t('media_detail.danger_zone')}
+                                        </h3>
                                         {!showRemoveConfirm ? (
                                             <button
                                                 onClick={() => setShowRemoveConfirm(true)}
                                                 className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 bg-red-500/10 text-red-400 border border-red-500/30 active:bg-red-500/20"
                                             >
                                                 <Trash2 size={18} />
-                                                Remove from List
+                                                {t('media_detail.remove_from_list')}
                                             </button>
                                         ) : (
                                             <div className="space-y-3">
                                                 <p className="text-center text-red-300 text-sm flex items-center justify-center gap-2">
                                                     <AlertTriangle size={16} />
-                                                    Are you sure?
+                                                    {t('media_detail.are_you_sure')}
                                                 </p>
                                                 <div className="flex gap-3">
                                                     <button
                                                         onClick={() => setShowRemoveConfirm(false)}
                                                         className="flex-1 py-3 rounded-lg bg-gray-700 text-white font-medium"
                                                     >
-                                                        Cancel
+                                                        {t('media_detail.cancel')}
                                                     </button>
                                                     <button
                                                         onClick={handleRemove}
                                                         className="flex-1 py-3 rounded-lg bg-red-600 text-white font-medium"
                                                     >
-                                                        Delete
+                                                        {t('media_detail.delete')}
                                                     </button>
                                                 </div>
                                             </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, Loader2, Film, Tv, Sparkles, X, ChevronDown, Filter } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { searchAnime } from "../api/jikan";
 import { searchMovies, searchTVShows, getTVDetails } from "../api/tmdb";
@@ -18,6 +19,7 @@ export function SearchPage() {
         userLists,
         showToast,
     } = useAuthContext();
+    const { t, i18n } = useTranslation();
 
     // Search state
     const [query, setQuery] = useState("");
@@ -41,10 +43,13 @@ export function SearchPage() {
                     const savedSettings = localStorage.getItem('app_settings');
                     const adultContent = savedSettings ? JSON.parse(savedSettings).adultContent ?? false : false;
 
+                    // Map app language to TMDB language
+                    const tmdbLang = i18n.language.startsWith('pt') ? 'pt-PT' : 'en-US';
+
                     const [animeData, movieData, tvData] = await Promise.all([
                         searchAnime(query, !adultContent),
-                        searchMovies(query, adultContent),
-                        searchTVShows(query, adultContent),
+                        searchMovies(query, adultContent, tmdbLang),
+                        searchTVShows(query, adultContent, tmdbLang),
                     ]);
 
                     const animeItems = animeData.map(animeToMediaItem);
@@ -162,7 +167,7 @@ export function SearchPage() {
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [query]);
+    }, [query, i18n.language]);
 
     // Close filter dropdown when clicking outside
     useEffect(() => {
@@ -200,7 +205,7 @@ export function SearchPage() {
         }
 
         if (existing) {
-            showToast("You already added this to your list! 😅", "info");
+            showToast(t('list.duplicate_warning', { defaultValue: "You already added this to your list! 😅" }), "info");
             return;
         }
 
@@ -250,7 +255,8 @@ export function SearchPage() {
             const list = userLists.find(l => l.id === listId);
             const listName = list ? ` to ${list.name}` : '';
             const emoji = media.type === 'movie' ? '🎬' : media.type === 'tv' ? '📺' : '✅';
-            showToast(`Added ${media.title}${listName}! ${emoji}`, "success");
+            // Simple toast for now, can be improved later
+            showToast(t('list.added', { title: media.title }) + `${listName}! ${emoji}`, "success");
             setQuery("");
         }
     }
@@ -304,7 +310,7 @@ export function SearchPage() {
                     </div>
                     <input
                         type="text"
-                        placeholder="Search anime, movies, or TV shows..."
+                        placeholder={t('search.placeholder')}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         className="w-full bg-white dark:bg-gray-900 rounded-full py-4 pl-12 pr-14 text-lg text-slate-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-none border-none ring-2 ring-white/5 ring-inset"
@@ -337,10 +343,10 @@ export function SearchPage() {
                         >
                             <Filter size={14} />
                             {searchMediaTypeFilter.size === 0
-                                ? 'All Types'
+                                ? t('search.all_types')
                                 : searchMediaTypeFilter.size === 3
-                                    ? 'All Types'
-                                    : `${searchMediaTypeFilter.size} Selected`}
+                                    ? t('search.all_types')
+                                    : `${searchMediaTypeFilter.size} ${t('search.selected')}`}
                             <ChevronDown size={14} className={`transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`} />
                         </button>
 
@@ -363,16 +369,16 @@ export function SearchPage() {
                                             }`}
                                     >
                                         <div className={`w-2 h-2 rounded-full ${searchMediaTypeFilter.size === 0 ? 'bg-blue-500' : 'bg-transparent'}`} />
-                                        All Types
+                                        {t('search.all_types')}
                                     </button>
 
                                     <div className="h-[1px] bg-gray-200 dark:bg-gray-700" />
 
                                     {/* Individual Type Options */}
                                     {[
-                                        { value: 'anime', label: 'Animes', icon: <Sparkles size={14} />, color: 'purple' },
-                                        { value: 'movie', label: 'Movies', icon: <Film size={14} />, color: 'red' },
-                                        { value: 'tv', label: 'Series', icon: <Tv size={14} />, color: 'green' },
+                                        { value: 'anime', label: t('media_types.anime'), icon: <Sparkles size={14} />, color: 'purple' },
+                                        { value: 'movie', label: t('media_types.movie'), icon: <Film size={14} />, color: 'red' },
+                                        { value: 'tv', label: t('media_types.tv'), icon: <Tv size={14} />, color: 'green' },
                                     ].map(type => {
                                         const isActive = searchMediaTypeFilter.has(type.value);
                                         return (

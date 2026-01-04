@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, Check, FolderOpen, Folder, Film, Tv, Sparkles, Gamepad2, Book, Music, Star, Heart, Flame, Zap, Moon } from "lucide-react";
 import type { UserList } from "./ListManageModal";
+import { useTranslation } from "react-i18next";
 
 // Status options with display labels and colors
 const STATUS_OPTIONS = [
@@ -19,6 +20,7 @@ interface StatusDropdownProps {
 }
 
 export function StatusDropdown({ currentStatus, onStatusChange }: StatusDropdownProps) {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +42,7 @@ export function StatusDropdown({ currentStatus, onStatusChange }: StatusDropdown
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center gap-2 cursor-pointer transition-all border ${STATUS_OPTIONS.find(s => s.value === currentStatus)?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30"
                     }`}
             >
-                {STATUS_OPTIONS.find(s => s.value === currentStatus)?.label || currentStatus}
+                {t(`status.${currentStatus.toLowerCase()}`)}
                 <ChevronDown size={12} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
             </button>
 
@@ -65,7 +67,7 @@ export function StatusDropdown({ currentStatus, onStatusChange }: StatusDropdown
                                 }`}
                         >
                             {currentStatus === option.value && <Check size={12} />}
-                            {option.label}
+                            {t(`status.${option.value.toLowerCase()}`)}
                         </button>
                     ))}
                 </motion.div>
@@ -81,6 +83,7 @@ interface ListDropdownProps {
 }
 
 export function ListDropdown({ currentListId, userLists, onListChange }: ListDropdownProps) {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -121,8 +124,8 @@ export function ListDropdown({ currentListId, userLists, onListChange }: ListDro
             >
                 <FolderOpen size={12} />
                 {currentListId
-                    ? userLists.find(l => l.id === currentListId)?.name || "Move to List"
-                    : "Uncategorized"
+                    ? userLists.find(l => l.id === currentListId)?.name || t('list.move_to')
+                    : t('list.uncategorized')
                 }
                 <ChevronDown size={12} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
             </button>
@@ -147,7 +150,7 @@ export function ListDropdown({ currentListId, userLists, onListChange }: ListDro
                             }`}
                     >
                         {currentListId === null && <Check size={12} />}
-                        <Folder size={12} /> Uncategorized
+                        <Folder size={12} /> {t('list.uncategorized')}
                     </button>
 
                     {userLists.map((list) => (

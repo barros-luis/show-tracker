@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Trash2, ChevronUp, ChevronDown, Check, Film, Tv, Sparkles, Folder, Gamepad2, Book, Music, Star, Heart, Flame, Zap, Moon } from "lucide-react";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { useTranslation } from "react-i18next";
 
 export interface UserList {
     id: number;
@@ -61,6 +62,7 @@ export function ListManageModal({
     userId,
     showToast
 }: ListManageModalProps) {
+    const { t } = useTranslation();
     const [editingList, setEditingList] = useState<UserList | null>(null);
     const [newListName, setNewListName] = useState("");
     const [newListIcon, setNewListIcon] = useState<string | null>(null);
@@ -110,7 +112,7 @@ export function ListManageModal({
             setNewListIcon(null);
             setNewListColor("blue");
             setShowNewForm(false);
-            showToast("New list created successfully! It will show up once you add shows to it.", "success", 7000);
+            showToast(t('list_modal.create_success'), "success", 7000);
         }
     };
 
@@ -194,7 +196,7 @@ export function ListManageModal({
                         <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-800 w-full max-w-sm max-h-[60vh] flex flex-col relative"> {/* Reduced height and width */}
                             {/* Header */}
                             <div className="flex items-center justify-between p-4 border-b border-gray-800 flex-shrink-0">
-                                <h2 className="text-lg font-bold text-white">Manage Lists</h2>
+                                <h2 className="text-lg font-bold text-white">{t('list_modal.title')}</h2>
                                 <button
                                     onClick={onClose}
                                     className="p-2 hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
@@ -358,7 +360,7 @@ export function ListManageModal({
                                                 value={newListName}
                                                 onChange={(e) => setNewListName(e.target.value)}
                                                 onKeyDown={(e) => e.key === "Enter" && createList()}
-                                                placeholder="List name..."
+                                                placeholder={t('list_modal.list_name_placeholder')}
                                                 autoFocus
                                                 className="flex-1 min-w-0 bg-gray-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
                                             />
@@ -368,7 +370,7 @@ export function ListManageModal({
                                         <div className="flex items-center justify-between gap-2">
                                             {/* Color picker */}
                                             <div className="relative flex items-center gap-2">
-                                                <span className="text-[10px] sm:text-xs text-gray-500 uppercase font-bold tracking-wider">Color:</span>
+                                                <span className="text-[10px] sm:text-xs text-gray-500 uppercase font-bold tracking-wider">{t('list_modal.color')}:</span>
                                                 <button
                                                     onClick={() => setShowColorPicker(showColorPicker === "new" ? null : "new")}
                                                     className={`w-6 h-6 rounded-full ${getColorClasses(newListColor).bg} cursor-pointer hover:scale-110 transition-transform ring-2 ring-gray-800`}
@@ -394,7 +396,7 @@ export function ListManageModal({
                                                     onClick={() => { setShowNewForm(false); setNewListName(""); }}
                                                     className="px-3 py-1.5 hover:bg-gray-700/50 rounded-lg text-gray-400 text-xs sm:text-sm transition-colors cursor-pointer"
                                                 >
-                                                    Cancel
+                                                    {t('list_modal.cancel')}
                                                 </button>
                                                 <button
                                                     onClick={createList}
@@ -402,7 +404,7 @@ export function ListManageModal({
                                                     className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg !text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5 btn-animated"
                                                 >
                                                     <Check size={14} />
-                                                    Create
+                                                    {t('list_modal.create')}
                                                 </button>
                                             </div>
                                         </div>
@@ -413,7 +415,7 @@ export function ListManageModal({
                                         className="flex items-center gap-2 w-full p-3 rounded-xl border border-dashed border-gray-700 hover:border-blue-500 hover:bg-blue-500/5 text-gray-500 hover:text-blue-400 transition-all cursor-pointer justify-center"
                                     >
                                         <Plus size={18} />
-                                        Create new list
+                                        {t('list_modal.create_new')}
                                     </button>
                                 )}
                             </div>
@@ -421,7 +423,7 @@ export function ListManageModal({
                             {/* Footer */}
                             <div className="p-4 border-t border-gray-800 text-center">
                                 <p className="text-gray-500 text-xs">
-                                    Use arrows to reorder • Click name to edit • Items in deleted lists become uncategorized
+                                    {t('list_modal.footer_hint')}
                                 </p>
                             </div>
                         </div>
@@ -454,16 +456,16 @@ export function ListManageModal({
                                 exit={{ scale: 0.9, opacity: 0 }}
                                 className="relative bg-gray-900 rounded-xl p-6 border border-gray-700 shadow-2xl max-w-sm mx-4"
                             >
-                                <h3 className="text-lg font-bold text-white mb-2">Delete "{confirmDelete.name}"?</h3>
+                                <h3 className="text-lg font-bold text-white mb-2">{t('list_modal.delete_title', { name: confirmDelete.name })}</h3>
                                 <p className="text-gray-400 text-sm mb-6">
-                                    Items in this list will be moved to Uncategorized. This action cannot be undone.
+                                    {t('list_modal.delete_warning')}
                                 </p>
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => setConfirmDelete(null)}
                                         className="flex-1 px-4 py-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors cursor-pointer font-medium"
                                     >
-                                        Cancel
+                                        {t('list_modal.cancel')}
                                     </button>
                                     <button
                                         onClick={() => {
@@ -472,7 +474,7 @@ export function ListManageModal({
                                         }}
                                         className="flex-1 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer font-medium"
                                     >
-                                        Delete
+                                        {t('list_modal.delete')}
                                     </button>
                                 </div>
                             </motion.div>

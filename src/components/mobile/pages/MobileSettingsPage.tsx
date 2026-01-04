@@ -10,8 +10,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Sun, Settings as SettingsIcon,
-    ChevronRight, Bell, Camera, Save, Shuffle, LogOut, Shield
+    ChevronRight, Bell, Camera, Save, Shuffle, LogOut, Shield, Globe
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../../context/SettingsContext';
 import { AccountSettings } from '../../../components/forms/AccountSettings';
 
@@ -145,6 +146,7 @@ export function MobileSettingsPage({
     onProfileUpdate
 }: MobileSettingsPageProps) {
     const { settings, updateSetting } = useSettings();
+    const { t, i18n } = useTranslation();
     const [openSection, setOpenSection] = useState<SectionId | null>(null);
 
     // Profile Edit State
@@ -160,6 +162,14 @@ export function MobileSettingsPage({
     const toggleSection = (id: SectionId) => {
         setOpenSection(prev => prev === id ? null : id);
     };
+
+    // Language dropdown state
+    const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+    const languages = [
+        { code: 'en', label: 'English', flag: '🇬🇧' },
+        { code: 'pt', label: 'Português', flag: '🇵🇹' },
+    ];
+    const currentLang = languages.find(l => i18n.language.startsWith(l.code)) || languages[0];
 
     const handleSaveProfile = async () => {
         setLoading(true);
@@ -232,17 +242,17 @@ export function MobileSettingsPage({
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <SettingsIcon className="text-blue-500 dark:text-blue-400" size={24} />
-                    Settings
+                    {t('settings.title')}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                    Customize your experience
+                    {t('settings.manage_desc')}
                 </p>
             </div>
 
             {/* Account & Profile Section */}
             {session && (
                 <Section
-                    title="Account & Profile"
+                    title={t('settings.tabs.profile')}
                     icon={User}
                     isOpen={openSection === 'profile'}
                     onToggle={() => toggleSection('profile')}
@@ -276,23 +286,23 @@ export function MobileSettingsPage({
                         {/* Fields */}
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Display Name</label>
+                                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">{t('profile_form.display_name')}</label>
                                 <input
                                     type="text"
                                     value={nickname}
                                     onChange={(e) => setNickname(e.target.value)}
                                     className="w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder="Your Nickname"
+                                    placeholder={t('profile_form.display_name_placeholder')}
                                 />
                             </div>
 
                             <div>
-                                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">About Me</label>
+                                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">{t('profile_form.about_me_label')}</label>
                                 <textarea
                                     value={aboutMe}
                                     onChange={(e) => setAboutMe(e.target.value)}
                                     className="w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[160px]"
-                                    placeholder="Tell us about yourself..."
+                                    placeholder={t('profile_form.about_me_placeholder')}
                                 />
                             </div>
                         </div>
@@ -303,7 +313,7 @@ export function MobileSettingsPage({
                             disabled={loading}
                             className="w-full py-3 bg-blue-500 hover:bg-blue-600 !text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
-                            {loading ? "Saving..." : <><Save size={18} /> Save Changes</>}
+                            {loading ? t('profile_form.saving') : <><Save size={18} /> {t('profile_form.save')}</>}
                         </button>
                     </div>
                 </Section>
@@ -311,12 +321,67 @@ export function MobileSettingsPage({
 
             {/* Appearance Section */}
             <Section
-                title="Appearance"
+                title={t('settings.tabs.appearance')}
                 icon={Sun}
                 isOpen={openSection === 'appearance'}
                 onToggle={() => toggleSection('appearance')}
             >
-                <SettingRow label="Dark Mode" description="Use dark theme">
+                {/* Language Selector - Custom Dropdown */}
+                <SettingRow label={t('settings.general.language_title')} description={t('settings.general.language_desc')}>
+                    <div className="relative">
+                        <button
+                            onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                            className="flex items-center gap-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm rounded-xl px-4 py-2.5 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] justify-between shadow-sm"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Globe size={16} className="text-blue-500" />
+                                <span>{currentLang.flag} {currentLang.label}</span>
+                            </div>
+                            <ChevronRight size={16} className={`text-gray-400 transition-transform ${langDropdownOpen ? 'rotate-90' : ''}`} />
+                        </button>
+
+                        <AnimatePresence>
+                            {langDropdownOpen && (
+                                <>
+                                    {/* Backdrop to close dropdown */}
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setLangDropdownOpen(false)}
+                                    />
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden z-50 min-w-[180px]"
+                                    >
+                                        {languages.map((lang) => (
+                                            <button
+                                                key={lang.code}
+                                                onClick={() => {
+                                                    i18n.changeLanguage(lang.code);
+                                                    setLangDropdownOpen(false);
+                                                }}
+                                                className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${currentLang.code === lang.code
+                                                        ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                    }`}
+                                            >
+                                                <span className="text-xl">{lang.flag}</span>
+                                                <span className="font-medium">{lang.label}</span>
+                                                {currentLang.code === lang.code && (
+                                                    <div className="ml-auto w-2 h-2 bg-blue-500 rounded-full" />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </motion.div>
+                                </>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </SettingRow>
+
+                <SettingRow label={t('settings.appearance.dark')} description={t('settings.appearance.dark_desc')}>
                     <Toggle
                         enabled={settings.theme === 'dark'}
                         onToggle={() => updateSetting('theme', settings.theme === 'dark' ? 'light' : 'dark')}
@@ -326,19 +391,19 @@ export function MobileSettingsPage({
 
             {/* Notifications Section */}
             <Section
-                title="Notifications"
+                title={t('settings.general.notifications_title')}
                 icon={Bell}
                 isOpen={openSection === 'notifications'}
                 onToggle={() => toggleSection('notifications')}
             >
-                <SettingRow label="In-App Notifications" description="Show in notification bell">
+                <SettingRow label={t('settings.general.notify_in_app_label')} description={t('settings.general.notify_in_app_desc')}>
                     <Toggle
                         enabled={settings.notifyInApp}
                         onToggle={() => updateSetting('notifyInApp', !settings.notifyInApp)}
                     />
                 </SettingRow>
 
-                <SettingRow label="System Notifications" description="Push notifications">
+                <SettingRow label={t('settings.general.notify_os_label')} description={t('settings.general.notify_os_desc')}>
                     <Toggle
                         enabled={settings.notifyOS}
                         onToggle={() => updateSetting('notifyOS', !settings.notifyOS)}
@@ -348,12 +413,12 @@ export function MobileSettingsPage({
 
             {/* Content Section */}
             <Section
-                title="Content"
+                title={t('settings.general.content_filter_title')}
                 icon={User}
                 isOpen={openSection === 'content'}
                 onToggle={() => toggleSection('content')}
             >
-                <SettingRow label="Adult Content" description="Include 18+ in search">
+                <SettingRow label={t('settings.general.adult_content_label')} description={t('settings.general.adult_content_desc')}>
                     <Toggle
                         enabled={settings.adultContent}
                         onToggle={() => updateSetting('adultContent', !settings.adultContent)}
@@ -362,7 +427,7 @@ export function MobileSettingsPage({
                 </SettingRow>
                 {settings.adultContent && (
                     <p className="text-red-500 dark:text-red-400 text-xs mt-2">
-                        ⚠️ Adult content will be shown in search results.
+                        {t('settings.general.adult_warning')}
                     </p>
                 )}
             </Section>
@@ -370,7 +435,7 @@ export function MobileSettingsPage({
             {/* Account Management Section */}
             {session && (
                 <Section
-                    title="Account Security"
+                    title={t('settings.tabs.account')}
                     icon={Shield}
                     isOpen={openSection === 'account'}
                     onToggle={() => toggleSection('account')}
@@ -383,18 +448,18 @@ export function MobileSettingsPage({
 
             {/* About Section */}
             <Section
-                title="About"
+                title={t('settings.tabs.about')}
                 icon={SettingsIcon}
                 isOpen={openSection === 'about'}
                 onToggle={() => toggleSection('about')}
             >
                 <div className="space-y-4 text-sm">
                     <p className="text-gray-500 dark:text-gray-400">
-                        AShow Tracker helps you track your favorite anime, movies, and TV shows.
+                        {t('settings.about.app_desc')}
                     </p>
 
                     <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3">
-                        <p className="text-gray-500 dark:text-gray-500 text-xs mb-1">Data provided by:</p>
+                        <p className="text-gray-500 dark:text-gray-500 text-xs mb-1">{t('settings.about.data_sources_title')}:</p>
                         <div className="flex items-center gap-4">
                             <span className="text-gray-900 dark:text-white font-medium">TMDB</span>
                             <span className="text-gray-400 dark:text-gray-600">•</span>
@@ -403,7 +468,7 @@ export function MobileSettingsPage({
                     </div>
 
                     <p className="text-center text-gray-500 dark:text-gray-600 text-xs pt-2">
-                        AShow Tracker v1.2.1 • Made with ❤️
+                        AShow Tracker v1.2.1 • {t('settings.about.made_with')}
                     </p>
                 </div>
             </Section>
@@ -417,7 +482,7 @@ export function MobileSettingsPage({
                         }}
                         className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
                     >
-                        <LogOut size={18} /> Sign Out
+                        <LogOut size={18} /> {t('user_menu.sign_out')}
                     </button>
                 </div>
             )}

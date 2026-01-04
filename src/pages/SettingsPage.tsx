@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { User, Sun, Moon, Settings as SettingsIcon, Shield, Info, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User, Sun, Moon, Settings as SettingsIcon, Shield, Info, ExternalLink, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
 import { EditProfileForm } from '../components/forms/EditProfileForm';
 import { AccountSettings } from '../components/forms/AccountSettings';
@@ -48,13 +50,22 @@ export function SettingsPage(props: SettingsPageProps) {
 function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, showToast }: SettingsPageProps) {
     const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
     const { settings, updateSetting } = useSettings();
+    const { t, i18n } = useTranslation();
+
+    // Language dropdown state
+    const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+    const languages = [
+        { code: 'en', label: 'English', flagCode: 'GB' },
+        { code: 'pt', label: 'Português', flagCode: 'PT' },
+    ];
+    const currentLang = languages.find(l => i18n.language.startsWith(l.code)) || languages[0];
 
     const tabs = [
-        { id: 'profile', label: 'Profile', icon: User },
-        { id: 'appearance', label: 'Appearance', icon: Sun },
-        { id: 'general', label: 'General', icon: SettingsIcon },
-        { id: 'account', label: 'Account', icon: Shield },
-        { id: 'about', label: 'About', icon: Info },
+        { id: 'profile', label: t('settings.tabs.profile'), icon: User },
+        { id: 'appearance', label: t('settings.tabs.appearance'), icon: Sun },
+        { id: 'general', label: t('settings.tabs.general'), icon: SettingsIcon },
+        { id: 'account', label: t('settings.tabs.account'), icon: Shield },
+        { id: 'about', label: t('settings.tabs.about'), icon: Info },
     ];
 
     return (
@@ -64,7 +75,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                 <div className="p-6 border-b border-gray-100 dark:border-white/5">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <SettingsIcon className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-                        Settings
+                        {t('settings.title')}
                     </h2>
                 </div>
                 <nav className="flex-1 p-4 space-y-1">
@@ -94,8 +105,10 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
 
                     {/* HEADER */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 capitalize">{activeTab}</h1>
-                        <p className="text-gray-500 dark:text-gray-400">Manage your {activeTab} settings and preferences.</p>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 capitalize">
+                            {tabs.find(t => t.id === activeTab)?.label}
+                        </h1>
+                        <p className="text-gray-500 dark:text-gray-400">{t('settings.manage_desc')}</p>
                     </div>
 
                     {/* TAB CONTENT */}
@@ -116,7 +129,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                 <div className="space-y-8">
                                     {/* THEME TOGGLE */}
                                     <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Theme Preference</h3>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.appearance.theme_title')}</h3>
                                         <div className="grid grid-cols-2 gap-4">
                                             <button
                                                 onClick={() => updateSetting('theme', 'light')}
@@ -130,8 +143,8 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                         <Sun className="w-5 h-5" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <p className={`font-medium ${settings.theme === 'light' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>Light Mode</p>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Clean & bright</p>
+                                                        <p className={`font-medium ${settings.theme === 'light' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>{t('settings.appearance.light')}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.appearance.light_desc')}</p>
                                                     </div>
                                                 </div>
                                                 {settings.theme === 'light' && <div className="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_10px_#3b82f6]" />}
@@ -149,8 +162,8 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                         <Moon className="w-5 h-5" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <p className={`font-medium ${settings.theme === 'dark' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>Dark Mode</p>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Easy on the eyes</p>
+                                                        <p className={`font-medium ${settings.theme === 'dark' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>{t('settings.appearance.dark')}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.appearance.dark_desc')}</p>
                                                     </div>
                                                 </div>
                                                 {settings.theme === 'dark' && <div className="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_10px_#3b82f6]" />}
@@ -160,11 +173,11 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
 
                                     {/* MOUSE AURA TOGGLE */}
                                     <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Mouse Aura Effect</h3>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.appearance.mouse_aura_title')}</h3>
                                         <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                             <div>
-                                                <p className="font-medium text-gray-900 dark:text-white">Enable Mouse Glow</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">Show a glowing aura following your cursor</p>
+                                                <p className="font-medium text-gray-900 dark:text-white">{t('settings.appearance.mouse_aura_label')}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.appearance.mouse_aura_desc')}</p>
                                             </div>
                                             <button
                                                 onClick={() => updateSetting('mouseAura', !settings.mouseAura)}
@@ -179,7 +192,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
 
                                     {/* ZOOM LEVEL */}
                                     <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Zoom Level</h3>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.appearance.zoom_title')}</h3>
                                         <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-4">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-900 dark:text-white font-medium">{settings.zoomLevel}%</span>
@@ -187,7 +200,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                     onClick={() => updateSetting('zoomLevel', 100)}
                                                     className="text-xs text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 cursor-pointer"
                                                 >
-                                                    Reset to 100%
+                                                    {t('settings.appearance.zoom_reset')}
                                                 </button>
                                             </div>
                                             <input
@@ -211,13 +224,83 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
 
                             {activeTab === 'general' && (
                                 <div className="space-y-8">
-                                    {/* ADULT CONTENT FILTER */}
+                                    {/* LANGUAGE SELECTOR - Custom Dropdown */}
                                     <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Content Filter</h3>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.general.language_title')}</h3>
                                         <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                             <div>
-                                                <p className="font-medium text-gray-900 dark:text-white">Show Adult Content</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">Include 18+ content in search results</p>
+                                                <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.language_title')}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.general.language_desc')}</p>
+                                            </div>
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                                                    className="flex items-center gap-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] justify-between cursor-pointer hover:border-blue-400 transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src={`https://flagcdn.com/w20/${currentLang.flagCode.toLowerCase()}.png`}
+                                                            alt={currentLang.label}
+                                                            className="w-5 h-4 object-cover rounded-sm"
+                                                        />
+                                                        <span>{currentLang.label}</span>
+                                                    </div>
+                                                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${langDropdownOpen ? 'rotate-90' : ''}`} />
+                                                </button>
+
+                                                <AnimatePresence>
+                                                    {langDropdownOpen && (
+                                                        <>
+                                                            {/* Backdrop to close dropdown */}
+                                                            <div
+                                                                className="fixed inset-0 z-40"
+                                                                onClick={() => setLangDropdownOpen(false)}
+                                                            />
+                                                            <motion.div
+                                                                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                                transition={{ duration: 0.15 }}
+                                                                className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden z-50"
+                                                            >
+                                                                {languages.map((lang) => (
+                                                                    <button
+                                                                        key={lang.code}
+                                                                        onClick={() => {
+                                                                            i18n.changeLanguage(lang.code);
+                                                                            setLangDropdownOpen(false);
+                                                                        }}
+                                                                        className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors cursor-pointer ${currentLang.code === lang.code
+                                                                            ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                                                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                                            }`}
+                                                                    >
+                                                                        <img
+                                                                            src={`https://flagcdn.com/w20/${lang.flagCode.toLowerCase()}.png`}
+                                                                            alt={lang.label}
+                                                                            className="w-5 h-4 object-cover rounded-sm"
+                                                                        />
+                                                                        <span className="font-medium">{lang.label}</span>
+                                                                        {currentLang.code === lang.code && (
+                                                                            <div className="ml-auto w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                                                                        )}
+                                                                    </button>
+                                                                ))}
+                                                            </motion.div>
+                                                        </>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    {/* ADULT CONTENT FILTER */}
+                                    <section>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.general.content_filter_title')}</h3>
+                                        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                            <div>
+                                                <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.adult_content_label')}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.general.adult_content_desc')}</p>
                                             </div>
                                             <button
                                                 onClick={() => updateSetting('adultContent', !settings.adultContent)}
@@ -230,18 +313,18 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                         </div>
                                         {settings.adultContent && (
                                             <p className="mt-2 text-xs text-red-500 dark:text-red-400">
-                                                ⚠️ Adult content will be shown in search results.
+                                                {t('settings.general.adult_warning')}
                                             </p>
                                         )}
                                     </section>
 
                                     {/* CLOSE TO TRAY */}
                                     <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Window Behavior</h3>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.general.window_behavior_title')}</h3>
                                         <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                             <div>
-                                                <p className="font-medium text-gray-900 dark:text-white">Close to System Tray</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">Minimize to tray instead of quitting when closing the window</p>
+                                                <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.close_to_tray_label')}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.general.close_to_tray_desc')}</p>
                                             </div>
                                             <button
                                                 onClick={() => updateSetting('closeToTray', !settings.closeToTray)}
@@ -253,17 +336,17 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                             </button>
                                         </div>
                                         <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
-                                            {settings.closeToTray ? 'The app will stay running in your system tray' : 'The app will fully close when you click X'}
+                                            {settings.closeToTray ? t('settings.general.tray_hint_on') : t('settings.general.tray_hint_off')}
                                         </p>
                                     </section>
 
                                     {/* LAUNCH AT STARTUP */}
                                     <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Startup</h3>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.general.startup_title')}</h3>
                                         <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                             <div>
-                                                <p className="font-medium text-gray-900 dark:text-white">Launch at Startup</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">Automatically start the app when you log in to your computer</p>
+                                                <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.launch_startup_label')}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.general.launch_startup_desc')}</p>
                                             </div>
                                             <button
                                                 onClick={() => updateSetting('launchAtStartup', !settings.launchAtStartup)}
@@ -275,19 +358,19 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                             </button>
                                         </div>
                                         <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
-                                            {settings.launchAtStartup ? 'The app will start automatically when you log in' : 'The app will only start when you open it manually'}
+                                            {settings.launchAtStartup ? t('settings.general.startup_hint_on') : t('settings.general.startup_hint_off')}
                                         </p>
                                     </section>
 
                                     {/* NOTIFICATIONS */}
                                     <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Notifications</h3>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.general.notifications_title')}</h3>
                                         <div className="space-y-4">
                                             {/* In-App Notifications */}
                                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                                 <div>
-                                                    <p className="font-medium text-gray-900 dark:text-white">In-App Notifications</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Show notifications in the app's bell icon</p>
+                                                    <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.notify_in_app_label')}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.general.notify_in_app_desc')}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => updateSetting('notifyInApp', !settings.notifyInApp)}
@@ -302,8 +385,8 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                             {/* OS Notifications */}
                                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                                 <div>
-                                                    <p className="font-medium text-gray-900 dark:text-white">System Notifications</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Send notifications to your operating system</p>
+                                                    <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.notify_os_label')}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.general.notify_os_desc')}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => updateSetting('notifyOS', !settings.notifyOS)}
@@ -318,19 +401,19 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                             {/* Check Interval */}
                                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                                 <div>
-                                                    <p className="font-medium text-gray-900 dark:text-white">Check Interval</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">How often to check for new episodes</p>
+                                                    <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.check_interval_label')}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.general.check_interval_desc')}</p>
                                                 </div>
                                                 <select
                                                     value={settings.notifyCheckInterval}
                                                     onChange={(e) => updateSetting('notifyCheckInterval', parseInt(e.target.value))}
                                                     className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm rounded-lg px-3 py-2 border border-gray-100 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                                                 >
-                                                    <option value={1}>Every 1 hour</option>
-                                                    <option value={2}>Every 2 hours</option>
-                                                    <option value={4}>Every 4 hours</option>
-                                                    <option value={6}>Every 6 hours</option>
-                                                    <option value={12}>Every 12 hours</option>
+                                                    <option value={1}>{t('settings.general.hours_1')}</option>
+                                                    <option value={2}>{t('settings.general.hours_2')}</option>
+                                                    <option value={4}>{t('settings.general.hours_4')}</option>
+                                                    <option value={6}>{t('settings.general.hours_6')}</option>
+                                                    <option value={12}>{t('settings.general.hours_12')}</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -344,16 +427,15 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                 <div className="space-y-8">
                                     {/* App Info */}
                                     <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">About AShow Tracker</h3>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.app_title')}</h3>
                                         <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                            AShow Tracker helps you keep track of your favorite anime, movies, and TV shows.
-                                            Mark episodes as watched, track your progress, and never lose your place again.
+                                            {t('settings.about.app_desc')}
                                         </p>
                                     </section>
 
                                     {/* Data Sources */}
                                     <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Data Sources</h3>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.data_sources_title')}</h3>
                                         <div className="space-y-4">
                                             {/* TMDB Attribution */}
                                             <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
@@ -365,8 +447,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                     />
                                                 </div>
                                                 <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                                                    This product uses the TMDB API but is not endorsed or certified by TMDB.
-                                                    Movie and TV show data, trailers, and images are provided by The Movie Database.
+                                                    {t('settings.about.tmdb_disclaimer')}
                                                 </p>
                                                 <a
                                                     href="https://www.themoviedb.org"
@@ -374,19 +455,18 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs mt-2 transition-colors"
                                                 >
-                                                    Visit TMDB <ExternalLink size={12} />
+                                                    {t('settings.about.visit_tmdb')} <ExternalLink size={12} />
                                                 </a>
                                             </div>
 
                                             {/* Jikan Attribution */}
                                             <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
                                                 <div className="flex items-center gap-4 mb-3">
-                                                    <span className="text-gray-900 dark:text-white font-bold text-lg">Jikan API</span>
-                                                    <span className="text-gray-500 text-xs">(MyAnimeList)</span>
+                                                    <span className="text-gray-900 dark:text-white font-bold text-lg">{t('settings.about.jikan_title')}</span>
+                                                    <span className="text-gray-500 text-xs">{t('settings.about.jikan_sub')}</span>
                                                 </div>
                                                 <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                                                    Anime data is provided by the Jikan API, an unofficial MyAnimeList API.
-                                                    This includes anime information, episode lists, and related metadata.
+                                                    {t('settings.about.jikan_disclaimer')}
                                                 </p>
                                                 <a
                                                     href="https://jikan.moe"
@@ -394,7 +474,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs mt-2 transition-colors"
                                                 >
-                                                    Visit Jikan <ExternalLink size={12} />
+                                                    {t('settings.about.visit_jikan')} <ExternalLink size={12} />
                                                 </a>
                                             </div>
                                         </div>
@@ -403,7 +483,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                     {/* Version */}
                                     <section className="pt-4 border-t border-gray-100 dark:border-white/5">
                                         <p className="text-gray-500 text-xs text-center">
-                                            AShow Tracker v1.2.1 • Made with ❤️
+                                            AShow Tracker v1.2.1 • {t('settings.about.made_with')}
                                         </p>
                                     </section>
                                 </div>

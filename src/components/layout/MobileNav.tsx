@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Search, List, User, Settings } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface MobileNavProps {
     isLoggedIn: boolean;
@@ -9,6 +10,7 @@ interface MobileNavProps {
 export function MobileNav({ isLoggedIn, onAuthClick }: MobileNavProps) {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
 
     const tabs = [
         { path: "/", icon: Search },
@@ -41,10 +43,10 @@ export function MobileNav({ isLoggedIn, onAuthClick }: MobileNavProps) {
                     const isActive = location.pathname === tab.path;
                     const Icon = tab.icon;
                     const getLabel = (path: string) => {
-                        if (path === "/") return "Search";
-                        if (path === "/list") return "My List";
-                        if (path === "/profile") return "Profile";
-                        if (path === "/settings") return "Settings";
+                        if (path === "/") return t('common.search');
+                        if (path === "/list") return t('common.my_list');
+                        if (path === "/profile") return t('common.profile');
+                        if (path === "/settings") return t('common.settings');
                         return "";
                     };
 

@@ -63,6 +63,7 @@ function setCachedEpisodes(mediaType: string, id: number | null, episodes: Unifi
 }
 
 import { StatusDropdown, ListDropdown } from "./MyListDropdowns";
+import { useTranslation } from "react-i18next";
 
 
 interface WatchlistItem {
@@ -105,6 +106,7 @@ export function DesktopMyListDetailModal({
     supabase,
     userId
 }: MyListDetailModalProps) {
+    const { t } = useTranslation();
     const [fullDetails, setFullDetails] = useState<Anime | TMDBTVShow | null>(null);
     const [episodes, setEpisodes] = useState<UnifiedEpisode[]>([]);
     const [watchedEpisodes, setWatchedEpisodes] = useState<Set<number>>(new Set());
@@ -578,20 +580,20 @@ export function DesktopMyListDetailModal({
                                                     <div className="flex items-center gap-2">
                                                         <Star size={14} className="text-yellow-500" fill="currentColor" />
                                                         <span className="text-white font-semibold">{fullDetails.score}</span>
-                                                        <span className="text-gray-500 text-xs">Rating</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.rating')}</span>
                                                     </div>
                                                 ) : (item.media_type === 'tv' && fullDetails && 'vote_average' in fullDetails && fullDetails.vote_average) ? (
                                                     <div className="flex items-center gap-2">
                                                         <Star size={14} className="text-yellow-500" fill="currentColor" />
                                                         <span className="text-white font-semibold">{Math.round(fullDetails.vote_average * 10) / 10}</span>
-                                                        <span className="text-gray-500 text-xs">Rating</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.rating')}</span>
                                                     </div>
                                                 ) : null}
                                                 {fullDetails?.popularity && (
                                                     <div className="flex items-center gap-2">
                                                         <Tv size={14} className="text-purple-400" />
                                                         <span className="text-white font-semibold">#{Math.round(fullDetails.popularity)}</span>
-                                                        <span className="text-gray-500 text-xs">Popularity</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.popularity')}</span>
                                                     </div>
                                                 )}
                                                 {/* Source - anime only */}
@@ -599,7 +601,7 @@ export function DesktopMyListDetailModal({
                                                     <div className="flex items-center gap-2">
                                                         <Calendar size={14} className="text-blue-400" />
                                                         <span className="text-white font-semibold">{fullDetails.source}</span>
-                                                        <span className="text-gray-500 text-xs">Source</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.source')}</span>
                                                     </div>
                                                 )}
                                                 {/* Season - anime only */}
@@ -607,15 +609,15 @@ export function DesktopMyListDetailModal({
                                                     <div className="flex items-center gap-2">
                                                         <Clock size={14} className="text-green-400" />
                                                         <span className="text-white font-semibold capitalize">{fullDetails.season} {fullDetails.year}</span>
-                                                        <span className="text-gray-500 text-xs">Season</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.season')}</span>
                                                     </div>
                                                 )}
                                                 {/* Seasons count - TV only */}
                                                 {item.media_type === 'tv' && fullDetails && 'number_of_seasons' in fullDetails && fullDetails.number_of_seasons && (
                                                     <div className="flex items-center gap-2">
                                                         <Tv size={14} className="text-green-400" />
-                                                        <span className="text-white font-semibold">{fullDetails.number_of_seasons} Season{fullDetails.number_of_seasons > 1 ? 's' : ''}</span>
-                                                        <span className="text-gray-500 text-xs">Total</span>
+                                                        <span className="text-white font-semibold">{t('media_detail.total_seasons', { count: fullDetails.number_of_seasons })}</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.total_eps')}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -646,7 +648,7 @@ export function DesktopMyListDetailModal({
                                             {((item.media_type === 'anime' && fullDetails && 'synopsis' in fullDetails && fullDetails.synopsis) ||
                                                 (item.media_type === 'tv' && fullDetails && 'overview' in fullDetails && fullDetails.overview)) && (
                                                     <div className="space-y-2">
-                                                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Synopsis</h3>
+                                                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('media_detail.synopsis')}</h3>
                                                         <p className="text-gray-300 text-xs leading-relaxed">
                                                             {item.media_type === 'anime' && 'synopsis' in fullDetails ? fullDetails.synopsis : 'overview' in fullDetails ? fullDetails.overview : ''}
                                                         </p>
@@ -662,26 +664,26 @@ export function DesktopMyListDetailModal({
                                                     className="w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-500/30 hover:border-red-500/60"
                                                 >
                                                     <Trash2 size={18} />
-                                                    Remove from My List
+                                                    {t('media_detail.remove_from_list')}
                                                 </button>
                                             ) : (
                                                 <div className="space-y-2">
                                                     <p className="text-center text-yellow-400 text-sm flex items-center justify-center gap-2">
                                                         <AlertTriangle size={16} />
-                                                        Are you sure?
+                                                        {t('media_detail.are_you_sure')}
                                                     </p>
                                                     <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => setShowRemoveConfirm(false)}
-                                                            className="flex-1 py-2 rounded-lg font-bold text-sm bg-gray-700 hover:bg-gray-600 text-white cursor-pointer"
-                                                        >
-                                                            Cancel
-                                                        </button>
                                                         <button
                                                             onClick={handleRemove}
                                                             className="flex-1 py-2 rounded-lg font-bold text-sm bg-red-600 hover:bg-red-500 text-white cursor-pointer"
                                                         >
-                                                            Yes, Remove
+                                                            {t('media_detail.confirm_remove')}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setShowRemoveConfirm(false)}
+                                                            className="flex-1 py-2 rounded-lg font-bold text-sm bg-gray-700 hover:bg-gray-600 text-white cursor-pointer"
+                                                        >
+                                                            {t('media_detail.cancel')}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -695,9 +697,9 @@ export function DesktopMyListDetailModal({
                                         <div className="mb-4">
                                             <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                                 <Tv size={20} className="text-blue-500" />
-                                                Episodes
+                                                {t('episode_list.title')}
                                                 <span className="text-gray-500 dark:text-gray-400 font-normal text-sm ml-2">
-                                                    ({watchedCount} / {totalEpisodes} watched)
+                                                    {t('episode_list.watched_count', { watched: watchedCount, total: totalEpisodes })}
                                                 </span>
                                             </h3>
                                             {/* Progress Bar */}
@@ -748,7 +750,7 @@ export function DesktopMyListDetailModal({
                                                         className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-purple-500/20 hover:bg-purple-500/30 text-purple-600 dark:text-purple-300 border border-purple-500/30 hover:border-purple-500/50 disabled:opacity-40 disabled:cursor-not-allowed"
                                                     >
                                                         <ChevronDown size={14} className="rotate-90" />
-                                                        Fill Gaps
+                                                        {t('episode_list.fill_gaps')}
                                                     </button>
 
                                                     {/* Check All Button */}
@@ -785,7 +787,7 @@ export function DesktopMyListDetailModal({
                                                         className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-green-500/20 hover:bg-green-500/30 text-green-600 dark:text-green-300 border border-green-500/30 hover:border-green-500/50 disabled:opacity-40 disabled:cursor-not-allowed"
                                                     >
                                                         <Check size={14} />
-                                                        Check All
+                                                        {t('episode_list.check_all')}
                                                     </button>
                                                 </div>
                                             )}
@@ -796,12 +798,12 @@ export function DesktopMyListDetailModal({
                                             {loadingEpisodes ? (
                                                 <div className="flex items-center justify-center py-20">
                                                     <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-                                                    <span className="ml-3 text-gray-500 dark:text-gray-400">Loading episodes...</span>
+                                                    <span className="ml-3 text-gray-500 dark:text-gray-400">{t('episode_list.loading')}</span>
                                                 </div>
                                             ) : episodes.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center py-20 text-gray-500">
                                                     <Tv size={48} className="mb-4 opacity-50" />
-                                                    <p>No episode data available</p>
+                                                    <p>{t('episode_list.no_episodes')}</p>
                                                     <p className="text-sm mt-1">
                                                         {item?.media_type === 'tv'
                                                             ? 'This show may not have episode info yet'
@@ -879,11 +881,11 @@ export function DesktopMyListDetailModal({
                                                                         {loadingSynopsis === episode.number ? (
                                                                             <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
                                                                                 <Loader2 size={14} className="animate-spin" />
-                                                                                Loading synopsis...
+                                                                                {t('profile.loading')}
                                                                             </div>
                                                                         ) : (
                                                                             <p className="text-gray-600 dark:text-gray-400 text-xs leading-relaxed">
-                                                                                {episodeSynopsis[episode.number] || "No synopsis available."}
+                                                                                {episodeSynopsis[episode.number] || t('media_detail.no_synopsis')}
                                                                             </p>
                                                                         )}
                                                                     </div>

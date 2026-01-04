@@ -12,6 +12,8 @@ import { Star, Calendar, Tv, Clock, Loader2, Plus, Play, Film, Monitor, ChevronD
 import { getAnimeDetails, type Anime } from "../../../api/jikan";
 import { getMovieDetails, getTVDetails, getTrailerFromVideos, type TMDBMovie, type TMDBTVShow } from "../../../api/tmdb";
 import { type MediaItem } from "../../../api/mediaTypes";
+import { useTranslation } from "react-i18next";
+import { translateText } from "../../../api/translation";
 
 interface MobileShowDetailModalProps {
     media: MediaItem | null;
@@ -30,41 +32,73 @@ export function MobileShowDetailModal({
     onAddToList,
     isLoggedIn
 }: MobileShowDetailModalProps) {
+    const { t, i18n } = useTranslation();
     const [fullDetails, setFullDetails] = useState<FullDetails>(null);
     const [loading, setLoading] = useState(false);
     const [showTrailer, setShowTrailer] = useState(false);
+    const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Fetch full details when modal opens
+    // Fetch full details    // Fetch details
     useEffect(() => {
-        if (isOpen && media) {
-            setLoading(true);
-            setShowTrailer(false);
-            // Reset scroll position when opening
-            if (scrollRef.current) {
-                scrollRef.current.scrollTop = 0;
-            }
-
-            if (media.type === 'anime') {
-                getAnimeDetails(media.sourceId).then((details) => {
-                    setFullDetails(details);
-                    setLoading(false);
-                });
-            } else if (media.type === 'movie') {
-                getMovieDetails(media.sourceId).then((details) => {
-                    setFullDetails(details);
-                    setLoading(false);
-                });
-            } else if (media.type === 'tv') {
-                getTVDetails(media.sourceId).then((details) => {
-                    setFullDetails(details);
-                    setLoading(false);
-                });
-            }
-        } else {
+        if (!isOpen || !media) {
             setFullDetails(null);
+            setTrailerUrl(null); // Reset trailer
+            return;
         }
-    }, [isOpen, media]);
+
+        setLoading(true);
+        setShowTrailer(false);
+        // Reset scroll position when opening
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = 0;
+        }
+
+        const fetchDetails = async () => {
+            try {
+                // Map app language to TMDB language (en-US or pt-PT)
+                const tmdbLang = i18n.language.startsWith('pt') ? 'pt-PT' : 'en-US';
+
+                if (media.type === 'anime') {
+                    const details = await getAnimeDetails(media.sourceId);
+
+                    // Translate synopsis if language is Portuguese
+                    if (details && details.synopsis && i18n.language.startsWith('pt')) {
+                        const translatedSynopsis = await translateText(details.synopsis, 'pt-pt');
+                        details.synopsis = translatedSynopsis;
+                    }
+
+                    setFullDetails(details);
+                    if (details?.trailer?.youtube_id) {
+                        setTrailerUrl(details.trailer.youtube_id);
+                    } else if (details?.trailer?.embed_url) {
+                        const match = details.trailer.embed_url.match(/embed\/([a-zA-Z0-9_-]+)/);
+                        setTrailerUrl(match ? match[1] : null);
+                    } else {
+                        setTrailerUrl(null);
+                    }
+                } else if (media.type === 'tv') {
+                    const details = await getTVDetails(media.sourceId, tmdbLang);
+                    setFullDetails(details);
+                    const trailer = getTrailerFromVideos(details?.videos?.results);
+                    setTrailerUrl(trailer);
+                } else { // movie
+                    const details = await getMovieDetails(media.sourceId, tmdbLang);
+                    setFullDetails(details);
+                    const trailer = getTrailerFromVideos(details?.videos?.results);
+                    setTrailerUrl(trailer);
+                }
+            } catch (error) {
+                console.error("Error fetching details:", error);
+                setFullDetails(null);
+                setTrailerUrl(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDetails();
+    }, [isOpen, media, i18n.language]);
 
     // Prevent body scroll when modal is open
     useEffect(() => {
@@ -78,33 +112,15 @@ export function MobileShowDetailModal({
         };
     }, [isOpen]);
 
-    // Helper to extract YouTube ID
-    const getYoutubeId = (): string | null => {
-        if (media?.trailerUrl) {
-            const match = media.trailerUrl.match(/embed\/([a-zA-Z0-9_-]+)/);
-            if (match) return match[1];
-            const vMatch = media.trailerUrl.match(/v=([a-zA-Z0-9_-]+)/);
-            if (vMatch) return vMatch[1];
-        }
+    const hasTrailer = !!trailerUrl;
 
-        if (!fullDetails) return null;
-
-        if (media?.type === 'anime') {
-            const anime = fullDetails as Anime;
-            if (anime.trailer?.youtube_id) return anime.trailer.youtube_id;
-            if (anime.trailer?.embed_url) {
-                const match = anime.trailer.embed_url.match(/embed\/([a-zA-Z0-9_-]+)/);
-                return match ? match[1] : null;
-            }
-        } else {
-            const tmdb = fullDetails as TMDBMovie | TMDBTVShow;
-            return getTrailerFromVideos(tmdb.videos?.results);
-        }
-        return null;
+    const getStatusLabel = (status: string | null) => {
+        if (!status) return t('media_detail.status.unknown');
+        if (status === 'Currently Airing' || status === 'Returning Series') return t('media_detail.status.currently_airing');
+        if (status === 'Finished Airing' || status === 'Ended' || status === 'Finished') return t('media_detail.status.finished_airing');
+        if (status === 'Released') return t('media_detail.status.released');
+        return status;
     };
-
-    const youtubeId = getYoutubeId();
-    const hasTrailer = !!youtubeId;
 
     // Get display data
     const getDisplayData = () => {
@@ -120,9 +136,15 @@ export function MobileShowDetailModal({
                     score: anime.score,
                     synopsis: anime.synopsis,
                     episodes: anime.episodes,
-                    status: anime.status,
+                    status: getStatusLabel(anime.status),
+                    type: anime.type,
+                    source: anime.source,
+                    season: anime.season,
                     genres: anime.genres?.map(g => g.name) || [],
                     duration: anime.duration,
+                    popularity: anime.popularity,
+                    rating: anime.rating,
+                    studios: anime.studios?.map(s => s.name) || [],
                 };
             } else if (media.type === 'movie') {
                 const movie = fullDetails as TMDBMovie;
@@ -133,9 +155,15 @@ export function MobileShowDetailModal({
                     score: movie.vote_average ? Math.round(movie.vote_average * 10) / 10 : null,
                     synopsis: movie.overview,
                     episodes: null,
-                    status: movie.status || 'Released',
+                    status: getStatusLabel(movie.status || 'Released'),
+                    type: t('media_types.movie'),
+                    source: null,
+                    season: null,
                     genres: movie.genres?.map(g => g.name) || [],
-                    duration: movie.runtime ? `${movie.runtime} min` : null,
+                    duration: movie.runtime ? t('media_detail.min_short', { count: movie.runtime }) : null,
+                    popularity: movie.popularity,
+                    rating: null,
+                    studios: [],
                 };
             } else {
                 const tv = fullDetails as TMDBTVShow;
@@ -146,9 +174,15 @@ export function MobileShowDetailModal({
                     score: tv.vote_average ? Math.round(tv.vote_average * 10) / 10 : null,
                     synopsis: tv.overview,
                     episodes: tv.number_of_episodes,
-                    status: tv.status === 'Returning Series' ? 'Currently Airing' : tv.status,
+                    status: getStatusLabel(tv.status || 'Unknown'),
+                    type: t('media_types.tv'),
+                    source: null,
+                    season: tv.number_of_seasons ? t('media_detail.total_seasons', { count: tv.number_of_seasons }) : null,
                     genres: tv.genres?.map(g => g.name) || [],
-                    duration: tv.episode_run_time?.[0] ? `${tv.episode_run_time[0]} min/ep` : null,
+                    duration: tv.episode_run_time?.[0] ? t('media_detail.min_per_ep', { count: tv.episode_run_time[0] }) : null,
+                    popularity: tv.popularity,
+                    rating: null,
+                    studios: tv.networks?.map(n => n.name) || [],
                 };
             }
         }
@@ -162,8 +196,14 @@ export function MobileShowDetailModal({
             synopsis: media.description,
             episodes: media.episodes,
             status: null,
+            type: media.type === 'anime' ? t('media_types.anime') : media.type === 'movie' ? t('media_types.movie') : t('media_types.tv'),
+            source: null,
+            season: null,
             genres: [],
             duration: null,
+            popularity: null,
+            rating: null,
+            studios: [],
         };
     };
 
@@ -263,7 +303,7 @@ export function MobileShowDetailModal({
                                                     {displayData.episodes && (
                                                         <span className="flex items-center gap-1 bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
                                                             <MediaTypeIcon size={10} />
-                                                            {displayData.episodes} eps
+                                                            {t('media_detail.eps_short', { count: displayData.episodes })}
                                                         </span>
                                                     )}
                                                     {displayData.duration && (
@@ -274,7 +314,7 @@ export function MobileShowDetailModal({
                                                     )}
                                                 </div>
                                                 {displayData.status && (
-                                                    <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${displayData.status === "Currently Airing"
+                                                    <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${displayData.status === t('media_detail.status.currently_airing')
                                                         ? "bg-green-500/20 text-green-400"
                                                         : "bg-gray-500/20 text-gray-400"
                                                         }`}>
@@ -291,7 +331,7 @@ export function MobileShowDetailModal({
                                             <div className="flex flex-wrap gap-1.5">
                                                 {displayData.genres.slice(0, 4).map((genre, idx) => (
                                                     <span key={idx} className="px-2.5 py-1 bg-blue-600/20 text-blue-300 rounded-full text-xs">
-                                                        {genre}
+                                                        {t(`genres.${genre}`, genre)}
                                                     </span>
                                                 ))}
                                             </div>
@@ -302,7 +342,7 @@ export function MobileShowDetailModal({
                                     {displayData.synopsis && (
                                         <div className="px-4 pb-4">
                                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                                                Synopsis
+                                                {t('media_detail.synopsis')}
                                             </h3>
                                             <p className="text-gray-300 text-sm leading-relaxed">
                                                 {displayData.synopsis}
@@ -319,16 +359,16 @@ export function MobileShowDetailModal({
                                             >
                                                 <span className="flex items-center gap-2 font-medium">
                                                     <Play size={16} className="text-blue-500" fill="currentColor" />
-                                                    Watch Trailer
+                                                    {t('media_detail.watch_trailer')}
                                                 </span>
                                                 {showTrailer ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                                             </button>
 
-                                            {showTrailer && youtubeId && (
+                                            {showTrailer && trailerUrl && (
                                                 <div className="mt-2">
                                                     <div className="aspect-video rounded-xl overflow-hidden bg-black">
                                                         <iframe
-                                                            src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
+                                                            src={`https://www.youtube.com/embed/${trailerUrl}?rel=0&modestbranding=1`}
                                                             title="Trailer"
                                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                             allowFullScreen
@@ -351,7 +391,7 @@ export function MobileShowDetailModal({
                                                 }`}
                                         >
                                             <Plus size={20} />
-                                            {isLoggedIn ? "Add to My List" : "Sign in to Add"}
+                                            {isLoggedIn ? t('media_detail.add_to_list') : t('media_detail.sign_in_to_add')}
                                         </button>
                                     </div>
                                 </div>

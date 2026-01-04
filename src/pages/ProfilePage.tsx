@@ -19,6 +19,7 @@ const ICON_MAP: Record<string, any> = {
 };
 
 import { usePlatform } from "../hooks/usePlatform";
+import { useTranslation } from "react-i18next";
 
 export function ProfilePage(props: ProfilePageProps) {
     const { isMobile } = usePlatform();
@@ -35,6 +36,7 @@ export function ProfilePage(props: ProfilePageProps) {
 function DesktopProfilePage({ session, profile }: ProfilePageProps) {
     const [displayProfile, setDisplayProfile] = useState<any>(profile || null);
     const [loadingTimeout, setLoadingTimeout] = useState(false);
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (profile) {
@@ -54,7 +56,7 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
     if (!session) {
         return (
             <div className="text-center py-20">
-                <p className="text-gray-400 text-lg mb-4">Please sign in to view your profile</p>
+                <p className="text-gray-400 text-lg mb-4">{t('profile.sign_in_required')}</p>
             </div>
         );
     }
@@ -72,29 +74,29 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
         if (loadingTimeout) {
             return (
                 <div className="text-center py-20">
-                    <p className="text-gray-400 text-lg mb-4">Unable to load profile</p>
-                    <p className="text-gray-500 text-sm mb-6">This might be a session issue. Try logging out and back in.</p>
+                    <p className="text-gray-400 text-lg mb-4">{t('profile.unable_to_load')}</p>
+                    <p className="text-gray-500 text-sm mb-6">{t('profile.session_issue')}</p>
                     <div className="flex gap-4 justify-center">
                         <button
                             onClick={() => window.location.reload()}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
                         >
-                            Retry
+                            {t('profile.retry')}
                         </button>
                         <button
                             onClick={handleLogout}
                             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500"
                         >
-                            Logout
+                            {t('profile.logout')}
                         </button>
                     </div>
                 </div>
             );
         }
-        return <div className="text-white p-10 text-center">Loading profile...</div>;
+        return <div className="text-white p-10 text-center">{t('profile.loading')}</div>;
     }
 
-    const nickname = displayProfile.nickname || "Anonymous";
+    const nickname = displayProfile.nickname || t('profile.anonymous');
     const aboutMe = displayProfile.about_me || "";
     const customFields = displayProfile.custom_fields || [];
     const avatarUrl = displayProfile.avatar_url;
@@ -157,7 +159,7 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                 <div className="lg:col-span-2">
                     <div className="bg-white dark:bg-gray-900/40 backdrop-blur-md rounded-3xl p-8 min-h-[400px] relative shadow-sm dark:shadow-none border border-gray-100 dark:border-none dark:ring-2 dark:ring-white/5 dark:ring-inset flex flex-col">
                         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3 shrink-0 border-b border-gray-100 dark:border-white/10 pb-4">
-                            About Me <span className="text-blue-500 text-4xl">!</span>
+                            {t('profile.about_me')} <span className="text-blue-500 text-4xl">!</span>
                         </h2>
 
                         <div className="prose prose-lg max-w-none flex-1 prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-strong:text-gray-900 dark:prose-strong:text-white prose-hr:border-gray-200 dark:prose-hr:border-white/10 prose-hr:my-4">
@@ -168,7 +170,7 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-600 min-h-[300px]">
                                     <AlertCircle size={48} className="mb-4 opacity-30" />
-                                    <p className="text-lg font-medium opacity-50">This user keeps a low profile.</p>
+                                    <p className="text-lg font-medium opacity-50">{t('profile.low_profile')}</p>
                                 </div>
                             )}
                         </div>

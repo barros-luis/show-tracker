@@ -21,6 +21,15 @@
     "core:window:allow-close",
     "core:window:allow-start-dragging",
     "core:window:allow-is-maximized",
-    "notification:default"
+    "notification:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://api.cognitive.microsofttranslator.com/*"
+        }
+      ],
+      "deny": []
+    }
   ]
 }

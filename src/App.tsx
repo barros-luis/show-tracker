@@ -2,6 +2,7 @@ import { MemoryRouter, Routes, Route, useNavigate, useLocation } from "react-rou
 import { motion } from "framer-motion";
 import { Search, List } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 // Pages
 import { SearchPage, MyListPage, ProfilePage, SettingsPage } from "./pages";
@@ -64,6 +65,7 @@ function MainLayout() {
   const location = useLocation();
   const { isMobile, isDesktop } = usePlatform();
   const { settings } = useSettings();
+  const { t } = useTranslation();
 
   // Update meta theme-color for mobile status bar
   useEffect(() => {
@@ -199,7 +201,7 @@ function MainLayout() {
                     : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
                     }`}
                 >
-                  <Search size={16} /> Search
+                  <Search size={16} /> {t('common.search')}
                 </button>
                 <button
                   onClick={() => {
@@ -214,7 +216,7 @@ function MainLayout() {
                     : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
                     }`}
                 >
-                  <List size={16} /> My List
+                  <List size={16} /> {t('common.my_list')}
                 </button>
               </div>
 
@@ -242,7 +244,7 @@ function MainLayout() {
                     onClick={() => setAuthModalOpen(true)}
                     className="btn-animated btn-glow bg-blue-500 hover:bg-blue-600 !text-white px-8 py-2 rounded-full font-bold text-sm transition-all shadow-lg cursor-pointer"
                   >
-                    Sign In
+                    {t('common.sign_in')}
                   </button>
                 )}
               </div>

@@ -6,6 +6,7 @@ import {
     Gamepad2, Clapperboard, Music, Smile
 } from "lucide-react";
 import { ImageCropper } from "./ImageCropper";
+import { useTranslation } from "react-i18next";
 
 interface EditProfileFormProps {
     session: any;
@@ -40,6 +41,7 @@ const GRADIENTS = [
 
 export function EditProfileForm({ session, profile, supabase, onProfileUpdate, showToast }: EditProfileFormProps) {
     const [loading, setLoading] = useState(false);
+    const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form State
@@ -101,10 +103,12 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
 
             await onProfileUpdate();
             isDirtyRef.current = false;
-            showToast("Profile saved successfully! ✅", "success");
+            await onProfileUpdate();
+            isDirtyRef.current = false;
+            showToast(t('profile_form.success'), "success");
         } catch (error: any) {
             console.error("Error updating profile:", error);
-            showToast("Failed to save profile: " + (error.message || "Unknown error"), "error");
+            showToast(t('profile_form.error', { error: error.message || "Unknown error" }), "error");
         } finally {
             setLoading(false);
         }
@@ -147,7 +151,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
             isDirtyRef.current = true;
         } catch (error: any) {
             console.error("Upload error:", error);
-            alert("Error uploading avatar: " + error.message);
+            alert(t('profile_form.upload_error', { error: error.message }));
         } finally {
             setLoading(false);
         }
@@ -156,7 +160,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
     // Custom Fields Logic
     const addCustomField = () => {
         if (customFields.length >= 5) return;
-        setCustomFields([...customFields, { label: "Label", value: "Value", icon: "Globe" }]);
+        setCustomFields([...customFields, { label: t('profile_form.label'), value: t('profile_form.value_url'), icon: "Globe" }]);
         isDirtyRef.current = true;
     };
 
@@ -209,7 +213,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                 {/* 1. VISUAL IDENTIY */}
                 <section className="bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6 shadow-sm">
                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Camera size={20} className="text-blue-400" /> Visual Identity
+                        <Camera size={20} className="text-blue-400" /> {t('profile_form.visual_identity')}
                     </h3>
 
                     <div className="space-y-6">
@@ -243,13 +247,13 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
 
                         {/* Nickname */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Display Name</label>
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">{t('profile_form.display_name')}</label>
                             <input
                                 type="text"
                                 value={nickname}
                                 onChange={(e) => handleInputChange(setNickname, e.target.value)}
                                 className="w-full bg-blue-100/50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                placeholder="Your Nickname"
+                                placeholder={t('profile_form.display_name_placeholder')}
                             />
                         </div>
                     </div>
@@ -258,17 +262,17 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                 {/* 2. DETAILS */}
                 <section className="bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6 flex flex-col shadow-sm">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                        <UserIconStub size={20} className="text-purple-500 dark:text-purple-400" /> Details
+                        <UserIconStub size={20} className="text-purple-500 dark:text-purple-400" /> {t('profile_form.about_me')}
                     </h3>
 
                     <div className="flex-1 flex flex-col gap-6">
                         <div className="flex-1">
-                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">About Me</label>
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">{t('profile_form.about_me_label')}</label>
                             <textarea
                                 value={aboutMe}
                                 onChange={(e) => handleInputChange(setAboutMe, e.target.value)}
                                 className="w-full min-h-[400px] bg-blue-100/50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-gray-900 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y transition-all text-sm leading-relaxed"
-                                placeholder="Tell us a bit about yourself..."
+                                placeholder={t('profile_form.about_me_placeholder')}
                             />
                         </div>
                     </div>
@@ -278,7 +282,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
             {/* 3. SOCIAL LINKS */}
             <section className="bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-white/5 rounded-xl p-6 shadow-sm">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Globe size={20} className="text-green-500 dark:text-green-400" /> Social Links & Stats
+                    <Globe size={20} className="text-green-500 dark:text-green-400" /> {t('profile_form.social_links')}
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -290,14 +294,14 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                                 value={field.label}
                                 onChange={(e) => updateCustomField(index, "label", e.target.value)}
                                 className="w-1/3 bg-transparent border-b border-gray-300 dark:border-gray-700 px-1 py-1 text-xs text-gray-500 dark:text-gray-500 focus:text-gray-900 dark:focus:text-white focus:border-blue-500 outline-none"
-                                placeholder="Label"
+                                placeholder={t('profile_form.label')}
                             />
                             <input
                                 type="text"
                                 value={field.value}
                                 onChange={(e) => updateCustomField(index, "value", e.target.value)}
                                 className="flex-1 bg-blue-100/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                placeholder="Value / URL"
+                                placeholder={t('profile_form.value_url')}
                             />
                             <button onClick={() => removeCustomField(index)} className="text-gray-400 dark:text-gray-600 hover:text-red-500 transition-colors p-1">
                                 <Trash2 size={16} />
@@ -307,7 +311,7 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
 
                     {customFields.length < 5 && (
                         <button onClick={addCustomField} className="cursor-pointer border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-3 text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 transition-all flex items-center justify-center gap-2 text-sm">
-                            <Plus size={16} /> Add Link or Stat
+                            <Plus size={16} /> {t('profile_form.add_link')}
                         </button>
                     )}
                 </div>
@@ -318,9 +322,9 @@ export function EditProfileForm({ session, profile, supabase, onProfileUpdate, s
                 <button
                     onClick={handleSave}
                     disabled={loading}
-                    className="cursor-pointer bg-blue-500 hover:bg-blue-600 !text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all btn-animated"
+                    className="cursor-pointer bg-blue-500 hover:bg-blue-600 !text-white px-8 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all btn-animated"
                 >
-                    {loading ? "Saving..." : <><Save size={20} /> Save Changes</>}
+                    {loading ? t('profile_form.saving') : <><Save size={20} /> {t('profile_form.save')}</>}
                 </button>
             </div>
         </div>

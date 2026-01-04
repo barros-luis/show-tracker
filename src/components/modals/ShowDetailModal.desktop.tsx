@@ -4,6 +4,8 @@ import { X, Star, Calendar, Tv, Clock, Loader2, Plus, Play, Film, Monitor } from
 import { getAnimeDetails, type Anime } from "../../api/jikan";
 import { getMovieDetails, getTVDetails, getTrailerFromVideos, type TMDBMovie, type TMDBTVShow } from "../../api/tmdb";
 import { type MediaItem } from "../../api/mediaTypes";
+import { useTranslation } from "react-i18next";
+import { translateText } from "../../api/translation";
 
 interface ShowDetailModalProps {
     media: MediaItem | null;
@@ -13,39 +15,43 @@ interface ShowDetailModalProps {
     isLoggedIn: boolean;
 }
 
-// Type for full details (can be any of the three)
-type FullDetails = Anime | TMDBMovie | TMDBTVShow | null;
 
 export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, isLoggedIn }: ShowDetailModalProps) {
-    const [fullDetails, setFullDetails] = useState<FullDetails>(null);
-    const [loading, setLoading] = useState(false);
+    const { t, i18n } = useTranslation();
+    const [fullDetails, setFullDetails] = useState<Anime | TMDBTVShow | TMDBMovie | null>(null);
+    const [loadingDetails, setLoadingDetails] = useState(false);
 
     // Fetch full details when modal opens
     useEffect(() => {
         if (isOpen && media) {
-            setLoading(true);
+            setLoadingDetails(true);
 
             // Fetch based on media type
             if (media.type === 'anime') {
-                getAnimeDetails(media.sourceId).then((details) => {
+                getAnimeDetails(media.sourceId).then(async (details) => {
+                    // Translate synopsis if language is Portuguese
+                    if (details && details.synopsis && i18n.language.startsWith('pt')) {
+                        const translated = await translateText(details.synopsis, 'pt-pt');
+                        details.synopsis = translated;
+                    }
                     setFullDetails(details);
-                    setLoading(false);
+                    setLoadingDetails(false);
                 });
             } else if (media.type === 'movie') {
-                getMovieDetails(media.sourceId).then((details) => {
+                getMovieDetails(media.sourceId, i18n.language).then((details) => {
                     setFullDetails(details);
-                    setLoading(false);
+                    setLoadingDetails(false);
                 });
             } else if (media.type === 'tv') {
-                getTVDetails(media.sourceId).then((details) => {
+                getTVDetails(media.sourceId, i18n.language).then((details) => {
                     setFullDetails(details);
-                    setLoading(false);
+                    setLoadingDetails(false);
                 });
             }
         } else {
             setFullDetails(null);
         }
-    }, [isOpen, media]);
+    }, [isOpen, media, i18n.language]);
 
     // Handle ESC key
     useEffect(() => {
@@ -96,6 +102,14 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
     const youtubeId = getYoutubeId();
     const hasTrailer = !!youtubeId;
 
+    const getStatusLabel = (status: string | null) => {
+        if (!status) return t('media_detail.status.unknown');
+        if (status === 'Currently Airing' || status === 'Returning Series') return t('media_detail.status.currently_airing');
+        if (status === 'Finished Airing' || status === 'Ended' || status === 'Finished') return t('media_detail.status.finished_airing');
+        if (status === 'Released') return t('media_detail.status.released');
+        return status;
+    };
+
     // Get display data based on media type
     const getDisplayData = () => {
         if (!media) return null;
@@ -110,11 +124,11 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                     score: anime.score,
                     synopsis: anime.synopsis,
                     episodes: anime.episodes,
-                    status: anime.status,
+                    status: getStatusLabel(anime.status),
                     type: anime.type,
                     source: anime.source,
                     season: anime.season,
-                    genres: anime.genres?.map(g => g.name) || [],
+                    genres: anime.genres?.map(g => g.name) || [], // Keep for fallback, but will use fullDetails.genres directly
                     duration: anime.duration,
                     popularity: anime.popularity,
                     rating: anime.rating,
@@ -129,25 +143,18 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                     score: movie.vote_average ? Math.round(movie.vote_average * 10) / 10 : null,
                     synopsis: movie.overview,
                     episodes: null,
-                    status: movie.status || 'Released',
-                    type: 'Movie',
+                    status: getStatusLabel(movie.status || 'Released'),
+                    type: t('media_types.movie'),
                     source: null,
                     season: null,
-                    genres: movie.genres?.map(g => g.name) || [],
-                    duration: movie.runtime ? `${movie.runtime} min` : null,
+                    genres: movie.genres?.map(g => g.name) || [], // Keep for fallback, but will use fullDetails.genres directly
+                    duration: movie.runtime ? t('media_detail.min_short', { count: movie.runtime }) : null,
                     popularity: movie.popularity,
                     rating: null,
                     studios: [],
                 };
             } else {
                 const tv = fullDetails as TMDBTVShow;
-                // Normalize TMDB status to be more user-friendly
-                let displayStatus = tv.status || 'Unknown';
-                if (displayStatus === 'Returning Series') {
-                    displayStatus = 'Currently Airing';
-                } else if (displayStatus === 'Ended') {
-                    displayStatus = 'Finished';
-                }
                 return {
                     title: tv.name,
                     imageUrl: media.largeImageUrl,
@@ -155,12 +162,12 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                     score: tv.vote_average ? Math.round(tv.vote_average * 10) / 10 : null,
                     synopsis: tv.overview,
                     episodes: tv.number_of_episodes,
-                    status: displayStatus,
-                    type: 'TV Series',
+                    status: getStatusLabel(tv.status || 'Unknown'),
+                    type: t('media_types.tv'),
                     source: null,
-                    season: tv.number_of_seasons ? `${tv.number_of_seasons} Season${tv.number_of_seasons > 1 ? 's' : ''}` : null,
-                    genres: tv.genres?.map(g => g.name) || [],
-                    duration: tv.episode_run_time?.[0] ? `${tv.episode_run_time[0]} min per ep` : null,
+                    season: tv.number_of_seasons ? t('media_detail.total_seasons', { count: tv.number_of_seasons }) : null,
+                    genres: tv.genres?.map(g => g.name) || [], // Keep for fallback, but will use fullDetails.genres directly
+                    duration: tv.episode_run_time?.[0] ? t('media_detail.min_per_ep', { count: tv.episode_run_time[0] }) : null,
                     popularity: tv.popularity,
                     rating: null,
                     studios: tv.networks?.map(n => n.name) || [],
@@ -177,7 +184,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
             synopsis: media.description,
             episodes: media.episodes,
             status: null,
-            type: media.type === 'anime' ? 'Anime' : media.type === 'movie' ? 'Movie' : 'TV Series',
+            type: media.type === 'anime' ? t('media_types.anime') : media.type === 'movie' ? t('media_types.movie') : t('media_types.tv'),
             source: null,
             season: null,
             genres: [],
@@ -226,7 +233,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                 <X size={20} />
                             </button>
 
-                            {loading ? (
+                            {loadingDetails ? (
                                 <div className="flex items-center justify-center py-20">
                                     <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
                                 </div>
@@ -250,28 +257,28 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                                     <div className="flex items-center gap-2">
                                                         <Star size={14} className="text-yellow-500" fill="currentColor" />
                                                         <span className="text-white font-semibold">{displayData.score}</span>
-                                                        <span className="text-gray-500 text-xs">Rating</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.rating')}</span>
                                                     </div>
                                                 )}
                                                 {displayData.popularity && (
                                                     <div className="flex items-center gap-2">
                                                         <MediaTypeIcon size={14} className="text-purple-400" />
                                                         <span className="text-white font-semibold">#{displayData.popularity}</span>
-                                                        <span className="text-gray-500 text-xs">Popularity</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.popularity')}</span>
                                                     </div>
                                                 )}
                                                 {displayData.source && (
                                                     <div className="flex items-center gap-2">
                                                         <Calendar size={14} className="text-blue-400" />
                                                         <span className="text-white font-semibold">{displayData.source}</span>
-                                                        <span className="text-gray-500 text-xs">Source</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.source')}</span>
                                                     </div>
                                                 )}
                                                 {displayData.season && displayData.year && (
                                                     <div className="flex items-center gap-2">
                                                         <Clock size={14} className="text-green-400" />
                                                         <span className="text-white font-semibold capitalize">{displayData.season} {displayData.year}</span>
-                                                        <span className="text-gray-500 text-xs">Season</span>
+                                                        <span className="text-gray-500 text-xs">{t('media_detail.season')}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -303,7 +310,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                                 {displayData.episodes && (
                                                     <div className="flex items-center gap-1 bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 px-2 py-1 rounded-full">
                                                         <Tv size={12} />
-                                                        {displayData.episodes} eps
+                                                        {t('media_detail.eps_short', { count: displayData.episodes })}
                                                     </div>
                                                 )}
                                                 {displayData.duration && (
@@ -316,9 +323,9 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
 
                                             {/* Status */}
                                             {displayData.status && (
-                                                <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${displayData.status === "Currently Airing"
+                                                <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${displayData.status === t('media_detail.status.currently_airing')
                                                     ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                                                    : displayData.status === "Finished Airing"
+                                                    : displayData.status === t('media_detail.status.finished_airing')
                                                         ? "bg-gray-500/20 text-gray-400 border border-gray-500/30"
                                                         : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
                                                     }`}>
@@ -327,14 +334,14 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                             )}
 
                                             {/* Genres */}
-                                            {displayData.genres && displayData.genres.length > 0 && (
+                                            {fullDetails && 'genres' in fullDetails && fullDetails.genres && fullDetails.genres.length > 0 && (
                                                 <div className="flex flex-wrap gap-1.5">
-                                                    {displayData.genres.map((genre, idx) => (
+                                                    {fullDetails.genres.map((genre) => (
                                                         <span
-                                                            key={idx}
+                                                            key={genre.name}
                                                             className="px-2 py-0.5 bg-blue-600/20 text-blue-300 rounded-full text-xs font-medium"
                                                         >
-                                                            {genre}
+                                                            {t(`genres.${genre.name}`, genre.name)}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -343,7 +350,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                             {/* Synopsis */}
                                             {displayData.synopsis && (
                                                 <div className="space-y-2">
-                                                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Synopsis</h3>
+                                                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('media_detail.synopsis')}</h3>
                                                     <p className="text-gray-300 text-xs leading-relaxed">
                                                         {displayData.synopsis}
                                                     </p>
@@ -354,7 +361,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                             {displayData.studios && displayData.studios.length > 0 && (
                                                 <div className="space-y-1">
                                                     <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                                        {media?.type === 'tv' ? 'Network' : 'Studio'}
+                                                        {media?.type === 'tv' ? t('media_detail.network') : t('media_detail.studio')}
                                                     </h4>
                                                     <p className="text-white text-sm font-medium">
                                                         {displayData.studios.join(", ")}
@@ -378,7 +385,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                                     }`}
                                             >
                                                 <Plus size={18} />
-                                                {isLoggedIn ? "Add to My List" : "Sign in to Add"}
+                                                {isLoggedIn ? t('media_detail.add_to_list') : t('media_detail.sign_in_to_add')}
                                             </button>
                                         </div>
                                     </div>
@@ -387,7 +394,7 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                     <div className="w-full md:w-2/3 flex flex-col bg-gray-100 dark:bg-gray-950 p-6">
                                         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                             <Play size={20} className="text-blue-500" fill="currentColor" />
-                                            Trailer
+                                            {t('media_detail.trailer')}
                                         </h3>
 
                                         {hasTrailer && youtubeId ? (
@@ -405,8 +412,8 @@ export function DesktopShowDetailModal({ media, isOpen, onClose, onAddToList, is
                                                 <div className="w-16 h-16 bg-gray-300 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
                                                     <Play size={28} className="text-gray-400 dark:text-gray-500" />
                                                 </div>
-                                                <p className="text-gray-500 dark:text-gray-500 text-lg font-medium">No trailer available</p>
-                                                <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">Check back later!</p>
+                                                <p className="text-gray-500 dark:text-gray-500 text-lg font-medium">{t('media_detail.no_trailer')}</p>
+                                                <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">{t('media_detail.check_back')}</p>
                                             </div>
                                         )}
                                     </div>
