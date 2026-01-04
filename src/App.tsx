@@ -148,8 +148,8 @@ function MainLayout() {
             isMobile={isMobile}
           />
 
-          {/* Update Banner - desktop only (mobile uses app stores) */}
-          {isDesktop && updateAvailable && (
+          {/* Update Banner */}
+          {updateAvailable && (
             <UpdateBanner
               newVersion={updateAvailable}
               onUpdate={handleInstallUpdate}

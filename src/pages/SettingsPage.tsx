@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import pkg from "../../package.json";
 import { User, Sun, Moon, Settings as SettingsIcon, Shield, Info, ExternalLink, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
@@ -86,12 +87,12 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as SettingsTab)}
-                                className={`cursor-pointer w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${isActive
-                                    ? 'bg-blue-500 !text-white shadow-md shadow-blue-500/20'
-                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                                    }`}
+                                className={`cursor - pointer w - full flex items - center gap - 3 px - 4 py - 3 rounded - lg text - sm font - medium transition - all ${isActive
+                                        ? 'bg-blue-500 !text-white shadow-md shadow-blue-500/20'
+                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                                    } `}
                             >
-                                <Icon className={`w-4 h-4 ${isActive ? '!text-white' : 'text-gray-500 dark:text-gray-400'}`} />
+                                <Icon className={`w - 4 h - 4 ${isActive ? '!text-white' : 'text-gray-500 dark:text-gray-400'} `} />
                                 {tab.label}
                             </button>
                         );
@@ -133,17 +134,17 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                         <div className="grid grid-cols-2 gap-4">
                                             <button
                                                 onClick={() => updateSetting('theme', 'light')}
-                                                className={`cursor-pointer relative flex items-center justify-between p-4 rounded-xl border-2 transition-all ${settings.theme === 'light'
-                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
-                                                    : 'border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 bg-white dark:bg-gray-800'
-                                                    }`}
+                                                className={`cursor - pointer relative flex items - center justify - between p - 4 rounded - xl border - 2 transition - all ${settings.theme === 'light'
+                                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+                                                        : 'border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 bg-white dark:bg-gray-800'
+                                                    } `}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 bg-yellow-100 dark:bg-white text-yellow-600 dark:text-yellow-500 rounded-full">
                                                         <Sun className="w-5 h-5" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <p className={`font-medium ${settings.theme === 'light' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>{t('settings.appearance.light')}</p>
+                                                        <p className={`font - medium ${settings.theme === 'light' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'} `}>{t('settings.appearance.light')}</p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.appearance.light_desc')}</p>
                                                     </div>
                                                 </div>
@@ -152,17 +153,17 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
 
                                             <button
                                                 onClick={() => updateSetting('theme', 'dark')}
-                                                className={`cursor-pointer relative flex items-center justify-between p-4 rounded-xl border-2 transition-all ${settings.theme === 'dark'
-                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
-                                                    : 'border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 bg-white dark:bg-gray-800'
-                                                    }`}
+                                                className={`cursor - pointer relative flex items - center justify - between p - 4 rounded - xl border - 2 transition - all ${settings.theme === 'dark'
+                                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+                                                        : 'border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 bg-white dark:bg-gray-800'
+                                                    } `}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-blue-300 rounded-full">
                                                         <Moon className="w-5 h-5" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <p className={`font-medium ${settings.theme === 'dark' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>{t('settings.appearance.dark')}</p>
+                                                        <p className={`font - medium ${settings.theme === 'dark' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'} `}>{t('settings.appearance.dark')}</p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.appearance.dark_desc')}</p>
                                                     </div>
                                                 </div>
@@ -181,11 +182,11 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                             </div>
                                             <button
                                                 onClick={() => updateSetting('mouseAura', !settings.mouseAura)}
-                                                className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${settings.mouseAura ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
-                                                    }`}
+                                                className={`relative w - 12 h - 6 rounded - full transition - colors cursor - pointer ${settings.mouseAura ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                                                    } `}
                                             >
-                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${settings.mouseAura ? 'translate-x-6' : 'translate-x-0.5'
-                                                    }`} />
+                                                <div className={`absolute top - 0.5 w - 5 h - 5 bg - white rounded - full transition - transform ${settings.mouseAura ? 'translate-x-6' : 'translate-x-0.5'
+                                                    } `} />
                                             </button>
                                         </div>
                                     </section>
@@ -244,9 +245,9 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                             className="w-5 h-4 object-cover rounded-sm"
                                                         />
                                                         <span>{currentLang.label}</span>
-                                                    </div>
+                                                    </div >
                                                     <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${langDropdownOpen ? 'rotate-90' : ''}`} />
-                                                </button>
+                                                </button >
 
                                                 <AnimatePresence>
                                                     {langDropdownOpen && (
@@ -266,9 +267,25 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                                 {languages.map((lang) => (
                                                                     <button
                                                                         key={lang.code}
-                                                                        onClick={() => {
+                                                                        onClick={async () => {
                                                                             i18n.changeLanguage(lang.code);
                                                                             setLangDropdownOpen(false);
+
+                                                                            // Save to Supabase
+                                                                            if (session?.user?.id && profile) {
+                                                                                const currentSettings = (profile.settings as Record<string, unknown>) || {};
+                                                                                const newSettings = { ...currentSettings, language: lang.code };
+
+                                                                                try {
+                                                                                    await supabase
+                                                                                        .from('profiles')
+                                                                                        .update({ settings: newSettings })
+                                                                                        .eq('id', session.user.id);
+                                                                                    onProfileUpdate();
+                                                                                } catch (err) {
+                                                                                    console.error("Failed to save language preference:", err);
+                                                                                }
+                                                                            }
                                                                         }}
                                                                         className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors cursor-pointer ${currentLang.code === lang.code
                                                                             ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'
@@ -290,12 +307,12 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                         </>
                                                     )}
                                                 </AnimatePresence>
-                                            </div>
-                                        </div>
-                                    </section>
+                                            </div >
+                                        </div >
+                                    </section >
 
                                     {/* ADULT CONTENT FILTER */}
-                                    <section>
+                                    < section >
                                         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.general.content_filter_title')}</h3>
                                         <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                             <div>
@@ -311,15 +328,17 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                     }`} />
                                             </button>
                                         </div>
-                                        {settings.adultContent && (
-                                            <p className="mt-2 text-xs text-red-500 dark:text-red-400">
-                                                {t('settings.general.adult_warning')}
-                                            </p>
-                                        )}
-                                    </section>
+                                        {
+                                            settings.adultContent && (
+                                                <p className="mt-2 text-xs text-red-500 dark:text-red-400">
+                                                    {t('settings.general.adult_warning')}
+                                                </p>
+                                            )
+                                        }
+                                    </section >
 
                                     {/* CLOSE TO TRAY */}
-                                    <section>
+                                    < section >
                                         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.general.window_behavior_title')}</h3>
                                         <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                             <div>
@@ -338,10 +357,10 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                         <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
                                             {settings.closeToTray ? t('settings.general.tray_hint_on') : t('settings.general.tray_hint_off')}
                                         </p>
-                                    </section>
+                                    </section >
 
                                     {/* LAUNCH AT STARTUP */}
-                                    <section>
+                                    < section >
                                         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.general.startup_title')}</h3>
                                         <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                             <div>
@@ -360,10 +379,10 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                         <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
                                             {settings.launchAtStartup ? t('settings.general.startup_hint_on') : t('settings.general.startup_hint_off')}
                                         </p>
-                                    </section>
+                                    </section >
 
                                     {/* NOTIFICATIONS */}
-                                    <section>
+                                    < section >
                                         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.general.notifications_title')}</h3>
                                         <div className="space-y-4">
                                             {/* In-App Notifications */}
@@ -417,118 +436,122 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                 </select>
                                             </div>
                                         </div>
-                                    </section>
-                                </div>
+                                    </section >
+                                </div >
                             )}
-                            {activeTab === 'account' && (
-                                <AccountSettings />
-                            )}
-                            {activeTab === 'about' && (
-                                <div className="space-y-8">
-                                    {/* App Info */}
-                                    <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.app_title')}</h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                            {t('settings.about.app_desc')}
-                                        </p>
-                                    </section>
+                            {
+                                activeTab === 'account' && (
+                                    <AccountSettings />
+                                )
+                            }
+                            {
+                                activeTab === 'about' && (
+                                    <div className="space-y-8">
+                                        {/* App Info */}
+                                        <section>
+                                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.app_title')}</h3>
+                                            <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                                                {t('settings.about.app_desc')}
+                                            </p>
+                                        </section>
 
-                                    {/* Data Sources */}
-                                    <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.data_sources_title')}</h3>
-                                        <div className="space-y-4">
-                                            {/* TMDB Attribution */}
-                                            <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
-                                                <div className="flex items-center gap-4 mb-3">
-                                                    <img
-                                                        src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg"
-                                                        alt="TMDB Logo"
-                                                        className="h-5"
-                                                    />
+                                        {/* Data Sources */}
+                                        <section>
+                                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.data_sources_title')}</h3>
+                                            <div className="space-y-4">
+                                                {/* TMDB Attribution */}
+                                                <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
+                                                    <div className="flex items-center gap-4 mb-3">
+                                                        <img
+                                                            src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg"
+                                                            alt="TMDB Logo"
+                                                            className="h-5"
+                                                        />
+                                                    </div>
+                                                    <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
+                                                        {t('settings.about.tmdb_disclaimer')}
+                                                    </p>
+                                                    <a
+                                                        href="https://www.themoviedb.org"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs mt-2 transition-colors"
+                                                    >
+                                                        {t('settings.about.visit_tmdb')} <ExternalLink size={12} />
+                                                    </a>
                                                 </div>
+
+                                                {/* Jikan Attribution */}
+                                                <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
+                                                    <div className="flex items-center gap-4 mb-3">
+                                                        <span className="text-gray-900 dark:text-white font-bold text-lg">{t('settings.about.jikan_title')}</span>
+                                                        <span className="text-gray-500 text-xs">{t('settings.about.jikan_sub')}</span>
+                                                    </div>
+                                                    <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
+                                                        {t('settings.about.jikan_disclaimer')}
+                                                    </p>
+                                                    <a
+                                                        href="https://jikan.moe"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs mt-2 transition-colors"
+                                                    >
+                                                        {t('settings.about.visit_jikan')} <ExternalLink size={12} />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        {/* Privacy Policy */}
+                                        <section>
+                                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.privacy_policy')}</h3>
+                                            <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
                                                 <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                                                    {t('settings.about.tmdb_disclaimer')}
+                                                    {t('settings.about.privacy_policy_desc')}
                                                 </p>
                                                 <a
-                                                    href="https://www.themoviedb.org"
+                                                    href="https://ashow-tracker.pages.dev/privacy.html"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs mt-2 transition-colors"
                                                 >
-                                                    {t('settings.about.visit_tmdb')} <ExternalLink size={12} />
+                                                    {t('settings.about.privacy_policy')} <ExternalLink size={12} />
                                                 </a>
                                             </div>
+                                        </section>
 
-                                            {/* Jikan Attribution */}
+                                        {/* Terms and Conditions */}
+                                        <section>
+                                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.terms_and_conditions')}</h3>
                                             <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
-                                                <div className="flex items-center gap-4 mb-3">
-                                                    <span className="text-gray-900 dark:text-white font-bold text-lg">{t('settings.about.jikan_title')}</span>
-                                                    <span className="text-gray-500 text-xs">{t('settings.about.jikan_sub')}</span>
-                                                </div>
                                                 <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                                                    {t('settings.about.jikan_disclaimer')}
+                                                    {t('settings.about.terms_and_conditions_desc')}
                                                 </p>
                                                 <a
-                                                    href="https://jikan.moe"
+                                                    href="https://ashow-tracker.pages.dev/terms.html"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs mt-2 transition-colors"
                                                 >
-                                                    {t('settings.about.visit_jikan')} <ExternalLink size={12} />
+                                                    {t('settings.about.terms_and_conditions')} <ExternalLink size={12} />
                                                 </a>
                                             </div>
-                                        </div>
-                                    </section>
+                                        </section>
 
-                                    {/* Privacy Policy */}
-                                    <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.privacy_policy')}</h3>
-                                        <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
-                                            <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                                                {t('settings.about.privacy_policy_desc')}
+                                        {/* Version */}
+                                        <section className="pt-4 border-t border-gray-100 dark:border-white/5">
+                                            <p className="text-gray-500 text-xs text-center">
+                                                AShow Tracker v{pkg.version} • {t('settings.about.made_with')}
                                             </p>
-                                            <a
-                                                href="https://ashow-tracker.pages.dev/privacy.html"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs mt-2 transition-colors"
-                                            >
-                                                {t('settings.about.privacy_policy')} <ExternalLink size={12} />
-                                            </a>
-                                        </div>
-                                    </section>
+                                        </section>
+                                    </div>
+                                )
+                            }
 
-                                    {/* Terms and Conditions */}
-                                    <section>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('settings.about.terms_and_conditions')}</h3>
-                                        <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-white/5">
-                                            <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                                                {t('settings.about.terms_and_conditions_desc')}
-                                            </p>
-                                            <a
-                                                href="https://ashow-tracker.pages.dev/terms.html"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs mt-2 transition-colors"
-                                            >
-                                                {t('settings.about.terms_and_conditions')} <ExternalLink size={12} />
-                                            </a>
-                                        </div>
-                                    </section>
-
-                                    {/* Version */}
-                                    <section className="pt-4 border-t border-gray-100 dark:border-white/5">
-                                        <p className="text-gray-500 text-xs text-center">
-                                            AShow Tracker v1.2.1 • {t('settings.about.made_with')}
-                                        </p>
-                                    </section>
-                                </div>
-                            )}
-
-                        </div>
+                        </div >
                     )}
-                </div>
-            </main>
-        </div>
+                </div >
+            </main >
+        </div >
     );
 }

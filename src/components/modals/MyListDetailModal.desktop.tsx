@@ -138,98 +138,111 @@ export function DesktopMyListDetailModal({
             setLoadingEpisodes(true);
 
             if (item.media_type === 'anime' && item.mal_id) {
-                // Fetch anime details from Jikan
-                getAnimeDetails(item.mal_id).then((details) => {
-                    setFullDetails(details);
-                    setLoading(false);
-                });
+                // Fetch anime details and episodes sequentially to handle Movies correctly
+                (async () => {
+                    try {
+                        const details = await getAnimeDetails(item.mal_id!);
+                        setFullDetails(details);
+                        setLoading(false);
 
-                // Check cache first for episodes
-                const cachedEps = getCachedEpisodes('anime', item.mal_id);
-                if (cachedEps) {
-                    console.log(`[Cache] Loaded ${cachedEps.length} episodes from cache`);
-                    setEpisodes(cachedEps);
-                    fetchWatchedEpisodes().then(() => setLoadingEpisodes(false));
-                    return;
-                }
+                        // Check cache first for episodes
+                        const cachedEps = getCachedEpisodes('anime', item.mal_id);
+                        if (cachedEps) {
+                            console.log(`[Cache] Loaded ${cachedEps.length} episodes from cache`);
+                            setEpisodes(cachedEps);
+                            fetchWatchedEpisodes().then(() => setLoadingEpisodes(false));
+                            return;
+                        }
 
-                getAllAnimeEpisodes(item.mal_id).then(async (eps) => {
-                    const unifiedEps: UnifiedEpisode[] = eps.map(ep => ({
-                        id: ep.mal_id,
-                        number: ep.mal_id,  // For anime, mal_id IS the episode number
-                        title: ep.title,
-                        synopsis: ep.synopsis,
-                        filler: ep.filler,
-                        recap: ep.recap,
-                    }));
+                        const eps = await getAllAnimeEpisodes(item.mal_id!);
+                        let unifiedEps: UnifiedEpisode[] = eps.map(ep => ({
+                            id: ep.mal_id,
+                            number: ep.mal_id,  // For anime, mal_id IS the episode number
+                            title: ep.title,
+                            synopsis: ep.synopsis,
+                            filler: ep.filler,
+                            recap: ep.recap,
+                        }));
 
-                    // Fallback to TMDB for missing episodes (e.g. One Piece where Jikan is stale)
-                    if (eps.length > 0) {
-                        try {
-                            const tmdbResults = await searchTVShows(item.title);
-                            // Filter for Japanese animation
-                            const candidate = tmdbResults.find(show =>
-                                show.origin_country?.includes('JP') &&
-                                show.first_air_date
-                            ) || tmdbResults[0];
+                        // FIX: Handle Anime Movies that Jikan returns as 0 episodes
+                        if (unifiedEps.length === 0 && (details?.type === 'Movie' || details?.episodes === 1)) {
+                            unifiedEps = [{
+                                id: 1,
+                                number: 1,
+                                title: details?.title || item.title,
+                                synopsis: details?.synopsis || "Movie",
+                            }];
+                        }
 
-                            if (candidate) {
-                                const details = await getTVDetails(candidate.id);
-                                if (details?.last_episode_to_air) {
-                                    const lastJikanEp = eps[eps.length - 1];
-                                    const jikanDate = lastJikanEp.aired ? new Date(lastJikanEp.aired) : null;
+                        // Fallback to TMDB for missing episodes (e.g. One Piece where Jikan is stale)
+                        // ... (Logic kept same, just indented/moved if needed, but since we have unifiedEps let's keep it clean)
+                        if (eps.length > 0) { // Only try patching if we actually got standard episodes but might be missing new ones
+                            try {
+                                const tmdbResults = await searchTVShows(item.title);
+                                // Filter for Japanese animation
+                                const candidate = tmdbResults.find(show =>
+                                    show.origin_country?.includes('JP') &&
+                                    show.first_air_date
+                                ) || tmdbResults[0];
 
-                                    // Fetch current season episodes (where latest ep is)
-                                    const seasonNum = details.last_episode_to_air.season_number;
-                                    const seasonData = await getTVSeasonEpisodes(candidate.id, seasonNum);
+                                if (candidate) {
+                                    const details = await getTVDetails(candidate.id);
+                                    if (details?.last_episode_to_air) {
+                                        const lastJikanEp = eps[eps.length - 1];
+                                        const jikanDate = lastJikanEp.aired ? new Date(lastJikanEp.aired) : null;
 
-                                    // Also fetch previous season if current season has few episodes?
-                                    // For One Piece, S22 starts deep in.
-                                    // Jikan stops at 1147 (Oct 26).
+                                        // Fetch current season episodes (where latest ep is)
+                                        const seasonNum = details.last_episode_to_air.season_number;
+                                        const seasonData = await getTVSeasonEpisodes(candidate.id, seasonNum);
 
-                                    if (seasonData?.episodes && jikanDate) {
-                                        const newEpisodes = seasonData.episodes.filter(ep => {
-                                            if (!ep.air_date) return false;
-                                            return new Date(ep.air_date) > jikanDate;
-                                        });
+                                        if (seasonData?.episodes && jikanDate) {
+                                            const newEpisodes = seasonData.episodes.filter(ep => {
+                                                if (!ep.air_date) return false;
+                                                return new Date(ep.air_date) > jikanDate;
+                                            });
 
-                                        let nextNum = lastJikanEp.mal_id + 1;
-                                        newEpisodes.forEach(ep => {
-                                            // Avoid duplicates if any weirdness
-                                            if (!unifiedEps.find(e => e.number === nextNum)) {
-                                                unifiedEps.push({
-                                                    id: ep.id, // TMDB ID
-                                                    number: nextNum++,
-                                                    title: ep.name,
-                                                    synopsis: ep.overview,
-                                                    filler: false,
-                                                    recap: false
-                                                });
-                                            }
-                                        });
+                                            let nextNum = lastJikanEp.mal_id + 1;
+                                            newEpisodes.forEach(ep => {
+                                                // Avoid duplicates if any weirdness
+                                                if (!unifiedEps.find(e => e.number === nextNum)) {
+                                                    unifiedEps.push({
+                                                        id: ep.id, // TMDB ID
+                                                        number: nextNum++,
+                                                        title: ep.name,
+                                                        synopsis: ep.overview,
+                                                        filler: false,
+                                                        recap: false
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
+                            } catch (err) {
+                                console.error("Error patching anime episodes:", err);
                             }
-                        } catch (err) {
-                            console.error("Error patching anime episodes:", err);
                         }
+
+                        setEpisodes(unifiedEps);
+                        setLoadingEpisodes(false);
+
+                        setCachedEpisodes('anime', item.mal_id, unifiedEps);
+
+                        // Update total_episodes if different
+                        if (unifiedEps.length > 0 && unifiedEps.length > (item.total_episodes || 0)) {
+                            await supabase
+                                .from('watchlist')
+                                .update({ total_episodes: unifiedEps.length })
+                                .eq('id', item.id);
+                            onTotalEpisodesUpdate(item.id, unifiedEps.length);
+                        }
+
+                    } catch (error) {
+                        console.error("Error fetching anime details/episodes:", error);
+                        setLoading(false);
+                        setLoadingEpisodes(false);
                     }
-
-                    setEpisodes(unifiedEps);
-                    setLoadingEpisodes(false);
-
-                    setCachedEpisodes('anime', item.mal_id, unifiedEps);
-                    console.log(`[Cache] Saved ${unifiedEps.length} episodes to cache`);
-
-                    // Update total_episodes if different
-                    if (unifiedEps.length > 0 && unifiedEps.length > (item.total_episodes || 0)) {
-                        await supabase
-                            .from('watchlist')
-                            .update({ total_episodes: unifiedEps.length })
-                            .eq('id', item.id);
-                        onTotalEpisodesUpdate(item.id, unifiedEps.length);
-                    }
-                });
+                })();
             } else if (item.media_type === 'tv' && item.tmdb_id) {
                 // Fetch TV show details from TMDB
                 getTVDetails(item.tmdb_id).then((details) => {

@@ -60,9 +60,24 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
+import { useTranslation } from "react-i18next";
+
 export function AuthProvider({ children }: AuthProviderProps) {
     const { session, profile, loading, error: authError, refreshProfile } = useAuth();
     const { toast, showToast, hideToast } = useToast();
+    const { i18n } = useTranslation();
+
+    // Sync language from profile
+    useEffect(() => {
+        if (profile?.settings && typeof profile.settings === 'object') {
+            const savedLang = (profile.settings as any).language;
+            if (savedLang && i18n.language !== savedLang) {
+                console.log("Syncing language from profile:", savedLang);
+                i18n.changeLanguage(savedLang);
+            }
+        }
+    }, [profile]);
+
 
     const userId = session?.user?.id;
     const {
@@ -83,6 +98,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Update state
     const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
+    const [mobileUpdateUrl, setMobileUpdateUrl] = useState<string | null>(null);
 
     // Auth modal state
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
@@ -95,10 +111,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (isMobile) {
                 try {
-                    const response = await fetch('https://github.com/barros-luis/show-tracker/releases/latest/download/latest.json');
+                    const response = await fetch('https://api.github.com/repos/barros-luis/show-tracker/releases/latest');
                     if (response.ok) {
                         const data = await response.json();
-                        const latestVersion = data.version;
+                        const latestVersion = data.tag_name.replace('v', ''); // Remove 'v' prefix if present
                         const currentVersion = pkg.version;
 
                         // Simple version comparison
@@ -117,7 +133,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         }
 
                         if (hasNewUpdate) {
-                            showToast(`New update available: v${latestVersion}`, "info");
+                            setUpdateAvailable(latestVersion);
+
+                            // Find APK asset
+                            if (data.assets && Array.isArray(data.assets)) {
+                                const apkAsset = data.assets.find((asset: any) => asset.name.endsWith('.apk'));
+                                if (apkAsset) {
+                                    setMobileUpdateUrl(apkAsset.browser_download_url);
+                                }
+                            }
                         }
                     }
                 } catch (err) {
@@ -139,7 +163,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, []);
 
     const handleInstallUpdate = async () => {
-        await invoke('install_update');
+        const ua = navigator.userAgent.toLowerCase();
+        const isMobile = /android|iphone|ipad|ipod/i.test(ua);
+
+        if (isMobile) {
+            import('@tauri-apps/plugin-opener').then(({ openUrl }) => {
+                if (mobileUpdateUrl) {
+                    openUrl(mobileUpdateUrl);
+                } else {
+                    showToast("New update available! Please visit our website to download the latest version.", "info", 5000);
+                }
+            });
+        } else {
+            await invoke('install_update');
+        }
     };
 
     const isCheckingRef = useRef(false);

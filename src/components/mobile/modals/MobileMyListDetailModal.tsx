@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, AlertTriangle, ChevronDown, Check, LayoutGrid, Eye, EyeOff, Tv, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getAllTVEpisodes, searchTVShows, getTVDetails, getTVSeasonEpisodes } from "../../../api/tmdb";
-import { getAllAnimeEpisodes, getEpisodeDetails } from "../../../api/jikan";
+import { getAllAnimeEpisodes, getEpisodeDetails, getAnimeDetails } from "../../../api/jikan";
 import { getListIcon } from "../../../utils/constants";
 import { SupabaseClient } from "@supabase/supabase-js";
 
@@ -213,6 +213,23 @@ export function MobileMyListDetailModal({
                     title: ep.title,
                     synopsis: ep.synopsis,
                 }));
+
+                // FIX: Handle Anime Movies that Jikan returns as 0 episodes
+                if (unifiedEps.length === 0) {
+                    try {
+                        const details = await getAnimeDetails(item.mal_id);
+                        if (details?.type === 'Movie' || details?.episodes === 1) {
+                            unifiedEps = [{
+                                id: 1,
+                                number: 1,
+                                title: details?.title || item.title,
+                                synopsis: details?.synopsis || "Movie",
+                            }];
+                        }
+                    } catch (err) {
+                        console.error("Error checking anime type for 0-episode item:", err);
+                    }
+                }
 
                 // TMDB Fallback logic for missing anime episodes (Ported from Desktop)
                 if (eps.length > 0) {

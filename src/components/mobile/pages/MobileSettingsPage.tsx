@@ -12,6 +12,7 @@ import {
     User, Sun, Settings as SettingsIcon,
     ChevronRight, Bell, Camera, Save, Shuffle, LogOut, Shield, Globe
 } from 'lucide-react';
+import pkg from "../../../../package.json";
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../../context/SettingsContext';
 import { AccountSettings } from '../../../components/forms/AccountSettings';
@@ -358,9 +359,25 @@ export function MobileSettingsPage({
                                         {languages.map((lang) => (
                                             <button
                                                 key={lang.code}
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     i18n.changeLanguage(lang.code);
                                                     setLangDropdownOpen(false);
+
+                                                    // Save to Supabase
+                                                    if (session?.user?.id && profile) {
+                                                        const currentSettings = (profile.settings as Record<string, unknown>) || {};
+                                                        const newSettings = { ...currentSettings, language: lang.code };
+
+                                                        try {
+                                                            await supabase
+                                                                .from('profiles')
+                                                                .update({ settings: newSettings })
+                                                                .eq('id', session.user.id);
+                                                            onProfileUpdate();
+                                                        } catch (err) {
+                                                            console.error("Failed to save language preference:", err);
+                                                        }
+                                                    }
                                                 }}
                                                 className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${currentLang.code === lang.code
                                                     ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'
@@ -494,7 +511,7 @@ export function MobileSettingsPage({
                     </div>
 
                     <p className="text-center text-gray-500 dark:text-gray-600 text-xs pt-2">
-                        AShow Tracker v1.2.1 • {t('settings.about.made_with')}
+                        AShow Tracker v{pkg.version} • {t('settings.about.made_with')}
                     </p>
                 </div>
             </Section>
