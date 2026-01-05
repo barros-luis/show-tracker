@@ -87,12 +87,12 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as SettingsTab)}
-                                className={`cursor - pointer w - full flex items - center gap - 3 px - 4 py - 3 rounded - lg text - sm font - medium transition - all ${isActive
-                                        ? 'bg-blue-500 !text-white shadow-md shadow-blue-500/20'
-                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                                className={`cursor-pointer w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${isActive
+                                    ? 'bg-blue-500 !text-white shadow-md shadow-blue-500/20'
+                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                                     } `}
                             >
-                                <Icon className={`w - 4 h - 4 ${isActive ? '!text-white' : 'text-gray-500 dark:text-gray-400'} `} />
+                                <Icon className={`w-4 h-4 ${isActive ? '!text-white' : 'text-gray-500 dark:text-gray-400'} `} />
                                 {tab.label}
                             </button>
                         );
@@ -134,9 +134,9 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                         <div className="grid grid-cols-2 gap-4">
                                             <button
                                                 onClick={() => updateSetting('theme', 'light')}
-                                                className={`cursor - pointer relative flex items - center justify - between p - 4 rounded - xl border - 2 transition - all ${settings.theme === 'light'
-                                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
-                                                        : 'border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 bg-white dark:bg-gray-800'
+                                                className={`cursor-pointer relative flex items-center justify-between p-4 rounded-xl border-2 transition-all ${settings.theme === 'light'
+                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+                                                    : 'border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 bg-white dark:bg-gray-800'
                                                     } `}
                                             >
                                                 <div className="flex items-center gap-3">
@@ -144,7 +144,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                         <Sun className="w-5 h-5" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <p className={`font - medium ${settings.theme === 'light' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'} `}>{t('settings.appearance.light')}</p>
+                                                        <p className={`font-medium ${settings.theme === 'light' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'} `}>{t('settings.appearance.light')}</p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.appearance.light_desc')}</p>
                                                     </div>
                                                 </div>
@@ -153,9 +153,9 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
 
                                             <button
                                                 onClick={() => updateSetting('theme', 'dark')}
-                                                className={`cursor - pointer relative flex items - center justify - between p - 4 rounded - xl border - 2 transition - all ${settings.theme === 'dark'
-                                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
-                                                        : 'border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 bg-white dark:bg-gray-800'
+                                                className={`cursor-pointer relative flex items-center justify-between p-4 rounded-xl border-2 transition-all ${settings.theme === 'dark'
+                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+                                                    : 'border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 bg-white dark:bg-gray-800'
                                                     } `}
                                             >
                                                 <div className="flex items-center gap-3">
@@ -163,7 +163,7 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                         <Moon className="w-5 h-5" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <p className={`font - medium ${settings.theme === 'dark' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'} `}>{t('settings.appearance.dark')}</p>
+                                                        <p className={`font-medium ${settings.theme === 'dark' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'} `}>{t('settings.appearance.dark')}</p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.appearance.dark_desc')}</p>
                                                     </div>
                                                 </div>
@@ -182,10 +182,10 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                             </div>
                                             <button
                                                 onClick={() => updateSetting('mouseAura', !settings.mouseAura)}
-                                                className={`relative w - 12 h - 6 rounded - full transition - colors cursor - pointer ${settings.mouseAura ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                                                className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${settings.mouseAura ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
                                                     } `}
                                             >
-                                                <div className={`absolute top - 0.5 w - 5 h - 5 bg - white rounded - full transition - transform ${settings.mouseAura ? 'translate-x-6' : 'translate-x-0.5'
+                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${settings.mouseAura ? 'translate-x-6' : 'translate-x-0.5'
                                                     } `} />
                                             </button>
                                         </div>
