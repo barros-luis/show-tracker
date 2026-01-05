@@ -31,6 +31,8 @@ interface UnifiedEpisode {
     title: string;
     synopsis?: string | null;
     season?: number;
+    filler?: boolean;
+    recap?: boolean;
 }
 
 interface WatchlistItem {
@@ -212,6 +214,8 @@ export function MobileMyListDetailModal({
                     number: ep.mal_id,
                     title: ep.title,
                     synopsis: ep.synopsis,
+                    filler: ep.filler,
+                    recap: ep.recap,
                 }));
 
                 // FIX: Handle Anime Movies that Jikan returns as 0 episodes
@@ -650,10 +654,23 @@ export function MobileMyListDetailModal({
                                                             className="flex-1 min-w-0 pointer-events-auto"
                                                             onClick={() => toggleEpisodeExpand(ep.number)}
                                                         >
-                                                            <div className="flex items-center justify-between">
+                                                            <div className="flex items-center justify-between gap-2">
                                                                 <p className={`text-sm font-medium truncate ${isWatched ? "text-blue-100" : "text-gray-200"}`}>
                                                                     {ep.title}
                                                                 </p>
+                                                                {/* Filler/Recap Badges */}
+                                                                <div className="flex gap-1 flex-shrink-0">
+                                                                    {ep.filler && (
+                                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-orange-500/20 text-orange-400">
+                                                                            Filler
+                                                                        </span>
+                                                                    )}
+                                                                    {ep.recap && (
+                                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-purple-500/20 text-purple-400">
+                                                                            Recap
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                             {ep.season && (
                                                                 <p className="text-xs text-gray-500">{t('episode_list.season', { season: ep.season })}</p>

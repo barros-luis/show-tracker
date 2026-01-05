@@ -48,9 +48,14 @@ export function SettingsProvider({ children, session }: { children: ReactNode, s
                     .from('profiles')
                     .select('settings')
                     .eq('id', session.user.id)
-                    .single();
+                    .maybeSingle();
 
-                if (data?.settings && !error) {
+                if (error) {
+                    console.error("[Settings] Error fetching settings:", error.message, error.details, error.hint);
+                    return;
+                }
+
+                if (data?.settings) {
                     // Merge remote settings with local defaults
                     const merged = { ...defaultSettings, ...data.settings };
                     setSettings(merged);

@@ -16,25 +16,80 @@ export function useAuth(): UseAuthReturn {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Ensure profile exists for new users (especially OAuth)
+    const ensureProfileExists = useCallback(async (userId: string, userMetadata: any): Promise<void> => {
+        try {
+            // Google OAuth uses 'picture' for avatar, Supabase might use 'avatar_url'
+            const avatarUrl = userMetadata?.picture || userMetadata?.avatar_url || null;
+            const fullName = userMetadata?.full_name || userMetadata?.name || null;
+
+            // Try to create/update profile - use 'nickname' column (not 'full_name')
+            const { error } = await supabase
+                .from("profiles")
+                .upsert({
+                    id: userId,
+                    nickname: fullName, // Your DB uses 'nickname' not 'full_name'
+                    avatar_url: avatarUrl,
+                    updated_at: new Date().toISOString(),
+                }, {
+                    onConflict: 'id',
+                    ignoreDuplicates: false
+                });
+
+            if (error) {
+                console.error("[Auth] Failed to update profile:", error.message);
+            }
+        } catch (err: any) {
+            console.error("[Auth] ensureProfileExists exception:", err.message);
+        }
+    }, []);
+
     // Fetch profile without blocking
-    const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+    const fetchProfile = useCallback(async (userId: string, userMetadata?: any): Promise<Profile | null> => {
         try {
             const { data, error: queryError } = await supabase
                 .from("profiles")
                 .select("*")
                 .eq("id", userId)
-                .single();
+                .maybeSingle();
 
             if (queryError) {
                 console.error("[Auth] Profile query error:", queryError.message);
                 return null;
             }
-            return data as Profile;
+
+            // If profile exists but avatar is missing, update it with OAuth data
+            if (data && !data.avatar_url && userMetadata) {
+                console.log("[Auth] Profile exists but missing avatar, updating...");
+                await ensureProfileExists(userId, userMetadata);
+                // Fetch again after update
+                const { data: updatedData } = await supabase
+                    .from("profiles")
+                    .select("*")
+                    .eq("id", userId)
+                    .maybeSingle();
+                return updatedData as Profile | null;
+            }
+
+            // If no profile exists, create one
+            if (!data && userMetadata) {
+                console.log("[Auth] No profile found, creating one for OAuth user...");
+                await ensureProfileExists(userId, userMetadata);
+                // Fetch again after creation
+                const { data: newData } = await supabase
+                    .from("profiles")
+                    .select("*")
+                    .eq("id", userId)
+                    .maybeSingle();
+                return newData as Profile | null;
+            }
+
+            return data as Profile | null;
         } catch (err: any) {
             console.error("[Auth] fetchProfile exception:", err.message);
             return null;
         }
-    }, []);
+    }, [ensureProfileExists]);
 
     const refreshProfile = useCallback(async () => {
         if (session?.user?.id) {
@@ -66,7 +121,7 @@ export function useAuth(): UseAuthReturn {
 
                 // 3. Fetch Profile in background
                 if (cachedSession.user?.id) {
-                    const profileData = await fetchProfile(cachedSession.user.id);
+                    const profileData = await fetchProfile(cachedSession.user.id, cachedSession.user.user_metadata);
                     if (isMounted && profileData) {
                         setProfile(profileData);
                         // Optional: Cache locally if needed, but session-first strategy relies less on it
@@ -104,7 +159,7 @@ export function useAuth(): UseAuthReturn {
                     // Fetch profile in background
                     const userId = newSession.user?.id;
                     if (userId) {
-                        fetchProfile(userId).then(data => {
+                        fetchProfile(userId, newSession.user.user_metadata).then(data => {
                             if (isMounted && data) {
                                 setProfile(data);
                                 localStorage.setItem(`profile_${userId}`, JSON.stringify(data));

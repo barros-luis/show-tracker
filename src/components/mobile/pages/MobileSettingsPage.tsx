@@ -16,6 +16,7 @@ import pkg from "../../../../package.json";
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../../context/SettingsContext';
 import { AccountSettings } from '../../../components/forms/AccountSettings';
+import { clearDeepLinkCache } from '../../../hooks/useDeepLink';
 
 
 interface MobileSettingsPageProps {
@@ -515,13 +516,35 @@ export function MobileSettingsPage({
                     </p>
                 </div>
             </Section>
+
             {/* Sign Out Button */}
             {session && (
                 <div className="mt-8 mb-4">
                     <button
                         onClick={async () => {
-                            await supabase.auth.signOut();
-                            window.location.reload(); // Force reload to clear state
+                            try {
+                                console.log("🚪 [Logout] Starting...");
+        
+                                // Clear deep link cache
+                                clearDeepLinkCache();
+        
+                                // Clear all auth storage
+                                localStorage.removeItem('supabase.auth.token');
+                                localStorage.removeItem('supabase.auth.token-code-verifier');
+        
+                                console.log("🚪 [Logout] Caches cleared");
+        
+                                // Sign out
+                                await supabase.auth.signOut();
+        
+                                console.log("🚪 [Logout] Signed out");
+        
+                                // Reload
+                                window.location.reload();
+                            } catch (error) {
+                                console.error('Sign out error:', error);
+                                showToast('Failed to sign out', 'error');
+                            }
                         }}
                         className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
                     >

@@ -21,32 +21,30 @@ import { AuthModal } from "./components/modals/AuthModal";
 // Context & Hooks
 import { AuthProvider, useAuthContext } from "./context/AuthContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
+// Import the cleaner function
+import { clearDeepLinkCache } from "./hooks/useDeepLink"; 
 
 // Styles
 import "./App.css";
 
 // Synchronous platform detection - computes on first render
 function usePlatform() {
-  // Compute initial state synchronously to prevent flash of wrong UI
   const getInitialPlatform = () => {
     if (typeof window === 'undefined') return { isMobile: false, isDesktop: true };
 
     const ua = navigator.userAgent.toLowerCase();
     const isMobileUA = /android|iphone|ipad|ipod/i.test(ua);
-    // const isMobileWidth = window.innerWidth < 768; // User hates auto-switch on resize
-    const isMobile = isMobileUA; // Only true mobile devices get the mobile UI
+    const isMobile = isMobileUA; 
 
     return { isMobile, isDesktop: !isMobile };
   };
 
   const [info, setInfo] = useState(getInitialPlatform);
 
-  // Handle resize events (for testing in browser dev tools)
   useEffect(() => {
     const handleResize = () => {
       const ua = navigator.userAgent.toLowerCase();
       const isMobileUA = /android|iphone|ipad|ipod/i.test(ua);
-      // const isMobileWidth = window.innerWidth < 768;
       const isMobile = isMobileUA;
       setInfo({ isMobile, isDesktop: !isMobile });
     };
@@ -57,8 +55,6 @@ function usePlatform() {
 
   return info;
 }
-
-
 
 function MainLayout() {
   const navigate = useNavigate();
@@ -91,7 +87,6 @@ function MainLayout() {
     refreshProfile,
   } = useAuthContext();
 
-  // Determine active view from route
   const getActiveView = (): "search" | "list" | "profile" | "settings" => {
     if (location.pathname === "/list") return "list";
     if (location.pathname === "/profile") return "profile";
@@ -102,20 +97,28 @@ function MainLayout() {
 
   const handleLogout = async () => {
     console.log("Logging out...");
+    
+    // 1. Clear deep link cache (Anti-Zombie)
+    clearDeepLinkCache();
+    
+    // 2. Clear manual storage keys (optional, but safe to keep)
     const keysToRemove = Object.keys(localStorage).filter(key =>
       key.startsWith('sb-') || key.includes('supabase')
     );
     keysToRemove.forEach(key => localStorage.removeItem(key));
-    supabase.auth.signOut().catch(() => { });
-    window.location.reload();
+    
+    // 3. Sign out via Supabase
+    await supabase.auth.signOut().catch((err) => console.error("Sign out error", err));
+    
+    // 4. Reset UI without reloading (Prevents getCurrent() from firing again)
+    navigate("/");
+    showToast("Logged out successfully", "success");
   };
 
   return (
     <div className="h-screen flex flex-col transition-colors duration-300" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      {/* Desktop: Custom Title Bar (Windows only) */}
       {isDesktop && <TitleBar />}
 
-      {/* Mobile: Custom Header */}
       {isMobile && (
         <MobileHeader
           isLoggedIn={!!session}
@@ -129,17 +132,14 @@ function MainLayout() {
         />
       )}
 
-      {/* Main Content */}
       <div
         className={`flex-1 overflow-y-auto font-sans selection:bg-blue-500 selection:text-white ${isMobile ? 'p-4 pb-24' : 'p-8'} relative text-slate-900 dark:text-white transition-colors duration-300`}
         style={{ backgroundColor: 'var(--bg-primary)' }}
       >
-        {/* Mouse Aura - desktop only for performance */}
         {isDesktop && <MouseAura />}
 
         <div className={`${isMobile ? 'max-w-full' : 'max-w-6xl'} mx-auto ${isMobile ? '' : 'relative z-10'}`}>
 
-          {/* Toast Notifications */}
           <Toast
             message={toast?.message || null}
             type={toast?.type}
@@ -148,7 +148,6 @@ function MainLayout() {
             isMobile={isMobile}
           />
 
-          {/* Update Banner */}
           {updateAvailable && (
             <UpdateBanner
               newVersion={updateAvailable}
@@ -157,17 +156,14 @@ function MainLayout() {
             />
           )}
 
-          {/* Auth Modal */}
           <AuthModal
             supabase={supabase}
             isOpen={isAuthModalOpen}
             onClose={() => setAuthModalOpen(false)}
           />
 
-          {/* Desktop Header - hidden on mobile */}
           {isDesktop && (
             <header className="mb-8 flex items-center justify-between relative z-10">
-              {/* Left: Logo */}
               <div className="w-1/3 text-left">
                 <img
                   src="/ast-logo-dark.png"
@@ -183,7 +179,6 @@ function MainLayout() {
                 />
               </div>
 
-              {/* Center: View Toggle */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-100 dark:bg-slate-900/50 backdrop-blur-md p-1.5 rounded-full flex items-center shadow-inner border border-white/5">
                 <div className="absolute inset-0 p-1.5">
                   <motion.div
@@ -220,7 +215,6 @@ function MainLayout() {
                 </button>
               </div>
 
-              {/* Right: User Actions */}
               <div className="w-1/3 flex items-center justify-end gap-2">
                 {session ? (
                   <>
@@ -251,7 +245,6 @@ function MainLayout() {
             </header>
           )}
 
-          {/* Routes */}
           <Routes>
             <Route path="/" element={<SearchPage />} />
             <Route path="/list" element={<MyListPage />} />
@@ -270,7 +263,6 @@ function MainLayout() {
         </div>
       </div>
 
-      {/* Mobile: Bottom Navigation - Hide if modal is open */}
       {isMobile && !location.search.includes('view=modal') && (
         <MobileNav
           isLoggedIn={!!session}

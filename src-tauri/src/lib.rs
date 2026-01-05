@@ -123,7 +123,8 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_deep_link::init())
-        .plugin(tauri_plugin_opener::init());
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_store::Builder::new().build());
 
     // Desktop-only: single instance with callback
     #[cfg(not(any(target_os = "android", target_os = "ios")))]

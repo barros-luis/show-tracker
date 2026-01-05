@@ -24,21 +24,67 @@ export function AuthModal({ supabase, isOpen, onClose }: AuthModalProps) {
   // --- GOOGLE LOGIN LOGIC ---
   async function handleGoogleLogin() {
     try {
+      console.log("🔐 [Auth] Starting Google OAuth with PKCE...");
+
+      // Check if there's already a pending OAuth callback before starting a new flow
+      // This prevents the race condition where clicking again overwrites the verifier
+      const { getCurrent } = await import("@tauri-apps/plugin-deep-link");
+      const pendingUrls = await getCurrent();
+
+      if (pendingUrls && pendingUrls.some(url => url.includes("code="))) {
+        // Check if we have a verifier for this pending URL
+        // If not, it's a stale URL from a previous session - ignore it
+        const { getPkceVerifier, isMobilePlatform, clearPkceVerifier } = await import("../../services/pkceStore");
+        let hasVerifier = false;
+
+        if (isMobilePlatform()) {
+          hasVerifier = !!(await getPkceVerifier());
+        }
+        if (!hasVerifier) {
+          hasVerifier = !!localStorage.getItem('supabase.auth.token-code-verifier');
+        }
+
+        if (hasVerifier) {
+          console.log("🔐 [Auth] Found pending OAuth callback with verifier! Processing...");
+          window.dispatchEvent(new CustomEvent("deep-link-early-capture", { detail: pendingUrls }));
+          return; // Don't start a new OAuth flow
+        } else {
+          console.log("🔐 [Auth] Found stale OAuth callback (no verifier). Starting fresh OAuth flow...");
+          await clearPkceVerifier();
+        }
+      }
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: 'show-tracker://auth-callback',
-          skipBrowserRedirect: true
+          skipBrowserRedirect: true,
+          // Force PKCE
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          }
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("🔐 [Auth] OAuth error:", error);
+        throw error;
+      }
 
-      // 3. Open the System Browser (Chrome/Safari)
+      console.log("🔐 [Auth] OAuth URL generated:", data.url ? 'yes' : 'no');
+
+      // Verify that PKCE verifier is stored before opening browser
+      const verifierKey = `supabase.auth.token-code-verifier`;
+      const storedVerifier = localStorage.getItem(verifierKey);
+      console.log("🔐 [Auth] PKCE verifier stored:", storedVerifier ? 'yes' : 'NO - PROBLEM!');
+
       if (data.url) {
+        console.log("🔐 [Auth] Opening browser...");
         await openUrl(data.url);
       }
     } catch (err: any) {
+      console.error("🔐 [Auth] Exception:", err);
       setError(err.message);
     }
   }
