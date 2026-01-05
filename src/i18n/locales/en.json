@@ -46,6 +46,7 @@
         "all": "All Statuses",
         "watching": "Watching",
         "planned": "Planned",
+        "planning": "Planned",
         "finished": "Finished",
         "on_hold": "On Hold",
         "rewatching": "Re-watching",
@@ -233,6 +234,9 @@
     },
     "episode_list": {
         "title": "Episodes",
+        "episodes": "watched",
+        "season": "Season {{season}}",
+        "no_synopsis": "No synopsis available",
         "watched_count": "({{watched}} / {{total}} watched)",
         "fill_gaps": "Fill Gaps",
         "check_all": "Check All",

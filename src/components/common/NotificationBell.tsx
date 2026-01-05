@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Check, Trash2 } from 'lucide-react';
+import { Bell, Check, Trash2, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
@@ -25,6 +25,7 @@ export function NotificationBell({
     dropdownClassName
 }: NotificationBellProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [expandedId, setExpandedId] = useState<number | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -41,16 +42,24 @@ export function NotificationBell({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleMarkRead = async (id: number) => {
-        // Optimistic update
-        onNotificationsChange(
-            notifications.map(n => n.id === id ? { ...n, read: true } : n)
-        );
-        try {
-            await markNotificationRead(supabase, id);
-        } catch (err) {
-            console.error("Failed to mark read:", err);
-            // Revert? (Optional, maybe too complex for now)
+    const handleNotificationClick = async (notification: AppNotification) => {
+        // Toggle expand
+        if (expandedId === notification.id) {
+            setExpandedId(null);
+        } else {
+            setExpandedId(notification.id);
+        }
+
+        // Mark as read
+        if (!notification.read) {
+            onNotificationsChange(
+                notifications.map(n => n.id === notification.id ? { ...n, read: true } : n)
+            );
+            try {
+                await markNotificationRead(supabase, notification.id);
+            } catch (err) {
+                console.error("Failed to mark read:", err);
+            }
         }
     };
 
@@ -151,42 +160,52 @@ export function NotificationBell({
                                     <span className="text-sm">No notifications</span>
                                 </div>
                             ) : (
-                                notifications.map(notification => (
-                                    <div
-                                        key={notification.id}
-                                        onClick={() => handleMarkRead(notification.id)}
-                                        className={`flex items-start gap-3 p-4 border-b border-gray-200 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-gray-800/30 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-50 dark:bg-blue-500/5' : ''
-                                            }`}
-                                    >
-                                        {/* Image */}
-                                        {notification.image_url && (
-                                            <img
-                                                src={notification.image_url}
-                                                alt=""
-                                                className="w-10 h-14 object-cover rounded-md flex-shrink-0"
-                                            />
-                                        )}
+                                notifications.map(notification => {
+                                    const isExpanded = expandedId === notification.id;
+                                    return (
+                                        <div
+                                            key={notification.id}
+                                            onClick={() => handleNotificationClick(notification)}
+                                            className={`flex items-start gap-3 p-4 border-b border-gray-200 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-gray-800/30 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-50 dark:bg-blue-500/5' : ''
+                                                }`}
+                                        >
+                                            {/* Image */}
+                                            {notification.image_url && (
+                                                <img
+                                                    src={notification.image_url}
+                                                    alt=""
+                                                    className="w-10 h-14 object-cover rounded-md flex-shrink-0"
+                                                />
+                                            )}
 
-                                        {/* Content */}
-                                        <div className="flex-1 min-w-0">
-                                            <p className={`text-sm font-medium truncate ${!notification.read ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'
-                                                }`}>
-                                                {notification.title}
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                                {notification.message}
-                                            </p>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                {formatTime(notification.created_at)}
-                                            </p>
+                                            {/* Content */}
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-sm font-medium ${isExpanded ? '' : 'truncate'} ${!notification.read ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'
+                                                    }`}>
+                                                    {notification.title}
+                                                </p>
+                                                <p className={`text-xs text-gray-500 dark:text-gray-400 mt-0.5 ${isExpanded ? '' : 'line-clamp-2'}`}>
+                                                    {notification.message}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <p className="text-xs text-gray-500">
+                                                        {formatTime(notification.created_at)}
+                                                    </p>
+                                                    {notification.message && notification.message.length > 60 && (
+                                                        <ChevronDown
+                                                            className={`w-3 h-3 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Unread indicator */}
+                                            {!notification.read && (
+                                                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2" />
+                                            )}
                                         </div>
-
-                                        {/* Unread indicator */}
-                                        {!notification.read && (
-                                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2" />
-                                        )}
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </motion.div>
@@ -195,3 +214,4 @@ export function NotificationBell({
         </div>
     );
 }
+

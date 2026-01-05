@@ -46,6 +46,7 @@
         "all": "Todos os estados",
         "watching": "A ver",
         "planned": "Planeado",
+        "planning": "Planeado",
         "finished": "Terminado",
         "on_hold": "Em espera",
         "rewatching": "A rever",
@@ -233,6 +234,9 @@
     },
     "episode_list": {
         "title": "Episódios",
+        "episodes": "vistos",
+        "season": "Temporada {{season}}",
+        "no_synopsis": "Sinopse indisponível",
         "watched_count": "({{watched}} / {{total}} vistos)",
         "fill_gaps": "Preencher Lacunas",
         "check_all": "Marcar Todos",
