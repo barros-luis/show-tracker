@@ -22,7 +22,7 @@ import { AuthModal } from "./components/modals/AuthModal";
 import { AuthProvider, useAuthContext } from "./context/AuthContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 // Import the cleaner function
-import { clearDeepLinkCache } from "./hooks/useDeepLink"; 
+import { clearDeepLinkCache } from "./hooks/useDeepLink";
 
 // Styles
 import "./App.css";
@@ -34,7 +34,7 @@ function usePlatform() {
 
     const ua = navigator.userAgent.toLowerCase();
     const isMobileUA = /android|iphone|ipad|ipod/i.test(ua);
-    const isMobile = isMobileUA; 
+    const isMobile = isMobileUA;
 
     return { isMobile, isDesktop: !isMobile };
   };
@@ -62,6 +62,8 @@ function MainLayout() {
   const { isMobile, isDesktop } = usePlatform();
   const { settings } = useSettings();
   const { t } = useTranslation();
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+
 
   // Update meta theme-color for mobile status bar
   useEffect(() => {
@@ -97,19 +99,19 @@ function MainLayout() {
 
   const handleLogout = async () => {
     console.log("Logging out...");
-    
+
     // 1. Clear deep link cache (Anti-Zombie)
     clearDeepLinkCache();
-    
+
     // 2. Clear manual storage keys (optional, but safe to keep)
     const keysToRemove = Object.keys(localStorage).filter(key =>
       key.startsWith('sb-') || key.includes('supabase')
     );
     keysToRemove.forEach(key => localStorage.removeItem(key));
-    
+
     // 3. Sign out via Supabase
     await supabase.auth.signOut().catch((err) => console.error("Sign out error", err));
-    
+
     // 4. Reset UI without reloading (Prevents getCurrent() from firing again)
     navigate("/");
     showToast("Logged out successfully", "success");
@@ -140,6 +142,8 @@ function MainLayout() {
 
         <div className={`${isMobile ? 'max-w-full' : 'max-w-6xl'} mx-auto ${isMobile ? '' : 'relative z-10'}`}>
 
+
+
           <Toast
             message={toast?.message || null}
             type={toast?.type}
@@ -148,11 +152,12 @@ function MainLayout() {
             isMobile={isMobile}
           />
 
-          {updateAvailable && (
+
+          {updateAvailable && !isMobile && !isBannerDismissed && (
             <UpdateBanner
               newVersion={updateAvailable}
               onUpdate={handleInstallUpdate}
-              onDismiss={() => { }}
+              onDismiss={() => setIsBannerDismissed(true)}
             />
           )}
 

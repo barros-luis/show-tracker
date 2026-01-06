@@ -29,7 +29,7 @@ export function UpdateBanner({ newVersion, onUpdate, onDismiss }: UpdateBannerPr
                 initial={{ opacity: 0, y: -50 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -50 }}
-                className="fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-50"
+                className="fixed top-12 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-50"
             >
                 <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-2xl shadow-blue-500/25 p-4 flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 border border-white/10">
                     <div className="flex items-center gap-3 w-full md:w-auto">

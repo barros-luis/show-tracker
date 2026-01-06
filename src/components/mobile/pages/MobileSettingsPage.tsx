@@ -10,11 +10,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Sun, Settings as SettingsIcon,
-    ChevronRight, Bell, Camera, Save, Shuffle, LogOut, Shield, Globe
+    ChevronRight, Bell, Camera, Save, Shuffle, LogOut, Shield, Globe, Download
 } from 'lucide-react';
 import pkg from "../../../../package.json";
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../../context/SettingsContext';
+import { useAuthContext } from '../../../context/AuthContext';
 import { AccountSettings } from '../../../components/forms/AccountSettings';
 import { clearDeepLinkCache } from '../../../hooks/useDeepLink';
 
@@ -148,6 +149,7 @@ export function MobileSettingsPage({
     onProfileUpdate
 }: MobileSettingsPageProps) {
     const { settings, updateSetting } = useSettings();
+    const { updateAvailable, handleInstallUpdate } = useAuthContext();
     const { t, i18n } = useTranslation();
     const [openSection, setOpenSection] = useState<SectionId | null>(null);
 
@@ -517,28 +519,37 @@ export function MobileSettingsPage({
                 </div>
             </Section>
 
-            {/* Sign Out Button */}
+            {/* Update Button & Sign Out */}
             {session && (
-                <div className="mt-8 mb-4">
+                <div className="mt-8 mb-4 space-y-3">
+                    {updateAvailable && (
+                        <button
+                            onClick={handleInstallUpdate}
+                            className="w-full py-3 bg-blue-500 hover:bg-blue-600 !text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
+                        >
+                            <Download size={18} /> Update App (v{updateAvailable})
+                        </button>
+                    )}
+
                     <button
                         onClick={async () => {
                             try {
                                 console.log("🚪 [Logout] Starting...");
-        
+
                                 // Clear deep link cache
                                 clearDeepLinkCache();
-        
+
                                 // Clear all auth storage
                                 localStorage.removeItem('supabase.auth.token');
                                 localStorage.removeItem('supabase.auth.token-code-verifier');
-        
+
                                 console.log("🚪 [Logout] Caches cleared");
-        
+
                                 // Sign out
                                 await supabase.auth.signOut();
-        
+
                                 console.log("🚪 [Logout] Signed out");
-        
+
                                 // Reload
                                 window.location.reload();
                             } catch (error) {

@@ -52,6 +52,8 @@ interface AuthContextType {
     // Auth Modal
     isAuthModalOpen: boolean;
     setAuthModalOpen: (open: boolean) => void;
+
+
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,7 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         updateListId,
     } = useWatchlist(userId);
 
-    const { lists: userLists, fetchLists: fetchUserLists, updateLists: updateUserLists } = useUserLists(userId);
+    const { lists: userLists, fetchLists: fetchUserLists, updateLists: updateUserLists } = useUserLists(userId, session?.user?.created_at);
 
     // Notifications state
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -99,6 +101,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Update state
     const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
     const [mobileUpdateUrl, setMobileUpdateUrl] = useState<string | null>(null);
+
+
 
     // Auth modal state
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
@@ -134,6 +138,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                         if (hasNewUpdate) {
                             setUpdateAvailable(latestVersion);
+                            showToast("Hey, new update available! Please go to Settings to update the app", "info", 8000);
 
                             // Find APK asset
                             if (data.assets && Array.isArray(data.assets)) {
@@ -282,6 +287,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 handleInstallUpdate,
                 isAuthModalOpen,
                 setAuthModalOpen,
+
             }}
         >
             {children}

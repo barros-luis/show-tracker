@@ -63,8 +63,8 @@ export function Toast({ message, type = "success", onClose, duration = 4000, isM
                         color: 'inherit' // let text color be determined by class
                     } : {}}
                 >
-                    <Icon size={isMobile ? 16 : 20} className={`flex-shrink-0 ${isMobile ? (type === 'success' ? 'text-green-500 dark:text-green-400' : type === 'error' ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400') : ''}`} />
-                    <span className="font-medium text-gray-900 dark:text-white/90 truncate">{message}</span>
+                    <Icon size={isMobile ? 18 : 20} className={`flex-shrink-0 mt-0.5 ${isMobile ? (type === 'success' ? 'text-green-500 dark:text-green-400' : type === 'error' ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400') : ''}`} />
+                    <span className="font-medium text-gray-900 dark:text-white/90 text-sm leading-snug break-words whitespace-normal">{message}</span>
                 </motion.div>
             )}
         </AnimatePresence>
