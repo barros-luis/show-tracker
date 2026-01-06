@@ -124,11 +124,17 @@ body {
   font-size: 0.9rem;
   font-weight: 500;
   transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .nav-links a:hover {
   color: #f9fafb;
 }
+
+/* Mobile Responsive Styles */
+
 
 .github-link {
   display: flex;
@@ -634,10 +640,81 @@ body {
   font-size: 0.85rem;
 }
 
+/* Mobile Menu Button */
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #f9fafb;
+  cursor: pointer;
+  padding: 8px;
+  position: relative;
+  z-index: 102;
+}
+
+/* Mobile Overlay */
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-menu-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-  .nav-links a:not(.github-link) {
-    display: none;
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 250px;
+    height: 100vh;
+    background: rgba(3, 7, 18, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 80px 24px 24px;
+    transition: right 0.3s ease;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 24px;
+    z-index: 101;
+    align-items: flex-start;
+  }
+
+  .nav-links.active {
+    right: 0;
+  }
+
+  /* Show all links inside the mobile menu */
+  .nav-links a:not(.github-link),
+  .nav-links a.github-link,
+  .nav-links a.lang-switch {
+    display: flex;
+    width: 100%;
+    padding: 12px 0;
+    font-size: 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+  }
+
+  .github-link {
+    background: transparent;
+    border: none;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0;
   }
 
   .hero {
