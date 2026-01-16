@@ -107,3 +107,27 @@ export function tvToMediaItem(tv: TMDBTVShow): MediaItem {
         originalData: tv,
     };
 }
+
+// Convert TMDB TV Show (that is Japanese Animation) to MediaItem with type 'anime'
+// This ensures the UI displays it correctly with anime badges and uses anime-specific features
+export function tmdbAnimeToMediaItem(tv: TMDBTVShow): MediaItem {
+    return {
+        id: `anime-${tv.id}`,  // Use anime- prefix for consistency with existing watchlist
+        sourceId: tv.id,
+        type: 'anime',  // Mark as anime type for UI treatment
+        title: tv.name,
+        description: tv.overview || "",
+        imageUrl: getTMDBImageUrl(tv.poster_path, 'w300'),
+        largeImageUrl: getTMDBImageUrl(tv.poster_path, 'original'),
+        year: tv.first_air_date ? new Date(tv.first_air_date).getFullYear() : null,
+        score: tv.vote_average,
+        episodes: tv.number_of_episodes,
+        status: tv.status || null,
+        genres: tv.genres?.map(g => g.name) || [],
+        popularity: (tv.vote_count || 0) * 10,
+        isAnime: true,
+        trailerUrl: tv.videos ? (getTrailerFromVideos(tv.videos.results) ? `https://www.youtube.com/embed/${getTrailerFromVideos(tv.videos.results)}` : null) : null,
+        originalData: tv,
+    };
+}
+

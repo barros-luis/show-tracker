@@ -185,6 +185,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     const isCheckingRef = useRef(false);
+    const lastCheckRef = useRef<number>(0);
 
     // Check for new releases (notifications)
     useEffect(() => {
@@ -225,20 +226,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
             } catch (err) {
                 console.error('Notification check failed:', err);
             } finally {
+                lastCheckRef.current = Date.now();
                 isCheckingRef.current = false;
             }
         };
 
+        // Initial check after startup
         const startupTimeout = setTimeout(checkNotifications, 3000);
 
+        // Periodic interval check
         const savedSettings = localStorage.getItem('app_settings');
         const settings = savedSettings ? JSON.parse(savedSettings) : {};
-        const checkIntervalHours = settings.notifyCheckInterval ?? 2;
+        const checkIntervalHours = settings.notifyCheckInterval ?? 1;
         const intervalId = setInterval(checkNotifications, checkIntervalHours * 60 * 60 * 1000);
+
+        // Also check when app comes into focus (if more than 5 min since last check)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                const now = Date.now();
+                const fiveMinutes = 5 * 60 * 1000;
+                if (now - lastCheckRef.current > fiveMinutes) {
+                    checkNotifications();
+                }
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
             clearTimeout(startupTimeout);
             clearInterval(intervalId);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [session?.user?.id, myList.length]);
 

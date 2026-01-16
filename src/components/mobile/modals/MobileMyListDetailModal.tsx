@@ -13,6 +13,7 @@ import { Trash2, AlertTriangle, ChevronDown, Check, LayoutGrid, Eye, EyeOff, Tv,
 import { useTranslation } from "react-i18next";
 import { getAllTVEpisodes, searchTVShows, getTVDetails, getTVSeasonEpisodes } from "../../../api/tmdb";
 import { getAllAnimeEpisodes, getEpisodeDetails, getAnimeDetails } from "../../../api/jikan";
+import { getFillerRecapMap, enrichWithJikan } from "../../../api/animeService";
 import { getListIcon } from "../../../utils/constants";
 import { SupabaseClient } from "@supabase/supabase-js";
 
@@ -206,7 +207,59 @@ export function MobileMyListDetailModal({
         try {
             let unifiedEps: UnifiedEpisode[] = [];
 
-            if (item.media_type === 'anime' && item.mal_id) {
+            if (item.media_type === 'anime' && item.tmdb_id) {
+                // TMDB-sourced anime - fetch episodes from TMDB with filler overlay from Jikan
+                const eps = await getAllTVEpisodes(item.tmdb_id);
+
+                // Try to get or find mal_id for filler data
+                let effectiveMalId = item.mal_id;
+                if (!effectiveMalId) {
+                    const jikanEnrichment = await enrichWithJikan(item.tmdb_id, item.title, null);
+                    effectiveMalId = jikanEnrichment?.mal_id || null;
+
+                    // Store mal_id for future lookups
+                    if (effectiveMalId) {
+                        await supabase
+                            .from('watchlist')
+                            .update({ mal_id: effectiveMalId })
+                            .eq('id', item.id);
+                    }
+                }
+
+                // Get filler/recap map if we have mal_id
+                let fillerMap = new Map<number, { filler: boolean; recap: boolean }>();
+                if (effectiveMalId) {
+                    try {
+                        fillerMap = await getFillerRecapMap(effectiveMalId);
+                        console.log(`[Filler] Loaded ${fillerMap.size} filler entries for MAL ID ${effectiveMalId}`);
+                    } catch (err) {
+                        console.error("Failed to fetch filler map:", err);
+                    }
+                }
+
+                // Convert to unified episodes with filler overlay
+                unifiedEps = eps.map((ep, idx) => {
+                    const epNumber = idx + 1;
+                    const fillerInfo = fillerMap.get(epNumber);
+                    return {
+                        id: ep.id,
+                        number: epNumber,
+                        title: `S${ep.season_number}E${ep.episode_number}: ${ep.name}`,
+                        synopsis: ep.overview,
+                        season: ep.season_number,
+                        filler: fillerInfo?.filler || false,
+                        recap: fillerInfo?.recap || false,
+                    };
+                });
+
+                setEpisodes(unifiedEps);
+
+                // Update total count
+                if (eps.length > (item.total_episodes || 0)) {
+                    await supabase.from('watchlist').update({ total_episodes: eps.length }).eq('id', item.id);
+                    onTotalEpisodesUpdate(item.id, eps.length);
+                }
+            } else if (item.media_type === 'anime' && item.mal_id) {
                 // Fetch Anime Episodes
                 const eps = await getAllAnimeEpisodes(item.mal_id);
                 unifiedEps = eps.map(ep => ({

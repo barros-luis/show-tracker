@@ -1,21 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
-import { searchAnime } from "../api/jikan";
+import { searchAnimeViaTMDB } from "../api/animeService";
 import { searchMovies, searchTVShows } from "../api/tmdb";
 import {
     type MediaItem,
-    animeToMediaItem,
     movieToMediaItem,
     tvToMediaItem,
+    tmdbAnimeToMediaItem,
 } from "../api/mediaTypes";
 
 interface UseSearchOptions {
     debounceMs?: number;
     minQueryLength?: number;
     adultContent?: boolean;
+    lang?: string;
 }
 
 export function useSearch(options: UseSearchOptions = {}) {
-    const { debounceMs = 500, minQueryLength = 3, adultContent = false } = options;
+    const { debounceMs = 500, minQueryLength = 3, adultContent = false, lang = 'en-US' } = options;
 
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<MediaItem[]>([]);
@@ -30,17 +31,21 @@ export function useSearch(options: UseSearchOptions = {}) {
 
         setLoading(true);
         try {
-            // Search all sources in parallel
+            // TMDB-first search: anime from TMDB + movies + TV (excluding JP animation)
             const [animeData, movieData, tvData] = await Promise.all([
-                searchAnime(searchQuery, !includeAdult),
-                searchMovies(searchQuery, includeAdult),
-                searchTVShows(searchQuery, includeAdult),
+                searchAnimeViaTMDB(searchQuery, includeAdult, lang),
+                searchMovies(searchQuery, includeAdult, lang),
+                searchTVShows(searchQuery, includeAdult, lang),
             ]);
 
-            // Convert to unified MediaItem format
-            const animeItems = animeData.map(animeToMediaItem);
+            // Convert TMDB anime to MediaItem with type 'anime'
+            const animeItems = animeData.map(tmdbAnimeToMediaItem);
             const movieItems = movieData.map(movieToMediaItem);
-            const tvItems = tvData.map(tvToMediaItem);
+
+            // Filter out Japanese animation from TV results (they're in animeItems now)
+            const tvItems = tvData
+                .filter(tv => !(tv.genre_ids?.includes(16) && tv.origin_country?.includes('JP')))
+                .map(tvToMediaItem);
 
             // Combine all results and filter out items without images
             const allItems = [...animeItems, ...movieItems, ...tvItems].filter(
@@ -58,9 +63,6 @@ export function useSearch(options: UseSearchOptions = {}) {
 
             const seenTitles = new Set<string>();
             const deduped = allItems.filter((item) => {
-                // Always keep non-anime items (movies, TV)
-                if (item.type !== "anime") return true;
-
                 const normalized = normalizeTitle(item.title);
                 if (seenTitles.has(normalized)) return false;
                 seenTitles.add(normalized);
@@ -74,7 +76,7 @@ export function useSearch(options: UseSearchOptions = {}) {
         } finally {
             setLoading(false);
         }
-    }, [minQueryLength]);
+    }, [minQueryLength, lang]);
 
     // Debounced search effect
     useEffect(() => {
@@ -100,3 +102,4 @@ export function useSearch(options: UseSearchOptions = {}) {
         setMediaTypeFilter,
     };
 }
+

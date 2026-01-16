@@ -30,7 +30,7 @@ const defaultSettings: Settings = {
     launchAtStartup: false, // Default: disabled - user must explicitly enable
     notifyInApp: true, // Default: enabled - show in-app notifications
     notifyOS: true, // Default: enabled - show OS notifications
-    notifyCheckInterval: 2, // Default: check every 2 hours
+    notifyCheckInterval: 1, // Default: check every 1 hour
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);

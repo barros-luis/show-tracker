@@ -119,6 +119,7 @@
             "notify_os_desc": "Enviar notificações para o teu sistema operativo",
             "check_interval_label": "Intervalo de Verificação",
             "check_interval_desc": "Com que frequência verificar novos episódios",
+            "minutes_30": "A cada 30 minutos",
             "hours_1": "A cada 1 hora",
             "hours_2": "A cada 2 horas",
             "hours_4": "A cada 4 horas",

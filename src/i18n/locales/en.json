@@ -119,6 +119,7 @@
             "notify_os_desc": "Send notifications to your operating system",
             "check_interval_label": "Check Interval",
             "check_interval_desc": "How often to check for new episodes",
+            "minutes_30": "Every 30 minutes",
             "hours_1": "Every 1 hour",
             "hours_2": "Every 2 hours",
             "hours_4": "Every 4 hours",

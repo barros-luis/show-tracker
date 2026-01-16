@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Calendar, Tv, Clock, Loader2, Trash2, ChevronDown, ChevronUp, Check, AlertTriangle } from "lucide-react";
 import { getAnimeDetails, getAllAnimeEpisodes, getEpisodeDetails, type Anime } from "../../api/jikan";
 import { getTVDetails, getAllTVEpisodes, searchTVShows, getTVSeasonEpisodes, type TMDBTVShow } from "../../api/tmdb";
+import { getFillerRecapMap, enrichWithJikan } from "../../api/animeService";
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { UserList } from "./ListManageModal";
 
@@ -137,7 +138,98 @@ export function DesktopMyListDetailModal({
             setLoading(true);
             setLoadingEpisodes(true);
 
-            if (item.media_type === 'anime' && item.mal_id) {
+            if (item.media_type === 'anime' && item.tmdb_id) {
+                // TMDB-sourced anime - fetch episodes from TMDB with filler overlay from Jikan
+                (async () => {
+                    try {
+                        // Fetch details from TMDB
+                        const tmdbDetails = await getTVDetails(item.tmdb_id!);
+
+                        // Also try to get MAL enrichment for additional details
+                        const jikanEnrichment = item.mal_id
+                            ? null  // Already have mal_id, can fetch details directly
+                            : await enrichWithJikan(item.tmdb_id!, item.title, tmdbDetails?.first_air_date ? new Date(tmdbDetails.first_air_date).getFullYear() : null);
+
+                        // If we got enrichment, update mal_id in DB for future filler lookups
+                        if (jikanEnrichment && !item.mal_id) {
+                            await supabase
+                                .from('watchlist')
+                                .update({ mal_id: jikanEnrichment.mal_id })
+                                .eq('id', item.id);
+                        }
+
+                        const effectiveMalId = item.mal_id || jikanEnrichment?.mal_id;
+
+                        // Get Jikan details for display if we have mal_id
+                        if (effectiveMalId) {
+                            const animeDetails = await getAnimeDetails(effectiveMalId);
+                            setFullDetails(animeDetails);
+                        } else {
+                            // Fall back to TMDB details
+                            setFullDetails(tmdbDetails);
+                        }
+                        setLoading(false);
+
+                        // Check cache first
+                        const cachedEps = getCachedEpisodes('anime', item.tmdb_id);
+                        if (cachedEps) {
+                            console.log(`[Cache] Loaded ${cachedEps.length} anime episodes from cache (TMDB)`);
+                            setEpisodes(cachedEps);
+                            fetchWatchedEpisodes().then(() => setLoadingEpisodes(false));
+                            return;
+                        }
+
+                        // Fetch all episodes from TMDB
+                        const tmdbEps = await getAllTVEpisodes(item.tmdb_id!);
+
+                        // Get filler/recap map from Jikan if we have mal_id
+                        let fillerMap = new Map<number, { filler: boolean; recap: boolean }>();
+                        if (effectiveMalId) {
+                            try {
+                                fillerMap = await getFillerRecapMap(effectiveMalId);
+                                console.log(`[Filler] Loaded ${fillerMap.size} filler entries for MAL ID ${effectiveMalId}`);
+                            } catch (err) {
+                                console.error("Failed to fetch filler map:", err);
+                            }
+                        }
+
+                        // Convert to unified episodes with filler overlay
+                        const unifiedEps: UnifiedEpisode[] = tmdbEps.map((ep, idx) => {
+                            const epNumber = idx + 1;
+                            const fillerInfo = fillerMap.get(epNumber);
+                            return {
+                                id: ep.id,
+                                number: epNumber,
+                                title: `S${ep.season_number}E${ep.episode_number}: ${ep.name}`,
+                                synopsis: ep.overview,
+                                season: ep.season_number,
+                                filler: fillerInfo?.filler || false,
+                                recap: fillerInfo?.recap || false,
+                            };
+                        });
+
+                        setEpisodes(unifiedEps);
+                        setLoadingEpisodes(false);
+
+                        // Cache episodes
+                        setCachedEpisodes('anime', item.tmdb_id, unifiedEps);
+                        console.log(`[Cache] Saved ${unifiedEps.length} anime episodes to cache (TMDB)`);
+
+                        // Update total_episodes if different
+                        if (unifiedEps.length > 0 && unifiedEps.length > (item.total_episodes || 0)) {
+                            await supabase
+                                .from('watchlist')
+                                .update({ total_episodes: unifiedEps.length })
+                                .eq('id', item.id);
+                            onTotalEpisodesUpdate(item.id, unifiedEps.length);
+                        }
+                    } catch (error) {
+                        console.error("Error fetching anime episodes via TMDB:", error);
+                        setLoading(false);
+                        setLoadingEpisodes(false);
+                    }
+                })();
+            } else if (item.media_type === 'anime' && item.mal_id) {
                 // Fetch anime details and episodes sequentially to handle Movies correctly
                 (async () => {
                     try {

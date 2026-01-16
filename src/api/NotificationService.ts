@@ -69,40 +69,111 @@ export async function checkForNewReleases(
                 // Check TV show for new episodes and new seasons
                 const details = await getTVDetails(item.tmdb_id);
                 if (details) {
-                    // Check for new episodes by comparing stored vs current last episode
-                    const epResult = checkTVNewEpisode(details, item.last_episode_season, item.last_episode_number);
-                    if (epResult.hasNew) {
-                        hasNewContent = true;
-                        newContentMessage = `New episode of ${item.title}! ${epResult.episodeInfo}`;
-                    }
-
-                    // Check for new seasons (if we have seasons_count stored)
-                    if (!hasNewContent && item.seasons_count && details.number_of_seasons) {
-                        if (details.number_of_seasons > item.seasons_count) {
+                    // If missing episode tracking data, populate it now (for entries added before this feature)
+                    if ((item.last_episode_season === null || item.last_episode_number === null) && details.last_episode_to_air) {
+                        // Auto-populate the missing tracking data
+                        await supabase
+                            .from('watchlist')
+                            .update({
+                                last_episode_season: details.last_episode_to_air.season_number,
+                                last_episode_number: details.last_episode_to_air.episode_number,
+                                seasons_count: details.number_of_seasons
+                            })
+                            .eq('id', item.id);
+                        // Don't notify on first population - just establishing baseline
+                        // Next check will work normally
+                    } else {
+                        // Check for new episodes by comparing stored vs current last episode
+                        const epResult = checkTVNewEpisode(details, item.last_episode_season, item.last_episode_number);
+                        if (epResult.hasNew) {
                             hasNewContent = true;
-                            newContentMessage = `New season of ${item.title}! Season ${details.number_of_seasons} now available`;
+                            newContentMessage = `New episode of ${item.title}! ${epResult.episodeInfo}`;
                         }
-                    }
 
-                    // Check for related movies (search for movies with same title)
-                    if (!hasNewContent) {
-                        const relatedMovies = await searchMovies(item.title, false);
-                        for (const movie of relatedMovies.slice(0, 5)) {
-                            // Check if titles are similar and movie released recently
-                            const movieTitle = movie.title.toLowerCase().replace(/[^a-z0-9]/g, '');
-                            const showTitle = item.title.toLowerCase().replace(/[^a-z0-9]/g, '');
-                            if (movieTitle.includes(showTitle) || showTitle.includes(movieTitle)) {
-                                if (movie.release_date && isRecentlyReleased(movie.release_date, 30)) {
-                                    hasNewContent = true;
-                                    newContentMessage = `New movie related to ${item.title}! "${movie.title}" is now available`;
-                                    break;
+                        // Check for new seasons (if we have seasons_count stored)
+                        if (!hasNewContent && item.seasons_count && details.number_of_seasons) {
+                            if (details.number_of_seasons > item.seasons_count) {
+                                hasNewContent = true;
+                                newContentMessage = `New season of ${item.title}! Season ${details.number_of_seasons} now available`;
+                            }
+                        }
+
+                        // Check for related movies (search for movies with same title)
+                        if (!hasNewContent) {
+                            const relatedMovies = await searchMovies(item.title, false);
+                            for (const movie of relatedMovies.slice(0, 5)) {
+                                // Check if titles are similar and movie released recently
+                                const movieTitle = movie.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+                                const showTitle = item.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+                                if (movieTitle.includes(showTitle) || showTitle.includes(movieTitle)) {
+                                    if (movie.release_date && isRecentlyReleased(movie.release_date, 30)) {
+                                        hasNewContent = true;
+                                        newContentMessage = `New movie related to ${item.title}! "${movie.title}" is now available`;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            } else if (item.media_type === 'anime' && item.tmdb_id) {
+                // TMDB-sourced anime - check using TV show logic
+                const details = await getTVDetails(item.tmdb_id);
+                if (details) {
+                    // If missing episode tracking data, populate it now (for entries added before this feature)
+                    if ((item.last_episode_season === null || item.last_episode_number === null) && details.last_episode_to_air) {
+                        // Auto-populate the missing tracking data
+                        await supabase
+                            .from('watchlist')
+                            .update({
+                                last_episode_season: details.last_episode_to_air.season_number,
+                                last_episode_number: details.last_episode_to_air.episode_number,
+                                seasons_count: details.number_of_seasons
+                            })
+                            .eq('id', item.id);
+                        // Don't notify on first population - just establishing baseline
+                    } else {
+                        // Check for new episodes using TV show logic
+                        const epResult = checkTVNewEpisode(details, item.last_episode_season, item.last_episode_number);
+                        if (epResult.hasNew) {
+                            hasNewContent = true;
+                            newContentMessage = `New episode of ${item.title}! ${epResult.episodeInfo}`;
+                        }
+
+                        // Check for new seasons
+                        if (!hasNewContent && item.seasons_count && details.number_of_seasons) {
+                            if (details.number_of_seasons > item.seasons_count) {
+                                hasNewContent = true;
+                                newContentMessage = `New season of ${item.title}! Season ${details.number_of_seasons} now available`;
+                            }
+                        }
+                    }
+                }
+
+                // Also check for sequels using Jikan relations if we have mal_id
+                if (!hasNewContent && item.mal_id) {
+                    const relations = await getAnimeRelations(item.mal_id);
+                    for (const rel of relations) {
+                        if (rel.relation === 'Sequel' || rel.relation === 'Side Story') {
+                            for (const entry of rel.entries) {
+                                if (entry.type === 'anime') {
+                                    const sequelDetails = await getAnimeDetails(entry.mal_id);
+                                    if (sequelDetails?.status === 'Currently Airing' && sequelDetails.aired?.from) {
+                                        if (isRecentlyStarted(sequelDetails.aired.from, 30)) {
+                                            hasNewContent = true;
+                                            newContentMessage = `New ${rel.relation.toLowerCase()} for ${item.title}! "${entry.name}" is now airing`;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (hasNewContent) break;
+                        }
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 350));
+                }
             } else if (item.media_type === 'anime' && item.mal_id) {
-                // Check anime for new episodes
+                // Jikan-sourced anime (MAL fallback) - use original Jikan-based logic
                 const details = await getAnimeDetails(item.mal_id);
                 if (details) {
                     const result = await checkAnimeNewEpisodeAsync(item.mal_id, details, item.total_episodes);

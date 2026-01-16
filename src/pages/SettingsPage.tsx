@@ -425,9 +425,10 @@ function DesktopSettingsPage({ session, profile, supabase, onProfileUpdate, show
                                                 </div>
                                                 <select
                                                     value={settings.notifyCheckInterval}
-                                                    onChange={(e) => updateSetting('notifyCheckInterval', parseInt(e.target.value))}
+                                                    onChange={(e) => updateSetting('notifyCheckInterval', parseFloat(e.target.value))}
                                                     className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm rounded-lg px-3 py-2 border border-gray-100 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                                                 >
+                                                    <option value={0.5}>{t('settings.general.minutes_30')}</option>
                                                     <option value={1}>{t('settings.general.hours_1')}</option>
                                                     <option value={2}>{t('settings.general.hours_2')}</option>
                                                     <option value={4}>{t('settings.general.hours_4')}</option>

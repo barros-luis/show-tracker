@@ -60,22 +60,34 @@ export function MobileShowDetailModal({
                 const tmdbLang = i18n.language.startsWith('pt') ? 'pt-PT' : 'en-US';
 
                 if (media.type === 'anime') {
-                    const details = await getAnimeDetails(media.sourceId);
+                    // Check if this anime came from TMDB search
+                    const isTMDBAnime = media.originalData && 'id' in media.originalData && !('mal_id' in media.originalData);
 
-                    // Translate synopsis if language is Portuguese
-                    if (details && details.synopsis && i18n.language.startsWith('pt')) {
-                        const translatedSynopsis = await translateText(details.synopsis, 'pt-pt');
-                        details.synopsis = translatedSynopsis;
-                    }
-
-                    setFullDetails(details);
-                    if (details?.trailer?.youtube_id) {
-                        setTrailerUrl(details.trailer.youtube_id);
-                    } else if (details?.trailer?.embed_url) {
-                        const match = details.trailer.embed_url.match(/embed\/([a-zA-Z0-9_-]+)/);
-                        setTrailerUrl(match ? match[1] : null);
+                    if (isTMDBAnime) {
+                        // TMDB-sourced anime - fetch from TMDB
+                        const details = await getTVDetails(media.sourceId, tmdbLang);
+                        setFullDetails(details);
+                        const trailer = getTrailerFromVideos(details?.videos?.results);
+                        setTrailerUrl(trailer);
                     } else {
-                        setTrailerUrl(null);
+                        // Jikan-sourced anime
+                        const details = await getAnimeDetails(media.sourceId);
+
+                        // Translate synopsis if language is Portuguese
+                        if (details && details.synopsis && i18n.language.startsWith('pt')) {
+                            const translatedSynopsis = await translateText(details.synopsis, 'pt-pt');
+                            details.synopsis = translatedSynopsis;
+                        }
+
+                        setFullDetails(details);
+                        if (details?.trailer?.youtube_id) {
+                            setTrailerUrl(details.trailer.youtube_id);
+                        } else if (details?.trailer?.embed_url) {
+                            const match = details.trailer.embed_url.match(/embed\/([a-zA-Z0-9_-]+)/);
+                            setTrailerUrl(match ? match[1] : null);
+                        } else {
+                            setTrailerUrl(null);
+                        }
                     }
                 } else if (media.type === 'tv') {
                     const details = await getTVDetails(media.sourceId, tmdbLang);
@@ -128,24 +140,50 @@ export function MobileShowDetailModal({
 
         if (fullDetails) {
             if (media.type === 'anime') {
-                const anime = fullDetails as Anime;
-                return {
-                    title: anime.title,
-                    imageUrl: media.largeImageUrl || anime.images.jpg.large_image_url, // Prefer enriched image
-                    year: anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null),
-                    score: anime.score,
-                    synopsis: anime.synopsis,
-                    episodes: anime.episodes,
-                    status: getStatusLabel(anime.status),
-                    type: anime.type,
-                    source: anime.source,
-                    season: anime.season,
-                    genres: anime.genres?.map(g => g.name) || [],
-                    duration: anime.duration,
-                    popularity: anime.popularity,
-                    rating: anime.rating,
-                    studios: anime.studios?.map(s => s.name) || [],
-                };
+                // Check if fullDetails is from TMDB (has 'name' property) or Jikan
+                const isTMDBData = 'name' in fullDetails && !('mal_id' in fullDetails);
+
+                if (isTMDBData) {
+                    // TMDB-sourced anime data
+                    const tv = fullDetails as TMDBTVShow;
+                    return {
+                        title: tv.name,
+                        imageUrl: media.largeImageUrl,
+                        year: tv.first_air_date ? new Date(tv.first_air_date).getFullYear() : null,
+                        score: tv.vote_average ? Math.round(tv.vote_average * 10) / 10 : null,
+                        synopsis: tv.overview,
+                        episodes: tv.number_of_episodes,
+                        status: getStatusLabel(tv.status || 'Unknown'),
+                        type: t('media_types.anime'),
+                        source: null,
+                        season: tv.number_of_seasons ? t('media_detail.total_seasons', { count: tv.number_of_seasons }) : null,
+                        genres: tv.genres?.map(g => g.name) || [],
+                        duration: tv.episode_run_time?.[0] ? t('media_detail.min_per_ep', { count: tv.episode_run_time[0] }) : null,
+                        popularity: tv.popularity,
+                        rating: null,
+                        studios: tv.networks?.map(n => n.name) || [],
+                    };
+                } else {
+                    // Jikan-sourced anime data
+                    const anime = fullDetails as Anime;
+                    return {
+                        title: anime.title,
+                        imageUrl: media.largeImageUrl || anime.images.jpg.large_image_url,
+                        year: anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null),
+                        score: anime.score,
+                        synopsis: anime.synopsis,
+                        episodes: anime.episodes,
+                        status: getStatusLabel(anime.status),
+                        type: anime.type,
+                        source: anime.source,
+                        season: anime.season,
+                        genres: anime.genres?.map(g => g.name) || [],
+                        duration: anime.duration,
+                        popularity: anime.popularity,
+                        rating: anime.rating,
+                        studios: anime.studios?.map(s => s.name) || [],
+                    };
+                }
             } else if (media.type === 'movie') {
                 const movie = fullDetails as TMDBMovie;
                 return {

@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { Search, Loader2, Film, Tv, Sparkles, X, ChevronDown, Filter } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { searchAnime } from "../api/jikan";
+import { searchAnimeViaTMDB, searchAnimeViaJikan, findMalIdForTMDBAnime } from "../api/animeService";
 import { searchMovies, searchTVShows, getTVDetails } from "../api/tmdb";
-import { type MediaItem, animeToMediaItem, movieToMediaItem, tvToMediaItem } from "../api/mediaTypes";
+import { type MediaItem, animeToMediaItem, movieToMediaItem, tvToMediaItem, tmdbAnimeToMediaItem } from "../api/mediaTypes";
 import { calculateRelevanceScore } from "../utils/searchUtils";
 import { MediaCard } from "../components/cards/MediaCard";
 import { ShowDetailModal } from "../components/modals/ShowDetailModalWrapper";
@@ -34,11 +34,16 @@ export function SearchPage() {
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
     const filterDropdownRef = useRef<HTMLDivElement>(null);
 
-    // Search effect with debounce
+    // MAL fallback search state
+    const [isJikanFallback, setIsJikanFallback] = useState(false);
+    const [showJikanFallbackButton, setShowJikanFallbackButton] = useState(false);
+
+    // Search effect with debounce - TMDB-first approach
     useEffect(() => {
         const timer = setTimeout(async () => {
             if (query.trim().length >= 3) {
                 setLoading(true);
+                setShowJikanFallbackButton(false);
                 try {
                     const savedSettings = localStorage.getItem('app_settings');
                     const adultContent = savedSettings ? JSON.parse(savedSettings).adultContent ?? false : false;
@@ -46,15 +51,31 @@ export function SearchPage() {
                     // Map app language to TMDB language
                     const tmdbLang = i18n.language.startsWith('pt') ? 'pt-PT' : 'en-US';
 
-                    const [animeData, movieData, tvData] = await Promise.all([
-                        searchAnime(query, !adultContent),
-                        searchMovies(query, adultContent, tmdbLang),
-                        searchTVShows(query, adultContent, tmdbLang),
-                    ]);
+                    let animeItems: MediaItem[] = [];
+                    let movieItems: MediaItem[] = [];
+                    let tvItems: MediaItem[] = [];
 
-                    const animeItems = animeData.map(animeToMediaItem);
-                    const movieItems = movieData.map(movieToMediaItem);
-                    const tvItems = tvData.map(tvToMediaItem);
+                    if (isJikanFallback) {
+                        // Jikan fallback mode - only search anime via Jikan
+                        const animeData = await searchAnimeViaJikan(query, !adultContent);
+                        animeItems = animeData.map(animeToMediaItem);
+                    } else {
+                        // TMDB-first mode (default)
+                        const [animeData, movieData, tvData] = await Promise.all([
+                            searchAnimeViaTMDB(query, adultContent, tmdbLang),
+                            searchMovies(query, adultContent, tmdbLang),
+                            searchTVShows(query, adultContent, tmdbLang),
+                        ]);
+
+                        // Convert TMDB anime results to MediaItem with type 'anime'
+                        animeItems = animeData.map(tmdbAnimeToMediaItem);
+                        movieItems = movieData.map(movieToMediaItem);
+
+                        // Filter out Japanese animation from TV results (they're in animeItems now)
+                        tvItems = tvData
+                            .filter(tv => !(tv.genre_ids?.includes(16) && tv.origin_country?.includes('JP')))
+                            .map(tvToMediaItem);
+                    }
 
                     const allItems = [...animeItems, ...movieItems, ...tvItems];
 
@@ -68,9 +89,10 @@ export function SearchPage() {
                             if (relevanceA !== relevanceB) {
                                 return relevanceB - relevanceA; // Higher relevance first
                             }
-                            return (b.popularity || 0) - (a.popularity || 0); // Then higher popularit
+                            return (b.popularity || 0) - (a.popularity || 0); // Then higher popularity
                         });
 
+                    // Deduplicate by normalized title (mainly for edge cases)
                     const normalizeTitle = (title: string): string => {
                         return title
                             .toLowerCase()
@@ -79,84 +101,20 @@ export function SearchPage() {
                             .trim();
                     };
 
-                    const seenIds = new Set<string>();
-                    const dedupedResults: MediaItem[] = [];
-
-                    // First pass: Group potential duplicates by normalized title
-                    const titleMap = new Map<string, MediaItem[]>();
-
-                    for (const item of sorted) {
+                    const seenTitles = new Set<string>();
+                    const dedupedResults = sorted.filter(item => {
                         const normTitle = normalizeTitle(item.title);
-                        if (!titleMap.has(normTitle)) {
-                            titleMap.set(normTitle, []);
-                        }
-                        titleMap.get(normTitle)?.push(item);
-                    }
-
-                    const enrichmentQueue: { jikanItem: MediaItem; tmdbItem: MediaItem }[] = [];
-
-                    // Process groups
-                    titleMap.forEach((items) => {
-                        const hasJikanAnime = items.some(i => i.type === 'anime');
-
-                        items.forEach(item => {
-                            if (seenIds.has(item.id)) return;
-
-                            if (item.type === 'tv' && item.isAnime && hasJikanAnime) {
-                                const jikanItem = items.find(i => i.type === 'anime');
-                                if (jikanItem) {
-                                    // Queue for video enrichment (requires detail fetch)
-                                    enrichmentQueue.push({ jikanItem, tmdbItem: item });
-
-                                    // Sync Enrichment: Image (available in list result)
-                                    if (item.largeImageUrl) {
-                                        jikanItem.imageUrl = item.imageUrl;
-                                        jikanItem.largeImageUrl = item.largeImageUrl;
-                                    }
-                                }
-                                return; // Skip adding the TMDB item to results
-                            }
-
-                            seenIds.add(item.id);
-                            dedupedResults.push(item);
-                        });
+                        if (seenTitles.has(normTitle)) return false;
+                        seenTitles.add(normTitle);
+                        return true;
                     });
 
-                    // Execute Async Enrichment
-                    if (enrichmentQueue.length > 0) {
-                        try {
-                            await Promise.all(enrichmentQueue.map(async ({ jikanItem, tmdbItem }) => {
-                                const details = await getTVDetails(tmdbItem.sourceId);
+                    setResults(dedupedResults);
 
-                                if (details?.videos?.results) {
-                                    const videos = details.videos.results;
-
-                                    const trailer = videos.find(v => v.site === "YouTube" && v.type === "Trailer")?.key
-                                        || videos.find(v => v.site === "YouTube")?.key;
-
-                                    if (trailer && !jikanItem.trailerUrl) {
-                                        const trailerUrl = `https://www.youtube.com/watch?v=${trailer}`;
-                                        jikanItem.trailerUrl = trailerUrl;
-                                    }
-                                }
-                            }));
-                        } catch (e) {
-                            console.error("Enrichment failed", e);
-                        }
+                    // Show MAL fallback button if no results and not already in fallback mode
+                    if (dedupedResults.length === 0 && !isJikanFallback) {
+                        setShowJikanFallbackButton(true);
                     }
-
-
-                    const finalResults = dedupedResults.sort((a, b) => {
-                        const relevanceA = calculateRelevanceScore(a.title, query);
-                        const relevanceB = calculateRelevanceScore(b.title, query);
-
-                        if (relevanceA !== relevanceB) {
-                            return relevanceB - relevanceA; // Higher relevance first
-                        }
-                        return (b.popularity || 0) - (a.popularity || 0); // Then higher popularity
-                    });
-
-                    setResults(finalResults);
                 } catch (err) {
                     console.error(err);
                 } finally {
@@ -164,10 +122,11 @@ export function SearchPage() {
                 }
             } else {
                 setResults([]);
+                setShowJikanFallbackButton(false);
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [query, i18n.language]);
+    }, [query, i18n.language, isJikanFallback]);
 
     // Close filter dropdown when clicking outside
     useEffect(() => {
@@ -221,7 +180,47 @@ export function SearchPage() {
         };
 
         if (media.type === 'anime') {
-            insertData.mal_id = media.sourceId;
+            // Check if this anime came from TMDB search (originalData has 'id' not 'mal_id')
+            const isTMDBAnime = 'id' in media.originalData && !('mal_id' in media.originalData);
+
+            if (isTMDBAnime) {
+                // Anime from TMDB search - store tmdb_id as primary
+                insertData.tmdb_id = media.sourceId;
+
+                // Fetch TV details for accurate episode/season info
+                try {
+                    const tvDetails = await getTVDetails(media.sourceId);
+                    if (tvDetails) {
+                        if (tvDetails.number_of_seasons) {
+                            insertData.seasons_count = tvDetails.number_of_seasons;
+                        }
+                        if (tvDetails.last_episode_to_air) {
+                            insertData.last_episode_season = tvDetails.last_episode_to_air.season_number;
+                            insertData.last_episode_number = tvDetails.last_episode_to_air.episode_number;
+                        }
+                        if (tvDetails.number_of_episodes) {
+                            insertData.total_episodes = tvDetails.number_of_episodes;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch anime TV details:", err);
+                }
+
+                // Also try to find mal_id for filler/recap data (async, non-blocking for user)
+                // We'll store it separately if found
+                findMalIdForTMDBAnime(media.title, media.year).then(async malId => {
+                    if (malId) {
+                        await supabase
+                            .from('watchlist')
+                            .update({ mal_id: malId })
+                            .eq('user_id', session.user.id)
+                            .eq('tmdb_id', media.sourceId);
+                    }
+                }).catch(err => console.error("Failed to find MAL ID:", err));
+            } else {
+                // Anime from Jikan fallback search - store mal_id as primary
+                insertData.mal_id = media.sourceId;
+            }
         } else {
             insertData.tmdb_id = media.sourceId;
 
@@ -416,6 +415,39 @@ export function SearchPage() {
                         <MediaCard key={media.id} media={media} onClick={(m) => setSelectedMedia(m)} />
                     ))}
                 </div>
+
+                {/* No Results + MAL Fallback Button */}
+                {query.trim().length >= 3 && !loading && filteredResults.length === 0 && (
+                    <div className="text-center py-12">
+                        <p className="text-gray-500 dark:text-gray-400 mb-4">
+                            {isJikanFallback
+                                ? t('search.no_results_fallback', { defaultValue: "No anime found on MAL either." })
+                                : t('search.no_results', { defaultValue: "No results found." })}
+                        </p>
+                        {showJikanFallbackButton && (
+                            <button
+                                onClick={() => {
+                                    setIsJikanFallback(true);
+                                    // The search will re-trigger due to dependency
+                                }}
+                                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all cursor-pointer flex items-center gap-2 mx-auto"
+                            >
+                                <Sparkles size={18} />
+                                {t('search.search_on_mal', { defaultValue: "Search on MAL instead" })}
+                            </button>
+                        )}
+                        {isJikanFallback && (
+                            <button
+                                onClick={() => {
+                                    setIsJikanFallback(false);
+                                }}
+                                className="mt-4 px-4 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline cursor-pointer"
+                            >
+                                {t('search.back_to_tmdb', { defaultValue: "← Back to regular search" })}
+                            </button>
+                        )}
+                    </div>
+                )}
             </motion.div>
         </>
     );
