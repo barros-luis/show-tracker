@@ -2,7 +2,7 @@ import { Suspense, lazy } from "react";
 import { DesktopMyListDetailModal } from "./MyListDetailModal.desktop";
 import { usePlatform } from "../../hooks/usePlatform";
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { UserList } from "./ListManageModal";
+import type { UserList, UserStatus } from "../../types";
 
 // Lazy load mobile modal
 const MobileMyListDetailModal = lazy(() =>
@@ -19,6 +19,7 @@ export interface MyListDetailModalProps {
     onStatusUpdate: (itemId: number, status: string) => void;
     onListChange: (itemId: number, listId: number | null) => void;
     userLists: UserList[];
+    userStatuses: UserStatus[];
     supabase: SupabaseClient;
     userId: string | null;
     showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
@@ -42,6 +43,7 @@ export function MyListDetailModal(props: MyListDetailModalProps) {
                     onStatusUpdate={props.onStatusUpdate}
                     onListChange={props.onListChange}
                     userLists={props.userLists}
+                    userStatuses={props.userStatuses}
                     supabase={props.supabase}
                     userId={props.userId}
                     showToast={props.showToast}

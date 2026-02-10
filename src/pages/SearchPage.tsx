@@ -17,6 +17,7 @@ export function SearchPage() {
         session,
         supabase,
         userLists,
+        userStatuses,
         showToast,
     } = useAuthContext();
     const { t, i18n } = useTranslation();
@@ -297,6 +298,7 @@ export function SearchPage() {
                 isOpen={isListPickerOpen}
                 onClose={() => { setListPickerOpen(false); setPendingMedia(null); }}
                 lists={userLists}
+                userStatuses={userStatuses}
                 onSelectList={handleListSelected}
                 mediaTitle={pendingMedia?.title || ""}
             />

@@ -16,15 +16,23 @@ import { getAllAnimeEpisodes, getEpisodeDetails, getAnimeDetails } from "../../.
 import { getFillerRecapMap, enrichWithJikan } from "../../../api/animeService";
 import { getListIcon } from "../../../utils/constants";
 import { SupabaseClient } from "@supabase/supabase-js";
+import type { UserStatus } from "../../../types";
 
-// Status options
-const STATUS_OPTIONS = [
-    { value: "PLANNED", label: "Planned", color: "bg-yellow-500/20 text-yellow-400" },
-    { value: "WATCHING", label: "Watching", color: "bg-green-500/20 text-green-400" },
-    { value: "ON_HOLD", label: "On Hold", color: "bg-orange-500/20 text-orange-400" },
-    { value: "FINISHED", label: "Finished", color: "bg-blue-500/20 text-blue-400" },
-    { value: "REWATCHING", label: "Re-watching", color: "bg-pink-500/20 text-pink-400" },
-] as const;
+// Color class mapping for dynamic status colors
+const getStatusColorClasses = (color: string): string => {
+    const colorMap: Record<string, string> = {
+        gray: "bg-gray-500/20 text-gray-400",
+        red: "bg-red-500/20 text-red-400",
+        orange: "bg-orange-500/20 text-orange-400",
+        yellow: "bg-yellow-500/20 text-yellow-400",
+        green: "bg-green-500/20 text-green-400",
+        cyan: "bg-cyan-500/20 text-cyan-400",
+        blue: "bg-blue-500/20 text-blue-400",
+        purple: "bg-purple-500/20 text-purple-400",
+        pink: "bg-pink-500/20 text-pink-400",
+    };
+    return colorMap[color] || colorMap.blue;
+};
 
 interface UnifiedEpisode {
     id: number;
@@ -59,6 +67,7 @@ interface MobileMyListDetailModalProps {
     onStatusUpdate: (itemId: number, status: string) => void;
     onListChange: (itemId: number, listId: number | null) => void;
     userLists: any[];
+    userStatuses: UserStatus[];
     supabase: SupabaseClient;
     userId: string | null;
     showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
@@ -74,6 +83,7 @@ export function MobileMyListDetailModal({
     onStatusUpdate,
     onListChange,
     userLists,
+    userStatuses,
     supabase,
     userId,
     showToast
@@ -540,10 +550,10 @@ export function MobileMyListDetailModal({
                                     {/* Status Pill */}
                                     <button
                                         onClick={() => { setShowStatusPicker(!showStatusPicker); setShowListPicker(false); }}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 uppercase tracking-wide border ${STATUS_OPTIONS.find(s => s.value === currentStatus)?.color
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 uppercase tracking-wide border ${getStatusColorClasses(userStatuses.find(s => s.value === currentStatus)?.color || 'blue')
                                             } bg-opacity-10 border-opacity-20`}
                                     >
-                                        {t(`status.${currentStatus.toLowerCase()}`)}
+                                        {userStatuses.find(s => s.value === currentStatus)?.label || currentStatus}
                                         <ChevronDown size={12} />
                                     </button>
 
@@ -583,17 +593,20 @@ export function MobileMyListDetailModal({
                                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
                                         className="absolute top-14 left-0 right-0 mx-5 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-30 overflow-hidden"
                                     >
-                                        {STATUS_OPTIONS.map(opt => (
-                                            <button
-                                                key={opt.value}
-                                                onClick={() => handleStatusChange(opt.value)}
-                                                className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 border-b border-gray-700/50 last:border-0 ${currentStatus === opt.value ? "bg-blue-500/10 text-blue-400" : "text-gray-300 active:bg-gray-700"
-                                                    }`}
-                                            >
-                                                {currentStatus === opt.value && <Check size={14} />}
-                                                <span className={currentStatus !== opt.value ? "ml-6" : ""}>{t(`status.${opt.value.toLowerCase()}`)}</span>
-                                            </button>
-                                        ))}
+                                        {userStatuses
+                                            .sort((a, b) => a.position - b.position)
+                                            .map(opt => (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={() => handleStatusChange(opt.value)}
+                                                    className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 border-b border-gray-700/50 last:border-0 ${currentStatus === opt.value ? "bg-blue-500/10 text-blue-400" : "text-gray-300 active:bg-gray-700"
+                                                        }`}
+                                                >
+                                                    {currentStatus === opt.value && <Check size={14} />}
+                                                    <div className={`w-2 h-2 rounded-full bg-${opt.color}-500 ${currentStatus !== opt.value ? "ml-6" : ""}`} />
+                                                    <span>{opt.label}</span>
+                                                </button>
+                                            ))}
                                     </motion.div>
                                 )}
 

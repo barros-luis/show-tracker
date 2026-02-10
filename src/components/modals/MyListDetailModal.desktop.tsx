@@ -5,7 +5,7 @@ import { getAnimeDetails, getAllAnimeEpisodes, getEpisodeDetails, type Anime } f
 import { getTVDetails, getAllTVEpisodes, searchTVShows, getTVSeasonEpisodes, type TMDBTVShow } from "../../api/tmdb";
 import { getFillerRecapMap, enrichWithJikan } from "../../api/animeService";
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { UserList } from "./ListManageModal";
+import type { UserList, UserStatus } from "../../types";
 
 // Unified episode type for both anime and TV
 interface UnifiedEpisode {
@@ -90,6 +90,7 @@ interface MyListDetailModalProps {
     onStatusUpdate: (itemId: number, status: string) => void;
     onListChange: (itemId: number, listId: number | null) => void;
     userLists: UserList[];
+    userStatuses: UserStatus[];
     supabase: SupabaseClient;
     userId: string | null;
 }
@@ -104,6 +105,7 @@ export function DesktopMyListDetailModal({
     onStatusUpdate,
     onListChange,
     userLists,
+    userStatuses,
     supabase,
     userId
 }: MyListDetailModalProps) {
@@ -740,6 +742,7 @@ export function DesktopMyListDetailModal({
                                             <StatusDropdown
                                                 currentStatus={currentStatus}
                                                 onStatusChange={handleStatusChange}
+                                                userStatuses={userStatuses}
                                             />
 
                                             {/* Move to List Dropdown */}

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Folder, Film, Tv, Sparkles, Gamepad2, Book, Music, Star, Heart, Flame, Zap, Moon, ChevronDown, Check } from "lucide-react";
-import type { UserList } from "./ListManageModal";
+import type { UserList, UserStatus } from "../../types";
 
 interface ListPickerModalProps {
     isOpen: boolean;
     onClose: () => void;
     lists: UserList[];
+    userStatuses: UserStatus[];
     onSelectList: (list: UserList | null, status: string) => void;
     mediaTitle: string;
 }
@@ -35,31 +36,43 @@ const COLOR_TEXT_MAP: Record<string, string> = {
     pink: "text-pink-400",
 };
 
-const QUERY_STATUS_OPTIONS = [
-    { value: "PLANNED", label: "Planned", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
-    { value: "WATCHING", label: "Watching", color: "bg-green-500/20 text-green-400 border-green-500/30" },
-    { value: "ON_HOLD", label: "On Hold", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
-    { value: "FINISHED", label: "Finished", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-    { value: "REWATCHING", label: "Re-watching", color: "bg-pink-500/20 text-pink-400 border-pink-500/30" },
-] as const;
+// Helper to get color classes for status
+const getStatusColorClasses = (color: string): string => {
+    const colorMap: Record<string, string> = {
+        gray: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+        red: "bg-red-500/20 text-red-400 border-red-500/30",
+        orange: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+        yellow: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+        green: "bg-green-500/20 text-green-400 border-green-500/30",
+        cyan: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+        blue: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+        purple: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+        pink: "bg-pink-500/20 text-pink-400 border-pink-500/30",
+    };
+    return colorMap[color] || colorMap.blue;
+};
 
 export function ListPickerModal({
     isOpen,
     onClose,
     lists,
+    userStatuses,
     onSelectList,
     mediaTitle
 }: ListPickerModalProps) {
-    const [selectedStatus, setSelectedStatus] = useState<string>("PLANNED");
+    // Default to first status if available, otherwise "PLANNED"
+    const [selectedStatus, setSelectedStatus] = useState<string>("");
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
     // Reset on open
     useEffect(() => {
         if (isOpen) {
-            setSelectedStatus("PLANNED");
+            // Set to first status (by position) or fallback to "PLANNED"
+            const sortedStatuses = [...userStatuses].sort((a, b) => a.position - b.position);
+            setSelectedStatus(sortedStatuses[0]?.value || "PLANNED");
             setShowStatusDropdown(false);
         }
-    }, [isOpen]);
+    }, [isOpen, userStatuses]);
 
     const getColorClasses = (colorName: string) => {
         return COLOR_BG_MAP[colorName] || COLOR_BG_MAP.gray;
@@ -120,16 +133,16 @@ export function ListPickerModal({
                                 </p>
                             </div>
 
-                            {/* Status Selector */}
                             <div className="p-4 bg-gray-900 border-b border-gray-800">
                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Initial Status</label>
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${QUERY_STATUS_OPTIONS.find(s => s.value === selectedStatus)?.color || "border-gray-700 bg-gray-800 text-gray-300"}`}
+                                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${getStatusColorClasses(userStatuses.find(s => s.value === selectedStatus)?.color || 'blue')}`}
                                     >
-                                        <span className="font-medium">
-                                            {QUERY_STATUS_OPTIONS.find(s => s.value === selectedStatus)?.label}
+                                        <span className="font-medium flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full bg-${userStatuses.find(s => s.value === selectedStatus)?.color || 'blue'}-500`} />
+                                            {userStatuses.find(s => s.value === selectedStatus)?.label || selectedStatus}
                                         </span>
                                         <ChevronDown size={16} className={`transition-transform ${showStatusDropdown ? "rotate-180" : ""}`} />
                                     </button>
@@ -142,19 +155,24 @@ export function ListPickerModal({
                                                 exit={{ opacity: 0, y: -10 }}
                                                 className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-20 overflow-hidden"
                                             >
-                                                {QUERY_STATUS_OPTIONS.map((status) => (
-                                                    <button
-                                                        key={status.value}
-                                                        onClick={() => {
-                                                            setSelectedStatus(status.value);
-                                                            setShowStatusDropdown(false);
-                                                        }}
-                                                        className={`w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer ${status.value === selectedStatus ? "text-blue-400 bg-blue-500/10" : "text-gray-300"}`}
-                                                    >
-                                                        {status.label}
-                                                        {status.value === selectedStatus && <Check size={16} />}
-                                                    </button>
-                                                ))}
+                                                {userStatuses
+                                                    .sort((a, b) => a.position - b.position)
+                                                    .map((status) => (
+                                                        <button
+                                                            key={status.value}
+                                                            onClick={() => {
+                                                                setSelectedStatus(status.value);
+                                                                setShowStatusDropdown(false);
+                                                            }}
+                                                            className={`w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer ${status.value === selectedStatus ? "text-blue-400 bg-blue-500/10" : "text-gray-300"}`}
+                                                        >
+                                                            <span className="flex items-center gap-2">
+                                                                <div className={`w-2 h-2 rounded-full bg-${status.color}-500`} />
+                                                                {status.label}
+                                                            </span>
+                                                            {status.value === selectedStatus && <Check size={16} />}
+                                                        </button>
+                                                    ))}
                                             </motion.div>
                                         )}
                                     </AnimatePresence>

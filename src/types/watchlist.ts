@@ -1,12 +1,7 @@
 export type MediaType = "anime" | "movie" | "tv";
 
-export type WatchStatus =
-    | "PLANNED"
-    | "WATCHING"
-    | "FINISHED"
-    | "ON_HOLD"
-    | "REWATCHING"
-    | "REWATCHED";
+// WatchStatus is now a string to support custom user-defined statuses
+export type WatchStatus = string;
 
 export interface WatchlistItem {
     id: number;
@@ -33,6 +28,16 @@ export interface UserList {
     color: string;
     position: number;
     is_default: boolean;
+    created_at: string;
+}
+
+export interface UserStatus {
+    id: number;
+    user_id: string;
+    value: string;      // Internal key like "WATCHING"
+    label: string;      // Display name like "Watching"
+    color: string;      // Color name (blue, green, etc.)
+    position: number;
     created_at: string;
 }
 

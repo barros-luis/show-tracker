@@ -22,7 +22,12 @@ export function useWatchlist(userId: string | undefined) {
         if (error) {
             console.error("Error fetching watchlist:", error);
         } else {
-            setItems(data || []);
+            const sortedData = (data || []).sort((a, b) => {
+                const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+                const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
+                return timeB - timeA;
+            });
+            setItems(sortedData);
         }
         setLoading(false);
     }, [userId]);
@@ -51,13 +56,21 @@ export function useWatchlist(userId: string | undefined) {
                             // Prevent duplicates if we already added it via optimistic update elsewhere (though complex to track, simple check helps)
                             if (prev.find(i => i.id === payload.new.id)) return prev;
                             const newItem = payload.new as WatchlistItem;
-                            return [newItem, ...prev].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+                            return [newItem, ...prev].sort((a, b) => {
+                                const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+                                const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
+                                return timeB - timeA;
+                            });
                         });
                     } else if (payload.eventType === 'UPDATE') {
                         setItems((prev) =>
                             prev.map((item) =>
                                 item.id === payload.new.id ? { ...item, ...payload.new } as WatchlistItem : item
-                            )
+                            ).sort((a, b) => {
+                                const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+                                const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
+                                return timeB - timeA;
+                            })
                         );
                     } else if (payload.eventType === 'DELETE') {
                         setItems((prev) => prev.filter((item) => item.id !== payload.old.id));
@@ -110,6 +123,31 @@ export function useWatchlist(userId: string | undefined) {
         );
     }, []);
 
+    const touchWatchlistItem = useCallback(async (itemId: number) => {
+        // Optimistic update
+        const now = new Date().toISOString();
+        setItems((prev) =>
+            prev.map((item) =>
+                item.id === itemId ? { ...item, updated_at: now } : item
+            ).sort((a, b) => {
+                const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+                const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
+                return timeB - timeA;
+            })
+        );
+
+        // Server update
+        const { error } = await supabase
+            .from("watchlist")
+            .update({ updated_at: now })
+            .eq("id", itemId);
+
+        if (error) {
+            console.error("Error touching watchlist item:", error);
+            // Revert on error? prioritizing speed over strict consistency for this feature
+        }
+    }, []);
+
     return {
         items,
         loading,
@@ -119,5 +157,6 @@ export function useWatchlist(userId: string | undefined) {
         updateTotalEpisodes,
         updateStatus,
         updateListId,
+        touchWatchlistItem,
     };
 }

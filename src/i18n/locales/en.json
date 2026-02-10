@@ -54,6 +54,8 @@
     },
     "list": {
         "edit_lists": "Edit Lists",
+        "edit_statuses": "Edit Statuses",
+        "all_lists": "All Lists",
         "uncategorized": "Uncategorized",
         "empty_title": "Your list is empty.",
         "empty_action": "Go search for something!",
@@ -197,6 +199,19 @@
         "delete_warning": "Items in this list will be moved to Uncategorized. This action cannot be undone.",
         "delete": "Delete",
         "create_success": "New list created successfully! It will show up once you add shows to it."
+    },
+    "status_modal": {
+        "title": "Manage Statuses",
+        "create_new": "Create new status",
+        "status_name_placeholder": "Status name...",
+        "color": "Color",
+        "cancel": "Cancel",
+        "create": "Create",
+        "footer_hint": "Use arrows to reorder • Click name to edit • Items with deleted status will use first available",
+        "delete_title": "Delete \"{{name}}\"?",
+        "delete_warning": "Items with this status will be moved to the first available status. This action cannot be undone.",
+        "delete": "Delete",
+        "create_success": "New status created successfully!"
     },
     "media_detail": {
         "rating": "Rating",

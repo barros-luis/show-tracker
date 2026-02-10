@@ -4,10 +4,11 @@ import { useToast, ToastType } from "../hooks/useToast";
 import { useDeepLink } from "../hooks/useDeepLink";
 import { useWatchlist } from "../hooks/useWatchlist";
 import { useUserLists } from "../hooks/useUserLists";
+import { useUserStatuses } from "../hooks/useUserStatuses";
 import { supabase } from "../services/supabase";
 import { invoke } from "@tauri-apps/api/core";
 import { type AppNotification, checkForNewReleases, fetchNotifications } from "../api/NotificationService";
-import type { Profile, WatchlistItem, UserList, WatchStatus } from "../types";
+import type { Profile, WatchlistItem, UserList, UserStatus, WatchStatus } from "../types";
 import pkg from "../../package.json";
 
 interface AuthContextType {
@@ -35,11 +36,17 @@ interface AuthContextType {
     updateTotalEpisodes: (itemId: number, total: number) => void;
     updateStatus: (itemId: number, status: WatchStatus) => void;
     updateListId: (itemId: number, listId: number | null) => void;
+    touchWatchlistItem: (itemId: number) => Promise<void>;
 
     // User Lists
     userLists: UserList[];
     fetchUserLists: () => void;
     updateUserLists: (lists: UserList[]) => void;
+
+    // User Statuses
+    userStatuses: UserStatus[];
+    fetchUserStatuses: () => void;
+    updateUserStatuses: (statuses: UserStatus[]) => void;
 
     // Notifications
     notifications: AppNotification[];
@@ -91,23 +98,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         updateTotalEpisodes,
         updateStatus,
         updateListId,
+        touchWatchlistItem,
     } = useWatchlist(userId);
 
     const { lists: userLists, fetchLists: fetchUserLists, updateLists: updateUserLists } = useUserLists(userId, session?.user?.created_at);
+    const { statuses: userStatuses, fetchStatuses: fetchUserStatuses, updateStatuses: updateUserStatuses } = useUserStatuses(userId, session?.user?.created_at);
 
-    // Notifications state
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
-    // Update state
     const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
     const [mobileUpdateUrl, setMobileUpdateUrl] = useState<string | null>(null);
 
 
 
-    // Auth modal state
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
 
-    // Check for updates on mount
     useEffect(() => {
         const checkForUpdates = async () => {
             const ua = navigator.userAgent.toLowerCase();
@@ -118,10 +123,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     const response = await fetch('https://api.github.com/repos/barros-luis/show-tracker/releases/latest');
                     if (response.ok) {
                         const data = await response.json();
-                        const latestVersion = data.tag_name.replace('v', ''); // Remove 'v' prefix if present
+                        const latestVersion = data.tag_name.replace('v', '');
                         const currentVersion = pkg.version;
 
-                        // Simple version comparison
                         const v1 = latestVersion.split('.').map(Number);
                         const v2 = currentVersion.split('.').map(Number);
 
@@ -140,7 +144,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             setUpdateAvailable(latestVersion);
                             showToast("Hey, new update available! Please go to Settings to update the app", "info", 8000);
 
-                            // Find APK asset
                             if (data.assets && Array.isArray(data.assets)) {
                                 const apkAsset = data.assets.find((asset: any) => asset.name.endsWith('.apk'));
                                 if (apkAsset) {
@@ -187,7 +190,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const isCheckingRef = useRef(false);
     const lastCheckRef = useRef<number>(0);
 
-    // Check for new releases (notifications)
     useEffect(() => {
         if (!session?.user?.id) return;
 
@@ -203,11 +205,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             isCheckingRef.current = true;
             try {
-                // Fetch current first to ensure we have latest state
                 const currentNotifs = await fetchNotifications(supabase, session.user.id);
                 setNotifications(currentNotifs);
 
-                // Then check for new stuff
                 const newNotifs = await checkForNewReleases(
                     supabase,
                     session.user.id,
@@ -217,7 +217,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                 if (newNotifs.length > 0) {
                     setNotifications(prev => {
-                        // Dedup before setting state just in case
                         const existingIds = new Set(prev.map(n => n.id));
                         const uniqueNew = newNotifs.filter(n => !existingIds.has(n.id));
                         return [...uniqueNew, ...prev];
@@ -295,9 +294,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 updateTotalEpisodes,
                 updateStatus,
                 updateListId,
+                touchWatchlistItem,
                 userLists,
                 fetchUserLists,
                 updateUserLists,
+                userStatuses,
+                fetchUserStatuses,
+                updateUserStatuses,
                 notifications,
                 setNotifications,
                 updateAvailable,

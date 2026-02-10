@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Film, Tv, Sparkles, ChevronDown, Edit2, X, Folder, Filter } from "lucide-react";
+import { Film, Tv, Sparkles, ChevronDown, Edit2, X, Folder, Filter, Pencil } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { MyListDetailModal } from "../components/modals/MyListDetailModalWrapper";
 import { ListManageModal } from "../components/modals/ListManageModal";
+import { StatusManageModal } from "../components/modals/StatusManageModal";
 import { useAuthContext } from "../context/AuthContext";
 import { getListIcon } from "../utils/constants";
 import { ScrollableRow } from "../components/common/ScrollableRow";
@@ -24,8 +25,11 @@ export function MyListPage() {
         updateListId,
         userLists,
         updateUserLists,
+        userStatuses,
+        updateUserStatuses,
         showToast,
         watchlistLoading,
+        touchWatchlistItem,
     } = useAuthContext();
     const { t } = useTranslation();
 
@@ -45,20 +49,26 @@ export function MyListPage() {
 
     // Filter state
     const [mediaTypeFilters, setMediaTypeFilters] = useState<Set<string>>(new Set());
+    const [listFilters, setListFilters] = useState<Set<number | null>>(new Set());
     const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
-    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [showMediaTypeDropdown, setShowMediaTypeDropdown] = useState(false);
-    const statusDropdownRef = useRef<HTMLDivElement>(null);
+    const [showListDropdown, setShowListDropdown] = useState(false);
+    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const mediaTypeDropdownRef = useRef<HTMLDivElement>(null);
+    const listDropdownRef = useRef<HTMLDivElement>(null);
+    const statusDropdownRef = useRef<HTMLDivElement>(null);
 
     // Modal state
     const [selectedItem, setSelectedItem] = useState<any | null>(null);
     const [isListManageModalOpen, setListManageModalOpen] = useState(false);
+    const [isStatusManageModalOpen, setStatusManageModalOpen] = useState(false);
 
     // Helpers to sync URL
     const openModal = (item: any) => {
         setSelectedItem(item);
         setSearchParams({ view: 'modal' });
+        // Update updated_at timestamp so it moves to top
+        touchWatchlistItem(item.id);
     };
 
     // Keep selectedItem in sync with myList updates (Realtime)
@@ -84,6 +94,9 @@ export function MyListPage() {
             }
             if (mediaTypeDropdownRef.current && !mediaTypeDropdownRef.current.contains(event.target as Node)) {
                 setShowMediaTypeDropdown(false);
+            }
+            if (listDropdownRef.current && !listDropdownRef.current.contains(event.target as Node)) {
+                setShowListDropdown(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -118,6 +131,7 @@ export function MyListPage() {
                 onStatusUpdate={(itemId, status) => updateStatus(itemId, status as any)}
                 onListChange={updateListId}
                 userLists={userLists}
+                userStatuses={userStatuses}
                 supabase={supabase}
                 userId={session?.user?.id || null}
                 showToast={showToast}
@@ -128,6 +142,16 @@ export function MyListPage() {
                 onClose={() => setListManageModalOpen(false)}
                 lists={userLists}
                 onListsChange={updateUserLists}
+                supabase={supabase}
+                userId={session?.user?.id || ""}
+                showToast={showToast}
+            />
+
+            <StatusManageModal
+                isOpen={isStatusManageModalOpen}
+                onClose={() => setStatusManageModalOpen(false)}
+                statuses={userStatuses}
+                onStatusesChange={updateUserStatuses}
                 supabase={supabase}
                 userId={session?.user?.id || ""}
                 showToast={showToast}
@@ -210,83 +234,181 @@ export function MyListPage() {
                         </AnimatePresence>
                     </div>
 
-                    {/* Status Filters Dropdown (same row as Types) */}
-                    <div className="relative" ref={statusDropdownRef}>
+                    {/* List Filter Dropdown */}
+                    <div className="relative" ref={listDropdownRef}>
                         <button
-                            onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                            onClick={() => setShowListDropdown(!showListDropdown)}
                             className="h-7 sm:h-9 px-3 sm:px-4 rounded-full text-[11px] sm:text-sm font-medium bg-white/80 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 border border-gray-200 dark:border-transparent whitespace-nowrap"
                         >
-                            {statusFilters.size === 0
-                                ? t('status.all')
-                                : statusFilters.size === 1
-                                    /* @ts-ignore - quick dirty map for one item, ideally use a helper function */
-                                    ? t(`status.${Array.from(statusFilters)[0].toLowerCase()}`) || Array.from(statusFilters)[0]
-                                    : `${statusFilters.size} ${t('search.selected')}`}
-                            <ChevronDown size={12} className={`transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
+                            <Folder size={12} />
+                            {listFilters.size === 0
+                                ? t('list.all_lists')
+                                : listFilters.size === 1
+                                    ? (Array.from(listFilters)[0] === null
+                                        ? t('list.uncategorized')
+                                        : userLists.find(l => l.id === Array.from(listFilters)[0])?.name || t('list.all_lists'))
+                                    : `${listFilters.size} ${t('search.selected')}`}
+                            <ChevronDown size={12} className={`transition-transform ${showListDropdown ? 'rotate-180' : ''}`} />
                         </button>
 
                         <AnimatePresence>
-                            {showStatusDropdown && (
+                            {showListDropdown && (
                                 <motion.div
                                     initial={{ opacity: 0, y: -5 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -5 }}
                                     className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[160px]"
                                 >
+                                    {/* All Lists Option */}
                                     <button
                                         onClick={() => {
-                                            setStatusFilters(new Set());
-                                            setShowStatusDropdown(false);
+                                            setListFilters(new Set());
+                                            setShowListDropdown(false);
                                         }}
-                                        className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors ${statusFilters.size === 0
+                                        className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors flex items-center gap-2 ${listFilters.size === 0
                                             ? 'bg-blue-500/20 text-blue-600 dark:text-white'
                                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                             }`}
                                     >
-                                        {t('status.all')}
+                                        <div className={`w-2 h-2 rounded-full ${listFilters.size === 0 ? 'bg-blue-500' : 'bg-transparent'}`} />
+                                        {t('list.all_lists')}
                                     </button>
 
-                                    {[
-                                        { value: 'WATCHING', label: t('status.watching') },
-                                        { value: 'PLANNED', label: t('status.planned') },
-                                        { value: 'FINISHED', label: t('status.finished') },
-                                        { value: 'ON_HOLD', label: t('status.on_hold') },
-                                        { value: 'REWATCHING', label: t('status.rewatching') },
-                                        { value: 'REWATCHED', label: t('status.rewatched') },
-                                    ].map(option => {
-                                        const isActive = statusFilters.has(option.value);
-                                        return (
-                                            <button
-                                                key={option.value}
-                                                onClick={() => {
-                                                    const newFilters = new Set(statusFilters);
-                                                    if (isActive) {
-                                                        newFilters.delete(option.value);
-                                                    } else {
-                                                        newFilters.add(option.value);
-                                                    }
-                                                    setStatusFilters(newFilters);
-                                                }}
-                                                className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors flex items-center gap-2 ${isActive
-                                                    ? 'bg-blue-500/20 text-blue-600 dark:text-white'
-                                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                                    }`}
-                                            >
-                                                <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-blue-500' : 'bg-transparent'}`} />
-                                                {option.label}
-                                            </button>
-                                        );
-                                    })}
+                                    {/* User Lists */}
+                                    {userLists
+                                        .sort((a, b) => a.position - b.position)
+                                        .map(list => {
+                                            const isActive = listFilters.has(list.id);
+                                            return (
+                                                <button
+                                                    key={list.id}
+                                                    onClick={() => {
+                                                        const newFilters = new Set(listFilters);
+                                                        if (isActive) {
+                                                            newFilters.delete(list.id);
+                                                        } else {
+                                                            newFilters.add(list.id);
+                                                        }
+                                                        setListFilters(newFilters);
+                                                    }}
+                                                    className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors flex items-center gap-2 ${isActive
+                                                        ? 'bg-blue-500/20 text-blue-600 dark:text-white'
+                                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                        }`}
+                                                >
+                                                    <span className={`text-${list.color}-400`}>{getListIcon(list.icon, 12)}</span>
+                                                    {list.name}
+                                                </button>
+                                            );
+                                        })}
+
+                                    {/* Uncategorized Option */}
+                                    <button
+                                        onClick={() => {
+                                            const newFilters = new Set(listFilters);
+                                            if (listFilters.has(null)) {
+                                                newFilters.delete(null);
+                                            } else {
+                                                newFilters.add(null);
+                                            }
+                                            setListFilters(newFilters);
+                                        }}
+                                        className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors flex items-center gap-2 ${listFilters.has(null)
+                                            ? 'bg-blue-500/20 text-blue-600 dark:text-white'
+                                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                            }`}
+                                    >
+                                        <Folder size={12} className="text-gray-400" />
+                                        {t('list.uncategorized')}
+                                    </button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
 
+                    {/* Status Filters Dropdown + Edit Button */}
+                    <div className="flex items-center gap-1.5">
+                        <div className="relative" ref={statusDropdownRef}>
+                            <button
+                                onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                                className="h-7 sm:h-9 px-3 sm:px-4 rounded-full text-[11px] sm:text-sm font-medium bg-white/80 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 border border-gray-200 dark:border-transparent whitespace-nowrap"
+                            >
+                                {statusFilters.size === 0
+                                    ? t('status.all')
+                                    : statusFilters.size === 1
+                                        ? userStatuses.find(s => s.value === Array.from(statusFilters)[0])?.label || Array.from(statusFilters)[0]
+                                        : `${statusFilters.size} ${t('search.selected')}`}
+                                <ChevronDown size={12} className={`transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            <AnimatePresence>
+                                {showStatusDropdown && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -5 }}
+                                        className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden min-w-[160px]"
+                                    >
+                                        <button
+                                            onClick={() => {
+                                                setStatusFilters(new Set());
+                                                setShowStatusDropdown(false);
+                                            }}
+                                            className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors ${statusFilters.size === 0
+                                                ? 'bg-blue-500/20 text-blue-600 dark:text-white'
+                                                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                }`}
+                                        >
+                                            {t('status.all')}
+                                        </button>
+
+                                        {userStatuses
+                                            .sort((a, b) => a.position - b.position)
+                                            .map(status => {
+                                                const isActive = statusFilters.has(status.value);
+                                                return (
+                                                    <button
+                                                        key={status.value}
+                                                        onClick={() => {
+                                                            const newFilters = new Set(statusFilters);
+                                                            if (isActive) {
+                                                                newFilters.delete(status.value);
+                                                            } else {
+                                                                newFilters.add(status.value);
+                                                            }
+                                                            setStatusFilters(newFilters);
+                                                        }}
+                                                        className={`w-full px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors flex items-center gap-2 ${isActive
+                                                            ? 'bg-blue-500/20 text-blue-600 dark:text-white'
+                                                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                            }`}
+                                                    >
+                                                        <div className={`w-2 h-2 rounded-full bg-${status.color}-500 ${isActive ? '' : 'opacity-60'}`} />
+                                                        {status.label}
+                                                    </button>
+                                                );
+                                            })}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Edit Statuses Icon - Outside dropdown but in same row */}
+                        <button
+                            onClick={() => setStatusManageModalOpen(true)}
+                            className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-gray-200/80 dark:bg-gray-700/50 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-all cursor-pointer border border-gray-300 dark:border-transparent"
+                            title={t('list.edit_statuses')}
+                        >
+                            <Pencil size={12} />
+                        </button>
+                    </div>
+
                     {/* Clear Filters (same row as Types and Statuses) */}
-                    {(mediaTypeFilters.size > 0 || statusFilters.size > 0) && (
+                    {(mediaTypeFilters.size > 0 || listFilters.size > 0 || statusFilters.size > 0) && (
                         <button
                             onClick={() => {
                                 setMediaTypeFilters(new Set());
+                                setListFilters(new Set());
                                 setStatusFilters(new Set());
                             }}
                             className="h-7 px-3 rounded-full text-[11px] sm:text-xs font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
@@ -312,6 +434,7 @@ export function MyListPage() {
                     .map(list => {
                         const listItems = myList.filter((item: any) => {
                             if (item.list_id !== list.id) return false;
+                            if (listFilters.size > 0 && !listFilters.has(item.list_id)) return false;
                             if (mediaTypeFilters.size > 0 && !mediaTypeFilters.has(item.media_type)) return false;
                             if (statusFilters.size > 0 && !statusFilters.has(item.status)) return false;
                             return true;
@@ -336,6 +459,7 @@ export function MyListPage() {
                 {(() => {
                     const uncategorizedItems = myList.filter((item: any) => {
                         if (item.list_id !== null) return false;
+                        if (listFilters.size > 0 && !listFilters.has(null)) return false;
                         if (mediaTypeFilters.size > 0 && !mediaTypeFilters.has(item.media_type)) return false;
                         if (statusFilters.size > 0 && !statusFilters.has(item.status)) return false;
                         return true;

@@ -13,6 +13,9 @@ import {
     Heart, Star, Zap, Code, Coffee,
     Gamepad2, Clapperboard, Music, Smile
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 
 interface MobileProfilePageProps {
     session: any;
@@ -134,7 +137,47 @@ export function MobileProfilePage({ session, profile }: MobileProfilePageProps) 
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                         <span>👋</span> About Me
                     </h2>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap overflow-hidden">{aboutMe}</p>
+                    <div className="prose prose-sm max-w-none prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:text-sm prose-p:leading-relaxed prose-a:text-blue-500 prose-strong:text-gray-900 dark:prose-strong:text-white prose-ul:text-gray-700 dark:prose-ul:text-gray-300 prose-ol:text-gray-700 dark:prose-ol:text-gray-300">
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm, remarkBreaks]}
+                            components={{
+                                h1: ({ children }) => <h3 className="text-base font-bold mb-2 text-gray-900 dark:text-white">{children}</h3>,
+                                h2: ({ children }) => <h4 className="text-sm font-bold mb-2 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-1">{children}</h4>,
+                                h3: ({ children }) => <h5 className="text-sm font-semibold mb-1 text-gray-900 dark:text-white">{children}</h5>,
+                                p: ({ children }) => <p className="mb-3 text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{children}</p>,
+                                ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-0.5">{children}</ul>,
+                                ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-0.5">{children}</ol>,
+                                li: ({ children }) => <li className="text-gray-700 dark:text-gray-300 text-sm">{children}</li>,
+                                a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{children}</a>,
+                                strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-white">{children}</strong>,
+                                em: ({ children }) => <em className="italic">{children}</em>,
+                                code: ({ children }) => <code className="bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-xs font-mono text-pink-500 dark:text-pink-400">{children}</code>,
+                                blockquote: ({ children }) => <blockquote className="border-l-2 border-blue-500 pl-3 my-3 italic text-gray-500 dark:text-gray-400 text-sm bg-gray-50 dark:bg-white/5 py-1 rounded-r-lg">{children}</blockquote>,
+                                hr: () => <hr className="border-gray-200 dark:border-white/10 my-4" />,
+                                // Table components for mobile
+                                table: ({ children }) => <div className="overflow-x-auto my-3 rounded-lg border border-gray-200 dark:border-gray-700"><table className="w-full text-left text-xs text-gray-600 dark:text-gray-300">{children}</table></div>,
+                                thead: ({ children }) => <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">{children}</thead>,
+                                tbody: ({ children }) => <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-transparent">{children}</tbody>,
+                                tr: ({ children }) => <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">{children}</tr>,
+                                th: ({ children }) => <th className="px-3 py-2 font-semibold text-gray-900 dark:text-white whitespace-nowrap">{children}</th>,
+                                td: ({ children }) => <td className="px-3 py-2 align-top">{children}</td>,
+                                // Image component for mobile
+                                img: ({ src, alt }) => (
+                                    <div className="my-3 relative group inline-block w-full">
+                                        <img
+                                            src={src}
+                                            alt={alt}
+                                            className="rounded-lg shadow-sm w-full h-auto object-cover border border-gray-200 dark:border-gray-700"
+                                            loading="lazy"
+                                        />
+                                        {alt && <span className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-center text-xs">{alt}</span>}
+                                    </div>
+                                ),
+                            }}
+                        >
+                            {aboutMe}
+                        </ReactMarkdown>
+                    </div>
                 </motion.div>
             )}
 

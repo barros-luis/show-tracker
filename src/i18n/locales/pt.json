@@ -54,6 +54,8 @@
     },
     "list": {
         "edit_lists": "Editar Listas",
+        "edit_statuses": "Editar Estados",
+        "all_lists": "Todas as Listas",
         "uncategorized": "Sem categoria",
         "empty_title": "A tua lista está vazia.",
         "empty_action": "Vai pesquisar algo!",
@@ -197,6 +199,19 @@
         "delete_warning": "Os itens nesta lista serão movidos para Não Categorizados. Esta ação não pode ser desfeita.",
         "delete": "Eliminar",
         "create_success": "Nova lista criada com sucesso! Irá aparecer assim que adicionares séries a ela."
+    },
+    "status_modal": {
+        "title": "Gerir Estados",
+        "create_new": "Criar novo estado",
+        "status_name_placeholder": "Nome do estado...",
+        "color": "Cor",
+        "cancel": "Cancelar",
+        "create": "Criar",
+        "footer_hint": "Usa as setas para reordenar • Clica no nome para editar • Itens com estado eliminado usarão o primeiro disponível",
+        "delete_title": "Eliminar \"{{name}}\"?",
+        "delete_warning": "Os itens com este estado serão movidos para o primeiro estado disponível. Esta ação não pode ser desfeita.",
+        "delete": "Eliminar",
+        "create_success": "Novo estado criado com sucesso!"
     },
     "media_detail": {
         "rating": "Classificação",
