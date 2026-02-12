@@ -215,3 +215,51 @@ export function getTrailerFromVideos(videos: TMDBVideo[] | undefined): string | 
     const anyYoutube = videos.find(v => v.site === "YouTube");
     return anyYoutube?.key || null;
 }
+
+// Get Trending Movies (Day or Week)
+export async function getTrendingMovies(timeWindow: 'day' | 'week' = 'week', lang = "en-US"): Promise<TMDBMovie[]> {
+    try {
+        const response = await fetch(buildUrl(`/trending/movie/${timeWindow}`, { language: lang }));
+        const data = await response.json();
+        return data.results || [];
+    } catch (error) {
+        console.error("Error fetching trending movies:", error);
+        return [];
+    }
+}
+
+// Get Trending TV Shows (Day or Week)
+export async function getTrendingTVShows(timeWindow: 'day' | 'week' = 'week', lang = "en-US"): Promise<TMDBTVShow[]> {
+    try {
+        const response = await fetch(buildUrl(`/trending/tv/${timeWindow}`, { language: lang }));
+        const data = await response.json();
+        return data.results || [];
+    } catch (error) {
+        console.error("Error fetching trending TV shows:", error);
+        return [];
+    }
+}
+
+// Get Recommendations for a Movie
+export async function getMovieRecommendations(movieId: number, lang = "en-US"): Promise<TMDBMovie[]> {
+    try {
+        const response = await fetch(buildUrl(`/movie/${movieId}/recommendations`, { language: lang }));
+        const data = await response.json();
+        return data.results || [];
+    } catch (error) {
+        console.error(`Error fetching recommendations for movie ${movieId}:`, error);
+        return [];
+    }
+}
+
+// Get Recommendations for a TV Show
+export async function getTVRecommendations(tvId: number, lang = "en-US"): Promise<TMDBTVShow[]> {
+    try {
+        const response = await fetch(buildUrl(`/tv/${tvId}/recommendations`, { language: lang }));
+        const data = await response.json();
+        return data.results || [];
+    } catch (error) {
+        console.error(`Error fetching recommendations for TV show ${tvId}:`, error);
+        return [];
+    }
+}

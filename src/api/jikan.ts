@@ -1,19 +1,53 @@
 const BASE_URL = "https://api.jikan.moe/v4";
 
 // Rate limiter - Jikan allows ~3 requests/second
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 350; // ms between requests
+class RateLimiter {
+  private queue: (() => Promise<void>)[] = [];
+  private isProcessing = false;
+  private lastRequestTime = 0;
+  private readonly minInterval = 400; // Increased to 400ms to be safe
 
-async function rateLimitedFetch(url: string): Promise<Response> {
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest));
+  async add<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          const result = await fn();
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        }
+      });
+      this.process();
+    });
   }
 
-  lastRequestTime = Date.now();
-  return fetch(url);
+  private async process() {
+    if (this.isProcessing || this.queue.length === 0) return;
+    this.isProcessing = true;
+
+    while (this.queue.length > 0) {
+      const task = this.queue.shift();
+      if (task) {
+        const now = Date.now();
+        const timeSinceLast = now - this.lastRequestTime;
+
+        if (timeSinceLast < this.minInterval) {
+          await new Promise(resolve => setTimeout(resolve, this.minInterval - timeSinceLast));
+        }
+
+        this.lastRequestTime = Date.now();
+        await task();
+      }
+    }
+
+    this.isProcessing = false;
+  }
+}
+
+const limiter = new RateLimiter();
+
+async function rateLimitedFetch(url: string): Promise<Response> {
+  return limiter.add(() => fetch(url));
 }
 export interface AnimeStudio {
   mal_id: number;
@@ -207,6 +241,39 @@ export async function getAnimeRelations(malId: number): Promise<AnimeRelation[]>
     }));
   } catch (error) {
     console.error("Error fetching anime relations:", error);
+    return [];
+  }
+}
+
+// Get Top Anime (Popularity/Rank)
+export async function getTopAnime(filter: 'airing' | 'upcoming' | 'bypopularity' | 'favorite' = 'bypopularity'): Promise<Anime[]> {
+  try {
+    const response = await rateLimitedFetch(`${BASE_URL}/top/anime?filter=${filter}&limit=20`);
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error("Error fetching top anime:", error);
+    return [];
+  }
+}
+
+// Get Recommendations for an Anime
+export async function getAnimeRecommendations(malId: number): Promise<Anime[]> {
+  try {
+    const response = await rateLimitedFetch(`${BASE_URL}/anime/${malId}/recommendations`);
+    const data = await response.json();
+
+    return (data.data || []).map((item: any) => ({
+      mal_id: item.entry.mal_id,
+      title: item.entry.title,
+      images: item.entry.images,
+      score: 0,
+      year: 0,
+      type: 'TV',
+    } as Anime));
+
+  } catch (error) {
+    console.error(`Error fetching recommendations for anime ${malId}:`, error);
     return [];
   }
 }

@@ -28,7 +28,7 @@ export function MediaCard({ media, onClick }: MediaCardProps) {
                     <img
                         src={media.imageUrl}
                         alt={media.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 pointer-events-none"
                         loading="lazy"
                     />
                 ) : (

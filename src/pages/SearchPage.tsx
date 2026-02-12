@@ -11,6 +11,8 @@ import { ShowDetailModal } from "../components/modals/ShowDetailModalWrapper";
 import { ListPickerModal } from "../components/modals/ListPickerModal";
 import { useAuthContext } from "../context/AuthContext";
 import type { UserList } from "../types";
+import { RecommendationService, RecommendationResults } from "../services/RecommendationService";
+import { RecommendationRow } from "../components/recommendations/RecommendationRow";
 
 export function SearchPage() {
     const {
@@ -19,6 +21,8 @@ export function SearchPage() {
         userLists,
         userStatuses,
         showToast,
+        myList, // Get watchlist for recommendations
+        watchlistLoading
     } = useAuthContext();
     const { t, i18n } = useTranslation();
 
@@ -27,6 +31,10 @@ export function SearchPage() {
     const [results, setResults] = useState<MediaItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchMediaTypeFilter, setSearchMediaTypeFilter] = useState<Set<string>>(new Set());
+
+    // Recommendations state
+    const [recommendations, setRecommendations] = useState<RecommendationResults | null>(null);
+    const [recsLoading, setRecsLoading] = useState(false);
 
     // Modal state
     const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
@@ -38,6 +46,26 @@ export function SearchPage() {
     // MAL fallback search state
     const [isJikanFallback, setIsJikanFallback] = useState(false);
     const [showJikanFallbackButton, setShowJikanFallbackButton] = useState(false);
+
+    // Setup Recommendations
+    useEffect(() => {
+        // Only fetch if logged in, query is empty, and watchlist is loaded
+        if (query.trim() === "" && session && !watchlistLoading) {
+            const fetchRecs = async () => {
+                setRecsLoading(true);
+                try {
+                    const recs = await RecommendationService.getRecommendations(myList);
+                    setRecommendations(recs);
+                } catch (err) {
+                    console.error("Failed to load recommendations", err);
+                } finally {
+                    setRecsLoading(false);
+                }
+            };
+            fetchRecs();
+        }
+    }, [query, session, watchlistLoading]); // Depends on myList but handled by watchlistLoading check implicitly + simple equality check might fail if array ref changes often
+
 
     // Search effect with debounce - TMDB-first approach
     useEffect(() => {
@@ -257,7 +285,7 @@ export function SearchPage() {
             const emoji = media.type === 'movie' ? '🎬' : media.type === 'tv' ? '📺' : '✅';
             // Simple toast for now, can be improved later
             showToast(t('list.added', { title: media.title }) + `${listName}! ${emoji}`, "success");
-            setQuery("");
+            // setQuery(""); // Don't clear query immediately if they are adding multiple items
         }
     }
 
@@ -335,88 +363,125 @@ export function SearchPage() {
                     )}
                 </div>
 
-                {/* Filter Dropdown */}
-                <div className="flex justify-center mb-6 sm:mb-8">
-                    <div className="relative" ref={filterDropdownRef}>
-                        <button
-                            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                            className="h-9 px-4 rounded-full text-sm font-medium bg-white/80 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all cursor-pointer flex items-center gap-2 border border-gray-200 dark:border-gray-700"
-                        >
-                            <Filter size={14} />
-                            {searchMediaTypeFilter.size === 0
-                                ? t('search.all_types')
-                                : searchMediaTypeFilter.size === 3
-                                    ? t('search.all_types')
-                                    : `${searchMediaTypeFilter.size} ${t('search.selected')}`}
-                            <ChevronDown size={14} className={`transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        <AnimatePresence>
-                            {showFilterDropdown && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -5 }}
-                                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-20 overflow-hidden min-w-[180px]"
-                                >
-                                    {/* All Types Option */}
-                                    <button
-                                        onClick={() => {
-                                            setSearchMediaTypeFilter(new Set());
-                                        }}
-                                        className={`w-full px-4 py-2.5 text-left text-sm font-medium cursor-pointer transition-colors flex items-center gap-3 ${searchMediaTypeFilter.size === 0
-                                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                            }`}
-                                    >
-                                        <div className={`w-2 h-2 rounded-full ${searchMediaTypeFilter.size === 0 ? 'bg-blue-500' : 'bg-transparent'}`} />
-                                        {t('search.all_types')}
-                                    </button>
-
-                                    <div className="h-[1px] bg-gray-200 dark:bg-gray-700" />
-
-                                    {/* Individual Type Options */}
-                                    {[
-                                        { value: 'anime', label: t('media_types.anime'), icon: <Sparkles size={14} />, color: 'purple' },
-                                        { value: 'movie', label: t('media_types.movie'), icon: <Film size={14} />, color: 'red' },
-                                        { value: 'tv', label: t('media_types.tv'), icon: <Tv size={14} />, color: 'green' },
-                                    ].map(type => {
-                                        const isActive = searchMediaTypeFilter.has(type.value);
-                                        return (
-                                            <button
-                                                key={type.value}
-                                                onClick={() => {
-                                                    const newFilters = new Set(searchMediaTypeFilter);
-                                                    if (isActive) {
-                                                        newFilters.delete(type.value);
-                                                    } else {
-                                                        newFilters.add(type.value);
-                                                    }
-                                                    setSearchMediaTypeFilter(newFilters);
-                                                }}
-                                                className={`w-full px-4 py-2.5 text-left text-sm font-medium cursor-pointer transition-colors flex items-center gap-3 ${isActive
-                                                    ? `bg-${type.color}-500/10 text-${type.color}-600 dark:text-${type.color}-400`
-                                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                                    }`}
-                                            >
-                                                <div className={`w-2 h-2 rounded-full ${isActive ? `bg-${type.color}-500` : 'bg-transparent'}`} />
-                                                <span className={isActive ? `text-${type.color}-500` : 'opacity-60'}>{type.icon}</span>
-                                                {type.label}
-                                            </button>
-                                        );
-                                    })}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                {/* Recommendations when query is empty */}
+                {query.trim() === "" && (
+                    <div className="mt-8">
+                        {recsLoading && !recommendations ? (
+                            <div className="flex justify-center py-20">
+                                <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+                            </div>
+                        ) : recommendations ? (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5 }}
+                            >
+                                <RecommendationRow
+                                    title={t('recommendations.anime', { defaultValue: "Anime for You" })}
+                                    items={recommendations.anime}
+                                    onItemClick={(m) => setSelectedMedia(m)}
+                                />
+                                <RecommendationRow
+                                    title={t('recommendations.shows', { defaultValue: "TV Shows You Might Like" })}
+                                    items={recommendations.tv}
+                                    onItemClick={(m) => setSelectedMedia(m)}
+                                />
+                                <RecommendationRow
+                                    title={t('recommendations.movies', { defaultValue: "Movie Recommendations" })}
+                                    items={recommendations.movies}
+                                    onItemClick={(m) => setSelectedMedia(m)}
+                                />
+                            </motion.div>
+                        ) : null}
                     </div>
-                </div>
+                )}
 
-                {/* Results Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {filteredResults.map((media) => (
-                        <MediaCard key={media.id} media={media} onClick={(m) => setSelectedMedia(m)} />
-                    ))}
-                </div>
+                {/* Filter Dropdown - Only show when searching */}
+                {query.trim().length >= 3 && (
+                    <div className="flex justify-center mb-6 sm:mb-8">
+                        <div className="relative" ref={filterDropdownRef}>
+                            <button
+                                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                                className="h-9 px-4 rounded-full text-sm font-medium bg-white/80 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all cursor-pointer flex items-center gap-2 border border-gray-200 dark:border-gray-700"
+                            >
+                                <Filter size={14} />
+                                {searchMediaTypeFilter.size === 0
+                                    ? t('search.all_types')
+                                    : searchMediaTypeFilter.size === 3
+                                        ? t('search.all_types')
+                                        : `${searchMediaTypeFilter.size} ${t('search.selected')}`}
+                                <ChevronDown size={14} className={`transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            <AnimatePresence>
+                                {showFilterDropdown && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -5 }}
+                                        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-20 overflow-hidden min-w-[180px]"
+                                    >
+                                        {/* All Types Option */}
+                                        <button
+                                            onClick={() => {
+                                                setSearchMediaTypeFilter(new Set());
+                                            }}
+                                            className={`w-full px-4 py-2.5 text-left text-sm font-medium cursor-pointer transition-colors flex items-center gap-3 ${searchMediaTypeFilter.size === 0
+                                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                }`}
+                                        >
+                                            <div className={`w-2 h-2 rounded-full ${searchMediaTypeFilter.size === 0 ? 'bg-blue-500' : 'bg-transparent'}`} />
+                                            {t('search.all_types')}
+                                        </button>
+
+                                        <div className="h-[1px] bg-gray-200 dark:bg-gray-700" />
+
+                                        {/* Individual Type Options */}
+                                        {[
+                                            { value: 'anime', label: t('media_types.anime'), icon: <Sparkles size={14} />, color: 'purple' },
+                                            { value: 'movie', label: t('media_types.movie'), icon: <Film size={14} />, color: 'red' },
+                                            { value: 'tv', label: t('media_types.tv'), icon: <Tv size={14} />, color: 'green' },
+                                        ].map(type => {
+                                            const isActive = searchMediaTypeFilter.has(type.value);
+                                            return (
+                                                <button
+                                                    key={type.value}
+                                                    onClick={() => {
+                                                        const newFilters = new Set(searchMediaTypeFilter);
+                                                        if (isActive) {
+                                                            newFilters.delete(type.value);
+                                                        } else {
+                                                            newFilters.add(type.value);
+                                                        }
+                                                        setSearchMediaTypeFilter(newFilters);
+                                                    }}
+                                                    className={`w-full px-4 py-2.5 text-left text-sm font-medium cursor-pointer transition-colors flex items-center gap-3 ${isActive
+                                                        ? `bg-${type.color}-500/10 text-${type.color}-600 dark:text-${type.color}-400`
+                                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                        }`}
+                                                >
+                                                    <div className={`w-2 h-2 rounded-full ${isActive ? `bg-${type.color}-500` : 'bg-transparent'}`} />
+                                                    <span className={isActive ? `text-${type.color}-500` : 'opacity-60'}>{type.icon}</span>
+                                                    {type.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
+                )}
+
+                {/* Results Grid - Only show when searching */}
+                {query.trim().length >= 3 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {filteredResults.map((media) => (
+                            <MediaCard key={media.id} media={media} onClick={(m) => setSelectedMedia(m)} />
+                        ))}
+                    </div>
+                )}
 
                 {/* No Results + MAL Fallback Button */}
                 {query.trim().length >= 3 && !loading && filteredResults.length === 0 && (
@@ -430,7 +495,6 @@ export function SearchPage() {
                             <button
                                 onClick={() => {
                                     setIsJikanFallback(true);
-                                    // The search will re-trigger due to dependency
                                 }}
                                 className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all cursor-pointer flex items-center gap-2 mx-auto"
                             >
@@ -454,3 +518,4 @@ export function SearchPage() {
         </>
     );
 }
+
