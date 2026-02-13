@@ -8,6 +8,13 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { MobileProfilePage } from "../components/mobile";
+import { useAuthContext } from "../context/AuthContext";
+import { ProfileSectionsRenderer } from "../components/profile/ProfileSectionsRenderer";
+import { ShowDetailModal } from "../components/modals/ShowDetailModalWrapper";
+import { SectionManagerModal } from "../components/modals/SectionManagerModal";
+import { MediaItem } from "../api/mediaTypes";
+import { ProfileSection } from "../types/profile";
+import { Settings } from "lucide-react";
 
 interface ProfilePageProps {
     session: any;
@@ -40,6 +47,12 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
     const [displayProfile, setDisplayProfile] = useState<any>(profile || null);
     const [loadingTimeout, setLoadingTimeout] = useState(false);
     const { t } = useTranslation();
+    const { session: currentSession, supabase, myList, userLists, showToast } = useAuthContext();
+    const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+    const [isSectionManagerOpen, setSectionManagerOpen] = useState(false);
+
+    // Check ownership
+    const isOwner = currentSession?.user?.id === profile?.id;
 
     useEffect(() => {
         if (profile) {
@@ -103,6 +116,7 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
     const aboutMe = displayProfile.about_me || "";
     const customFields = displayProfile.custom_fields || [];
     const avatarUrl = displayProfile.avatar_url;
+    const sections = displayProfile.sections || []; // Get sections
 
     // Use the saved gradient directly, or fallback to default
     const bannerGradientClass = displayProfile.banner_gradient || 'bg-gradient-to-r from-purple-500 to-indigo-600';
@@ -134,6 +148,16 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                                 <div className="mb-8 text-center lg:text-left">
                                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1 drop-shadow-sm">{nickname}</h1>
                                     <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">{session.user.email}</p>
+
+                                    {isOwner && (
+                                        <button
+                                            onClick={() => setSectionManagerOpen(true)}
+                                            className="mt-4 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 mx-auto lg:mx-0"
+                                        >
+                                            <Settings size={16} />
+                                            Customize Profile
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* Custom Fields */}
@@ -193,7 +217,7 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                                         td: ({ children }) => <td className="px-4 py-3 align-top">{children}</td>,
                                         // Image component
                                         img: ({ src, alt }) => (
-                                            <div className="my-4 relative group inline-block">
+                                            <span className="my-4 relative group inline-block">
                                                 <img
                                                     src={src}
                                                     alt={alt}
@@ -201,7 +225,7 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                                                     loading="lazy"
                                                 />
                                                 {alt && <span className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm text-white text-xs py-1 px-2 rounded-b-xl opacity-0 group-hover:opacity-100 transition-opacity text-center truncate">{alt}</span>}
-                                            </div>
+                                            </span>
                                         ),
                                     }}
                                 >
@@ -217,6 +241,122 @@ function DesktopProfilePage({ session, profile }: ProfilePageProps) {
                     </div>
                 </div>
             </div>
+
+            {/* PROFILE SECTIONS (Spotlight, Lists, Groups) */}
+            <ProfileSectionsRenderer
+                sections={sections}
+                watchlist={myList}
+            />
+
+            {/* DETAIL MODAL */}
+            <ShowDetailModal
+                media={selectedMedia}
+                isOpen={selectedMedia !== null}
+                onClose={() => setSelectedMedia(null)}
+                onAddToList={() => showToast("Add to list from profile coming soon!", "info")}
+                isLoggedIn={!!session}
+            />
+
+            {/* SECTION MANAGER MODAL */}
+            <SectionManagerModal
+                isOpen={isSectionManagerOpen}
+                onClose={() => setSectionManagerOpen(false)}
+                sections={sections}
+                userLists={userLists}
+                watchlist={myList}
+                onUpdateSections={async (newSections) => {
+                    // Optimistic update
+                    setDisplayProfile({ ...displayProfile, sections: newSections });
+
+                    // Persist to Supabase
+                    const { error } = await supabase
+                        .from('profiles')
+                        .update({ sections: newSections })
+                        .eq('id', profile.id);
+
+                    if (error) {
+                        console.error("Failed to save sections:", error);
+                        showToast("Failed to save changes", "error");
+                        // Revert? For now let's hope it works or user refreshes
+                    }
+                }}
+                onAddSection={(type, data) => {
+                    let newSection: ProfileSection | null = null;
+
+                    if (type === 'spotlight' && data) {
+                        const media = data as MediaItem;
+                        newSection = {
+                            id: crypto.randomUUID(),
+                            type: 'spotlight',
+                            title: 'Spotlight',
+                            order: sections.length,
+                            content: {
+                                type: 'spotlight',
+                                media: {
+                                    id: media.id,
+                                    sourceId: media.sourceId,
+                                    type: media.type,
+                                    title: media.title,
+                                    posterUrl: media.largeImageUrl,
+                                    backdropUrl: (media.originalData as any).backdrop_path
+                                        ? `https://image.tmdb.org/t/p/original${(media.originalData as any).backdrop_path}`
+                                        : undefined
+                                }
+                            }
+                        };
+                    } else if (type === 'list' && data) {
+                        const { listId, title } = data;
+                        newSection = {
+                            id: crypto.randomUUID(),
+                            type: 'list',
+                            title: title || 'Featured List',
+                            order: sections.length,
+                            content: {
+                                type: 'list',
+                                list_id: listId
+                            }
+                        };
+                    } else if (type === 'custom_group' && data) {
+                        const items = data as MediaItem[];
+                        newSection = {
+                            id: crypto.randomUUID(),
+                            type: 'custom_group',
+                            title: 'Collection',
+                            order: sections.length,
+                            content: {
+                                type: 'custom_group',
+                                items: items.map(item => ({
+                                    id: item.id,
+                                    sourceId: item.sourceId,
+                                    type: item.type,
+                                    title: item.title,
+                                    posterUrl: item.largeImageUrl || item.imageUrl,
+                                    backdropUrl: item.imageUrl
+                                }))
+                            }
+                        };
+                    }
+
+                    if (newSection) {
+                        const newSections = [...sections, newSection];
+                        setDisplayProfile({ ...displayProfile, sections: newSections });
+
+                        supabase
+                            .from('profiles')
+                            .update({ sections: newSections })
+                            .eq('id', profile.id)
+                            .then(({ error }) => {
+                                if (error) {
+                                    showToast("Failed to add section", "error");
+                                    // Revert on error
+                                    setDisplayProfile({ ...displayProfile, sections });
+                                } else {
+                                    showToast("Section added!", "success");
+                                }
+                            });
+                    }
+                }}
+            />
         </div>
     );
 }
