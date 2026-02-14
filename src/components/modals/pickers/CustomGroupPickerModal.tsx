@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Loader2, X, Plus, Check } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Search, Loader2, X, Check } from 'lucide-react';
+
 import { MediaItem } from '../../../api/mediaTypes';
 import { searchAnimeViaTMDB } from '../../../api/animeService';
 import { searchMovies, searchTVShows } from '../../../api/tmdb';
@@ -22,7 +22,7 @@ export const CustomGroupPickerModal: React.FC<CustomGroupPickerModalProps> = ({
     watchlist = [],
     title = "Create Collection"
 }) => {
-    const { t } = useTranslation();
+
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<MediaItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);

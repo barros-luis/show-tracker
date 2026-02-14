@@ -14,7 +14,7 @@ interface SpotlightPickerModalProps {
 }
 
 export const SpotlightPickerModal: React.FC<SpotlightPickerModalProps> = ({ isOpen, onClose, onSelect }) => {
-    const { t, i18n } = useTranslation();
+    const { i18n } = useTranslation();
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<MediaItem[]>([]);
     const [loading, setLoading] = useState(false);

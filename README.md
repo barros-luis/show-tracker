@@ -19,7 +19,7 @@
 
 **AShow Tracker** is a premium cross-platform application built for enthusiasts who want a beautiful, seamless way to track their binge-watching habits. Breaking away from clunky web interfaces, it offers a native, glassmorphism-inspired UI with deep system integration.
 
-## Features (v1.9.2)
+## Features (v2.1.1)
 
 ### 🎨 Stunning UI/UX
 - **Glassmorphism Design** — Modern, translucent aesthetics with dynamic gradient backgrounds
