@@ -1,6 +1,6 @@
 [package]
 name = "ashow-tracker"
-version = "2.1.2"
+version = "2.1.3"
 description = "AShow Tracker - Track your anime and TV shows"
 authors = ["Luis Barros"]
 edition = "2021"
