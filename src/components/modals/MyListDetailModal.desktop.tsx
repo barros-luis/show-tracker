@@ -431,14 +431,36 @@ export function DesktopMyListDetailModal({
     const fetchWatchedEpisodes = async () => {
         if (!item || !userId) return;
 
-        const { data } = await supabase
-            .from('watched_episodes')
-            .select('episode_number')
-            .eq('watchlist_id', item.id);
+        let allData: { episode_number: number }[] = [];
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
 
-        if (data) {
-            setWatchedEpisodes(new Set(data.map(d => d.episode_number)));
+        while (hasMore) {
+            const { data, error } = await supabase
+                .from('watched_episodes')
+                .select('episode_number')
+                .eq('watchlist_id', item.id)
+                .range(from, from + step - 1);
+
+            if (error) {
+                console.error("Error fetching watched episodes:", error);
+                break;
+            }
+
+            if (data) {
+                allData = [...allData, ...data];
+                if (data.length < step) {
+                    hasMore = false;
+                } else {
+                    from += step;
+                }
+            } else {
+                hasMore = false;
+            }
         }
+
+        setWatchedEpisodes(new Set(allData.map(d => d.episode_number)));
     };
 
     // Auto-scroll to first unwatched episode
