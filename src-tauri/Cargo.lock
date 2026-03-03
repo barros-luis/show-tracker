@@ -58,7 +58,7 @@ dependencies = [
 
 [[package]]
 name = "ashow-tracker"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "objc2 0.5.2",
  "objc2-app-kit 0.2.2",
